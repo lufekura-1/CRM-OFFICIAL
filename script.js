@@ -915,27 +915,27 @@ function openClienteModal(id, onSave) {
         <div class="modal-section">
           <h3>Dados da Compra</h3>
           <div class="form-grid">
-            <div class="form-field col-span-4"><label for="dataCompra">Data da Compra *</label><input id="dataCompra" type="date" name="dataCompra" class="date-input" required></div>
-            <div class="form-field col-span-4"><label for="valorLente">Valor da Lente (R$)</label><input id="valorLente" name="valorLente" class="text-input" placeholder="0,00" inputmode="decimal"></div>
+            <div class="form-field col-span-4"><label for="compra-data">Data da Compra *</label><input id="compra-data" type="date" name="dataCompra" class="date-input" required></div>
+            <div class="form-field col-span-4"><label for="compra-valor">Valor da Lente (R$)</label><input id="compra-valor" name="valorLente" class="text-input" placeholder="0,00" inputmode="decimal"></div>
             <div class="form-field col-span-4"><label for="compra-nfe">NFE/NFC-e</label><input id="compra-nfe" name="nfe" class="text-input"></div>
-            <div class="form-field col-span-12"><label for="armacao">Armação</label><input id="armacao" name="armacao" class="text-input"></div>
+            <div class="form-field col-span-12"><label for="compra-armacao">Armação</label><input id="compra-armacao" name="armacao" class="text-input"></div>
             <div class="form-field col-span-12"><label>Material da armação</label>
-              <div class="segmented" id="armacao-material" role="group">
+              <div class="segmented" id="compra-material" role="group">
                 <button type="button" class="seg-btn" data-value="ACETATO" aria-pressed="false">ACETATO</button>
                 <button type="button" class="seg-btn" data-value="METAL" aria-pressed="false">METAL</button>
                 <button type="button" class="seg-btn" data-value="TITANIUM" aria-pressed="false">TITANIUM</button>
                 <button type="button" class="seg-btn" data-value="OUTRO" aria-pressed="false">OUTRO</button>
               </div>
             </div>
-            <div class="form-field col-span-12"><label for="lente">Lente</label><input id="lente" name="lente" class="text-input"></div>
+            <div class="form-field col-span-12"><label for="compra-lente">Lente</label><input id="compra-lente" name="lente" class="text-input"></div>
             <div class="form-field col-span-12"><label>Tipos de compra</label>
-              <div class="segmented" id="tipos-compra" role="group">
+              <div class="segmented" id="compra-tipos" role="group">
                 <button type="button" class="seg-btn" data-value="V.S" aria-pressed="false">V.S</button>
                 <button type="button" class="seg-btn" data-value="M.F" aria-pressed="false">M.F</button>
                 <button type="button" class="seg-btn" data-value="SOLAR" aria-pressed="false">SOLAR</button>
               </div>
             </div>
-            <div class="form-field col-span-12"><label for="obs-compra">Observações</label><textarea id="obs-compra" name="observacoes" class="textarea" rows="3"></textarea></div>
+            <div class="form-field col-span-12"><label for="compra-observacoes">Observações</label><textarea id="compra-observacoes" name="observacoes" class="textarea" rows="3"></textarea></div>
             <fieldset class="col-span-12">
               <legend>Receituário</legend>
               <div class="rx-table-wrapper">
@@ -988,14 +988,14 @@ function openClienteModal(id, onSave) {
   });
   let tiposDiv, materialDiv;
   if(!id){
-    tiposDiv = form.querySelector('#tipos-compra');
+    tiposDiv = form.querySelector('#compra-tipos');
     tiposDiv.querySelectorAll('button').forEach(btn=>{
       btn.addEventListener('click',()=>{
         const pressed=btn.getAttribute('aria-pressed')==='true';
         btn.setAttribute('aria-pressed',(!pressed).toString());
       });
     });
-    materialDiv = form.querySelector('#armacao-material');
+    materialDiv = form.querySelector('#compra-material');
     materialDiv.querySelectorAll('button').forEach(btn=>{
       btn.addEventListener('click',()=>{
         materialDiv.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed','false'));
@@ -1028,6 +1028,8 @@ function openCompraModal(clienteId, compraId, onSave) {
   title.textContent = compra ? 'Editar Compra' : 'Nova Compra';
   body.innerHTML = `
     <form id="compra-form">
+      <input type="hidden" id="purchaseClientId">
+      <input type="hidden" id="purchaseId">
       <div class="modal-section">
         <h3>Dados da Compra</h3>
         <div class="form-grid">
@@ -1078,6 +1080,8 @@ function openCompraModal(clienteId, compraId, onSave) {
   const form = body.querySelector('#compra-form');
   form.dataset.clienteId = clienteId;
   form.dataset.compraId = compraId || '';
+  form.querySelector('#purchaseClientId').value = clienteId;
+  form.querySelector('#purchaseId').value = compraId || '';
   purchaseModalOnSave = onSave;
   const today = new Date().toISOString().slice(0,10);
   form.dataCompra.value = compra ? compra.dataCompra : today;
@@ -2170,10 +2174,10 @@ function parseCurrency(str){
 }
 
 function readPrescriptionTable(){
-  const get=id=>document.getElementById(id)?.value.trim()||'';
+  const get = name => document.querySelector(`[name="${name}"]`)?.value.trim() || '';
   return {
-    oe:{ esferico:get('rxOEEsf'), cilindrico:get('rxOECil'), eixo:get('rxOEEixo'), dnp:get('rxOEDnp'), adicao:get('rxOEAd') },
-    od:{ esferico:get('rxODESf'), cilindrico:get('rxODCil'), eixo:get('rxODEixo'), dnp:get('rxODDnp'), adicao:get('rxODAd') }
+    oe:{ esferico:get('oe_esferico'), cilindrico:get('oe_cilindrico'), eixo:get('oe_eixo'), dnp:get('oe_dnp'), adicao:get('oe_adicao') },
+    od:{ esferico:get('od_esferico'), cilindrico:get('od_cilindrico'), eixo:get('od_eixo'), dnp:get('od_dnp'), adicao:get('od_adicao') }
   };
 }
 
@@ -2194,16 +2198,18 @@ function readClientForm(){
 }
 
 function readPurchaseForm(){
+  const materialBtn = document.querySelector('#compra-material .seg-btn[aria-pressed="true"]');
   return {
     clienteId: document.getElementById('purchaseClientId').value,
     compra: {
       id: document.getElementById('purchaseId').value || null,
-      dataCompra: document.getElementById('purchaseDate').value,
-      nfe: document.getElementById('purchaseNFE').value.trim(),
-      armacao: document.getElementById('purchaseFrame').value.trim(),
-      material: document.querySelector('input[name="frameMaterial"]:checked')?.value || '',
-      lente: document.getElementById('purchaseLens').value.trim(),
-      valor: parseCurrency(document.getElementById('purchaseValue').value),
+      dataCompra: document.getElementById('compra-data').value,
+      nfe: document.getElementById('compra-nfe').value.trim(),
+      armacao: document.getElementById('compra-armacao').value.trim(),
+      material: materialBtn?.dataset.value || '',
+      lente: document.getElementById('compra-lente').value.trim(),
+      valor: parseCurrency(document.getElementById('compra-valor').value),
+      tiposCompra: Array.from(document.querySelectorAll('#compra-tipos .seg-btn[aria-pressed="true"]')).map(b=>b.dataset.value),
       grau: readPrescriptionTable()
     }
   };
