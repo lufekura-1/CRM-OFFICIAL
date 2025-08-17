@@ -953,7 +953,7 @@ function openClienteModal(id, onSave) {
         </div>
         `}
       </form>`;
-  const saveBtn = modal.querySelector('#modal-save');
+  const saveBtn = modal.querySelector('#clientSaveBtn') || modal.querySelector('#modal-save');
   saveBtn.setAttribute('form','cliente-form');
   saveBtn.id = 'clientSaveBtn';
   const cancelBtn = modal.querySelector('[data-modal-close]');
@@ -2230,11 +2230,17 @@ function closeModal(id){
 }
 
 function closeClientModal(){
+  const modal = document.getElementById('app-modal');
+  const saveBtn = modal?.querySelector('#clientSaveBtn') || modal?.querySelector('#purchaseSaveBtn') || modal?.querySelector('#modal-save');
+  if (saveBtn) saveBtn.id = 'modal-save';
   closeModal('clientModal');
   refreshUI();
 }
 
 function closePurchaseModal(){
+  const modal = document.getElementById('app-modal');
+  const saveBtn = modal?.querySelector('#purchaseSaveBtn') || modal?.querySelector('#clientSaveBtn') || modal?.querySelector('#modal-save');
+  if (saveBtn) saveBtn.id = 'modal-save';
   closeModal('purchaseModal');
   refreshUI();
 }
