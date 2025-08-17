@@ -892,6 +892,7 @@ function openClienteModal(id, onSave) {
   title.textContent = id ? 'Editar Cliente' : 'Novo Cliente';
   body.innerHTML = `
       <form id="cliente-form">
+        <input type="hidden" id="cliente-id">
         <div class="modal-section">
           <h3>Dados Pessoais</h3>
           <div class="form-grid">
@@ -962,6 +963,8 @@ function openClienteModal(id, onSave) {
   bindOnce(cancelBtn,'click', e=>{e.preventDefault(); closeClientModal();});
   const form = body.querySelector('#cliente-form');
   form.dataset.id = id || '';
+  const idInput = form.querySelector('#cliente-id');
+  if(idInput) idInput.value = id || '';
   clientModalOnSave = onSave;
   const today = new Date().toISOString().slice(0,10);
   if (!id && form.dataCompra) form.dataCompra.value = today;
@@ -2180,11 +2183,11 @@ function getSelectedTagUsosFromForm(){
 
 function readClientForm(){
   return {
-    id: document.getElementById('clientId').value || null,
-    nome: document.getElementById('clientName').value.trim(),
-    telefone: document.getElementById('clientPhone').value.trim(),
-    nascimento: document.getElementById('clientBirth').value.trim(),
-    cpf: document.getElementById('clientCPF').value.trim(),
+    id: document.getElementById('cliente-id')?.value || null,
+    nome: document.getElementById('cliente-nome').value.trim(),
+    telefone: document.getElementById('cliente-telefone').value.trim(),
+    nascimento: document.getElementById('cliente-dataNascimento').value.trim(),
+    cpf: document.getElementById('cliente-cpf').value.trim(),
     usos: getSelectedTagUsosFromForm(),
     compras: []
   };
