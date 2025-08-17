@@ -2182,7 +2182,7 @@ function getSelectedTagUsosFromForm(){
 }
 
 function readClientForm(){
-  return {
+  const formData = {
     id: document.getElementById('cliente-id')?.value || null,
     nome: document.getElementById('cliente-nome').value.trim(),
     telefone: document.getElementById('cliente-telefone').value.trim(),
@@ -2191,6 +2191,40 @@ function readClientForm(){
     usos: getSelectedTagUsosFromForm(),
     compras: []
   };
+
+  const dataCompraEl = document.getElementById('dataCompra');
+  if(dataCompraEl){
+    const compra = {
+      id: `cmp_${Date.now()}_${Math.random().toString(36).slice(2,7)}`,
+      dataCompra: dataCompraEl.value,
+      valorLente: parseCurrency(document.getElementById('valorLente')?.value),
+      nfe: document.getElementById('compra-nfe')?.value.trim() || '',
+      armacao: document.getElementById('armacao')?.value.trim() || '',
+      armacaoMaterial: document.querySelector('#armacao-material .seg-btn[aria-pressed="true"]')?.dataset.value || '',
+      lente: document.getElementById('lente')?.value.trim() || '',
+      tiposCompra: Array.from(document.querySelectorAll('#tipos-compra .seg-btn[aria-pressed="true"]')).map(b=>b.dataset.value),
+      observacoes: document.getElementById('obs-compra')?.value.trim() || '',
+      receituario: {
+        oe: {
+          esferico: document.querySelector('[name="oe_esferico"]')?.value.trim() || '',
+          cilindrico: document.querySelector('[name="oe_cilindrico"]')?.value.trim() || '',
+          eixo: document.querySelector('[name="oe_eixo"]')?.value.trim() || '',
+          dnp: document.querySelector('[name="oe_dnp"]')?.value.trim() || '',
+          adicao: document.querySelector('[name="oe_adicao"]')?.value.trim() || ''
+        },
+        od: {
+          esferico: document.querySelector('[name="od_esferico"]')?.value.trim() || '',
+          cilindrico: document.querySelector('[name="od_cilindrico"]')?.value.trim() || '',
+          eixo: document.querySelector('[name="od_eixo"]')?.value.trim() || '',
+          dnp: document.querySelector('[name="od_dnp"]')?.value.trim() || '',
+          adicao: document.querySelector('[name="od_adicao"]')?.value.trim() || ''
+        }
+      }
+    };
+    formData.compras.push(compra);
+  }
+
+  return formData;
 }
 
 function readPurchaseForm(){
