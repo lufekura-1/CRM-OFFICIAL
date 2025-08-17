@@ -2246,7 +2246,7 @@ function closePurchaseModal(){
 }
 
 function refreshUI(){
-  renderClientsTable?.();
+  window.renderClientsTable?.();
   renderSelectedPurchaseDetails?.();
   renderCalendarMonth?.();
   renderDashboard?.();
@@ -2355,8 +2355,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
   applyPerfilGates();
   await limparCachesJoaoClaro();
-  refreshUI();
   renderRoute(location.hash.slice(2) || 'dashboard');
+  refreshUI();
 });
 
 window.addEventListener('hashchange', () => renderRoute(location.hash.slice(2) || 'dashboard'));
