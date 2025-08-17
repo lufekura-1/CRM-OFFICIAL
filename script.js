@@ -260,6 +260,13 @@ let currentClientId = null;
 let currentClientPurchases = [];
 let renderSelectedPurchaseDetails = null;
 
+function openPurchaseModalForSelected(){
+  const id = state.getClienteSelecionadoId();
+  if(!id) return toast('Selecione um cliente');
+  openCompraModal(id);
+}
+window.openPurchaseModalForSelected = openPurchaseModalForSelected;
+
 function setActivePurchaseChip(id){
   document.querySelectorAll('#purchaseTabs [data-purchase-id]').forEach(el=>{
     el.classList.toggle('active', el.dataset.purchaseId===id);
