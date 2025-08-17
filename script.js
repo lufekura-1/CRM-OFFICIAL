@@ -2257,6 +2257,8 @@ function openModal(id){
     o.dataset.overlay='';
     document.body.appendChild(o);
   }
+  // store the element that triggered the modal to restore focus later
+  m.__opener=document.activeElement;
   m.classList.add('is-open');
   m.setAttribute('aria-hidden','false');
   document.body.classList.add('modal-open');
@@ -2264,12 +2266,23 @@ function openModal(id){
 
 function closeModal(id){
   const m=document.getElementById(id) || document.getElementById('app-modal');
+  const finalize=()=>{
+    if(m){
+      m.classList.remove('is-open');
+      m.setAttribute('aria-hidden','true');
+    }
+    document.body.classList.remove('modal-open');
+    document.querySelectorAll('.modal-backdrop, .veil, [data-overlay]').forEach(n=>n.remove());
+  };
   if(m){
-    m.classList.remove('is-open');
-    m.setAttribute('aria-hidden','true');
+    const opener=m.__opener;
+    if(opener && typeof opener.focus==='function') opener.focus();
+    else if(document.activeElement && typeof document.activeElement.blur==='function') document.activeElement.blur();
+    // ensure the modal is hidden only after focus leaves it
+    setTimeout(finalize,0);
+  }else{
+    finalize();
   }
-  document.body.classList.remove('modal-open');
-  document.querySelectorAll('.modal-backdrop, .veil, [data-overlay]').forEach(n=>n.remove());
 }
 
 function closeClientModal(){
