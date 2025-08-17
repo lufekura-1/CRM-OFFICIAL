@@ -316,7 +316,6 @@ input[name="telefone"] { width:18ch; }
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 100;
 }
 #app-modal[hidden] { display: none; }
 #app-modal .modal-overlay {
