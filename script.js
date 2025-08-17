@@ -2182,7 +2182,8 @@ function readPrescriptionTable(){
 }
 
 function getSelectedTagUsosFromForm(){
-  return Array.from(document.querySelectorAll('input[name="tagUso"]:checked')).map(cb=>cb.value);
+  return Array.from(document.querySelectorAll('#cliente-usa button[aria-pressed="true"]'))
+              .map(btn => btn.dataset.value);
 }
 
 function readClientForm(){
