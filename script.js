@@ -2276,6 +2276,7 @@ function closeModal(id){
   const m=document.getElementById(id) || document.getElementById('app-modal');
   const finalize=()=>{
     if(m){
+      m.hidden = true;
       m.classList.remove('is-open');
       m.setAttribute('aria-hidden','true');
     }
@@ -2297,7 +2298,7 @@ function closeClientModal(){
   const modal = document.getElementById('app-modal');
   const saveBtn = modal?.querySelector('#clientSaveBtn') || modal?.querySelector('#purchaseSaveBtn') || modal?.querySelector('#modal-save');
   if (saveBtn) saveBtn.id = 'modal-save';
-  closeModal('clientModal');
+  closeModal();
   refreshUI();
 }
 
@@ -2305,7 +2306,7 @@ function closePurchaseModal(){
   const modal = document.getElementById('app-modal');
   const saveBtn = modal?.querySelector('#purchaseSaveBtn') || modal?.querySelector('#clientSaveBtn') || modal?.querySelector('#modal-save');
   if (saveBtn) saveBtn.id = 'modal-save';
-  closeModal('purchaseModal');
+  closeModal();
   refreshUI();
 }
 
@@ -2355,7 +2356,7 @@ function handleClientSave(){
   }
   setClients(list);
   (f.compras||[]).forEach(c=>scheduleFollowUpsForPurchase(f,c));
-  closeModal('clientModal');
+  closeModal();
   if(typeof clientModalOnSave === 'function') clientModalOnSave(f.id);
   refreshUI();
 }
@@ -2372,7 +2373,7 @@ function handlePurchaseSave(){
   if(pIdx>=0) list[idx].compras[pIdx]=compra; else list[idx].compras.push(compra);
   setClients(list);
   scheduleFollowUpsForPurchase(list[idx], compra);
-  closeModal('purchaseModal');
+  closeModal();
   if(typeof purchaseModalOnSave === 'function') purchaseModalOnSave();
   refreshUI();
 }
