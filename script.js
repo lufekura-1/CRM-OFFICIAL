@@ -1237,7 +1237,11 @@ function initCalendarioPage() {
     if(idx>-1){
       eventos[idx].meta={...eventos[idx].meta, done:value};
       saveEventos();
-      render();
+      document.querySelectorAll(`[data-event-id="${ev.id}"]`).forEach(el=>{
+        el.setAttribute('data-efetuado', value);
+        const sw=el.querySelector('.switch');
+        if(sw) sw.checked=value;
+      });
     }
     const cliente=db.buscarPorId(ev.meta?.clienteId);
     if(cliente){
@@ -1356,6 +1360,7 @@ function initCalendarioPage() {
           if(ev.tipo==='desfalque'){
             const chip=document.createElement('div');
             chip.className='calendar-chip desfalque';
+            chip.dataset.eventId=ev.id;
             chip.textContent=`${ev.nome} ${ev.periodo==='dia_todo'?'Dia todo':'Manhã'}`;
             chip.tabIndex=0;
             setupCalendarChipEvents(chip,()=>showEventoPopover(chip,ev));
@@ -1363,6 +1368,7 @@ function initCalendarioPage() {
           }else{
             const chip=document.createElement('div');
             chip.className='calendar-chip evento'+(ev.origem==='admin'?' admin':'');
+            chip.dataset.eventId=ev.id;
             const color=ev.color;
             if(color) chip.classList.add(`event-color-${color}`);
             if(ev.meta?.type==='followup' || color==='followup') chip.classList.add('followup');
@@ -1430,11 +1436,13 @@ function initCalendarioPage() {
         const card=document.createElement('div');
         if(ev.tipo==='desfalque'){
           card.className='calendar-card desfalque';
+          card.dataset.eventId=ev.id;
           card.innerHTML=`<strong>${ev.nome}</strong><span class="tag">${ev.periodo==='dia_todo'?'Dia todo':'Manhã'}</span>`;
           card.tabIndex=0;
           setupCalendarChipEvents(card,()=>showEventoPopover(card,ev));
         }else{
           card.className='calendar-card evento'+(ev.origem==='admin'?' admin':'');
+          card.dataset.eventId=ev.id;
           const color=ev.color;
           if(color) card.classList.add(`event-color-${color}`);
           if(ev.meta?.type==='followup' || color==='followup') card.classList.add('followup');
@@ -2444,3 +2452,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 window.addEventListener('hashchange', () => renderRoute(location.hash.slice(2) || 'dashboard'));
+
+// remove focus state from regular buttons after click
+document.addEventListener('click',e=>{
+  const btn=e.target.closest('button');
+  if(btn && !btn.classList.contains('pill-date') && !btn.closest('.segmented')) btn.blur();
+});
