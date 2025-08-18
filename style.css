@@ -28,9 +28,9 @@
   --surface-muted: var(--color-app-bg);
   --text-muted: var(--text-weak);
   --control-height: 40px;
-  --card-danger-soft: #fdecea;
-  --card-success-soft: #e8f5e9;
-  --card-info-soft: #e3f2fd;
+  --card-danger-soft: #f8d7da;
+  --card-success-soft: #d4edda;
+  --card-info-soft: #d1ecf1;
 }
 html.theme-dark {
   --color-app-bg: #121212;
@@ -686,9 +686,9 @@ input[name="telefone"] { width:18ch; }
 .dash-slot{border:2px dashed #cfd3d8;border-radius:10px;min-height:140px;background:#fafafa;position:relative}
 .dash-card{border-radius:10px;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.08);height:100%;display:flex;align-items:center;justify-content:center;font-weight:700}
 .dash-title{font-weight:800;font-size:1rem;margin-bottom:6px}
-.card-info{background:#e6f2ff}
-.card-success{background:#e8f8ef}
-.card-danger{background:#ffecec}
+.card-info{background:var(--card-info-soft)}
+.card-success{background:var(--card-success-soft)}
+.card-danger{background:var(--card-danger-soft)}
 .tag-menu{position:fixed;z-index:950;min-width:220px;max-height:60vh;overflow:auto;background:#fff;border:1px solid #dadde2;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.15);padding:8px;display:grid;grid-template-columns:1fr;gap:6px}
 .tag-row{display:flex;align-items:center;justify-content:space-between;gap:8px}
 .tag-row label{font-weight:600}
@@ -741,9 +741,9 @@ input[name="telefone"] { width:18ch; }
 .event.followup, .event-color-followup, .calendar-chip.followup, .calendar-card.followup { background:#bfe0ff; color:#0c2a4a; }
 
 /* paletas padrão (usar quando houver widgets de status) */
-.card-info{background:#e6f2ff}
-.card-success{background:#e8f8ef}
-.card-danger{background:#ffecec}
+.card-info{background:var(--card-info-soft)}
+.card-success{background:var(--card-success-soft)}
+.card-danger{background:var(--card-danger-soft)}
 .purchase-card{position:relative}
 .purchase-date-badge{position:absolute; right:12px; top:10px; font-weight:800; font-size:1rem}
 .profile-admin{background:#eaf8ee}
