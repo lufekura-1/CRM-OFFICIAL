@@ -164,11 +164,14 @@ function upsertEvent(list, ev){
 
 function scheduleFollowUpsForPurchase(cliente, compra){
   let cal = getCalendar();
-  // Remove quaisquer eventos de compra existentes desta compra
-  cal = cal.filter(ev => !(
-    (ev.meta?.purchaseId === compra.id || ev.meta?.compraId === compra.id) &&
-    ev.meta?.kind === 'purchase'
-  ));
+// Remove quaisquer eventos de compra existentes desta compra (independente de cor)
+cal = cal.filter(ev => !(
+  (ev.meta?.purchaseId === compra.id || ev.meta?.compraId === compra.id) &&
+  ev.meta?.kind === 'purchase'
+));
+
+// ID base para novos eventos desta compra
+const baseId = `${currentProfile()}:${cliente.id}:${compra.id}:0`;
 
   const baseDate = parseDDMMYYYY(compra.dataCompra);
   if(isNaN(baseDate)) return;
@@ -1946,7 +1949,12 @@ function renderWidgetContent(card, cardInner, slot){
   if(slot.id === 'widget.clientsCount'){
     title.textContent = 'Quantidade de clientes';
     value.textContent = String(getClients().length);
-    card.classList.add('card-success');
+// Adiciona o status de sucesso no container do card.
+// Preferimos o elemento 'card' se existir; senão, caímos no pai do 'cardInner'.
+const cardContainer = card || cardInner?.parentElement;
+if (cardContainer) {
+  cardContainer.classList.add('card-success');
+}
   } else if(slot.id === 'widget.followupsToday'){
     title.textContent = 'Contatos para Hoje';
     value.textContent = String(getFollowupsStats().todayCount);

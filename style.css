@@ -744,9 +744,6 @@ input[name="telefone"] { width:18ch; }
 .card-info{background:var(--card-info-soft)}
 .card-success{background:var(--card-success-soft)}
 .card-danger{background:var(--card-danger-soft)}
-.dash-card.card-info{background:var(--card-info-soft)}
-.dash-card.card-success{background:var(--card-success-soft)}
-.dash-card.card-danger{background:var(--card-danger-soft)}
 .purchase-card{position:relative}
 .purchase-date-badge{position:absolute; right:12px; top:10px; font-weight:800; font-size:1rem}
 .profile-admin{background:#eaf8ee}
