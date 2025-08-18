@@ -223,6 +223,7 @@ select option { color: var(--color-text); background: var(--color-bg); }
 /* ===== Form controls ===== */
 .form-field { display:flex; flex-direction:column; gap:0.25rem; margin-bottom:0.75rem; }
 .form-field label { font-weight:500; }
+.form-field .field-label { font-weight:500; display:block; }
 .text-input,
 .masked-input,
 .date-input,

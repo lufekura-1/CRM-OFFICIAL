@@ -127,9 +127,11 @@ function bindOnce(el, ev, fn){
   el.__b = el.__b||{}; el.__b[ev]=fn; el.addEventListener(ev, fn);
 }
 
+function safeAttr(el, name, value){ if(el) el.setAttribute(name, value); }
+function qs(base, sel){ return (base||document).querySelector(sel); }
+
 function toast(msg){ ui?.toast ? ui.toast(msg) : console.log(msg); }
 
-on(document.getElementById('btnNovaCompra'), 'click', e => { e.preventDefault(); openPurchaseModalForSelected?.(); });
 on(document.getElementById('btnNovoContato'), 'click', e => { e.preventDefault(); openContactModalForSelected?.(); });
 
 function renderCalendarMonth(){
@@ -322,7 +324,7 @@ let renderSelectedPurchaseDetails = null;
 function openPurchaseModalForSelected(){
   const id = state.getClienteSelecionadoId();
   if(!id) return toast('Selecione um cliente');
-  openCompraModal(id);
+  openCompraModal(id, null, () => { refreshClientsTable?.(); window.renderClientDetail?.(); });
 }
 window.openPurchaseModalForSelected = openPurchaseModalForSelected;
 
@@ -789,11 +791,11 @@ function renderClientes() {
       <div class="card-header">
         <div class="card-head">Lista de Clientes</div>
         <div class="list-toolbar clients-toolbar">
-          <div class="search-wrap"><span class="icon">${iconSearch}</span><input id="clientSearch" class="search-input" placeholder="Pesquisar clientes…" aria-label="Pesquisar clientes" /></div>
-          <button id="tagMenuBtn" type="button" class="btn-dropdown">Etiquetas ▾</button>
-          <button id="addClientBtn" class="btn-icon btn-plus add-cliente" aria-label="Adicionar" title="Adicionar">${iconPlus}</button>
+            <div class="search-wrap"><span class="icon">${iconSearch}</span><input id="clientSearch" class="search-input" placeholder="Pesquisar clientes…" aria-label="Pesquisar clientes" /></div>
+            <button id="tagMenuBtn" type="button" class="btn-dropdown">Etiquetas ▾</button>
+            <button id="addClientBtn" class="btn-icon btn-plus add-cliente" data-action="client:new" aria-label="Adicionar" title="Adicionar">${iconPlus}</button>
+          </div>
         </div>
-      </div>
       <div class="card-body table-wrapper">
         <table class="table table-clients">
           <thead>
@@ -912,8 +914,9 @@ function openClienteModal(id, onSave) {
   content.classList.add(id ? 'modal-editar-cliente' : 'modal-novo-cliente');
   const cliente = id ? db.buscarPorId(id) : null;
   title.textContent = id ? 'Editar Cliente' : 'Novo Cliente';
-  body.innerHTML = `
-      <form id="cliente-form">
+    body.replaceChildren();
+    body.insertAdjacentHTML('afterbegin', `
+        <form id="cliente-form">
         <input type="hidden" id="cliente-id">
         <div class="modal-section">
           <h3>Dados Pessoais</h3>
@@ -922,7 +925,7 @@ function openClienteModal(id, onSave) {
             <div class="form-field col-span-4"><label for="cliente-telefone">Telefone *</label><input id="cliente-telefone" name="telefone" class="text-input" required placeholder="(00) 00000-0000"></div>
             <div class="form-field col-span-4"><label for="cliente-dataNascimento">Data de Nascimento</label><input id="cliente-dataNascimento" type="date" name="dataNascimento" class="date-input"></div>
             <div class="form-field col-span-4"><label for="cliente-cpf">CPF</label><input id="cliente-cpf" name="cpf" class="text-input" placeholder="000.000.000-00"></div>
-            <div class="form-field col-span-12"><label>O cliente usa:</label>
+              <div class="form-field col-span-12"><span class="field-label">O cliente usa:</span>
               <div class="chips" id="cliente-usa" role="group">
                 <button type="button" class="chip" data-value="Visão Simples" aria-pressed="false">Visão Simples</button>
                 <button type="button" class="chip" data-value="Multifocal" aria-pressed="false">Multifocal</button>
@@ -941,7 +944,7 @@ function openClienteModal(id, onSave) {
             <div class="form-field col-span-4"><label for="compra-valor">Valor da Lente (R$)</label><input id="compra-valor" name="valorLente" class="text-input" placeholder="0,00" inputmode="decimal"></div>
             <div class="form-field col-span-4"><label for="compra-nfe">NFE/NFC-e</label><input id="compra-nfe" name="nfe" class="text-input"></div>
             <div class="form-field col-span-12"><label for="compra-armacao">Armação</label><input id="compra-armacao" name="armacao" class="text-input"></div>
-            <div class="form-field col-span-12"><label>Material da armação</label>
+              <div class="form-field col-span-12"><span class="field-label">Material da armação</span>
               <div class="segmented" id="compra-material" role="group">
                 <button type="button" class="seg-btn" data-value="ACETATO" aria-pressed="false">ACETATO</button>
                 <button type="button" class="seg-btn" data-value="METAL" aria-pressed="false">METAL</button>
@@ -950,7 +953,7 @@ function openClienteModal(id, onSave) {
               </div>
             </div>
             <div class="form-field col-span-12"><label for="compra-lente">Lente</label><input id="compra-lente" name="lente" class="text-input"></div>
-            <div class="form-field col-span-12"><label>Tipos de compra</label>
+              <div class="form-field col-span-12"><span class="field-label">Tipos de compra</span>
               <div class="segmented" id="compra-tipos" role="group">
                 <button type="button" class="seg-btn" data-value="V.S" aria-pressed="false">V.S</button>
                 <button type="button" class="seg-btn" data-value="M.F" aria-pressed="false">M.F</button>
@@ -975,14 +978,13 @@ function openClienteModal(id, onSave) {
           </div>
         </div>
         `}
-      </form>`;
-  const saveBtn = modal.querySelector('#clientSaveBtn') || modal.querySelector('#modal-save');
-  saveBtn.setAttribute('form','cliente-form');
-  saveBtn.id = 'clientSaveBtn';
+        </form>`);
+  const saveBtn = modal.querySelector('.modal-footer .btn-primary');
+  safeAttr(saveBtn,'form','cliente-form');
+  safeAttr(saveBtn,'data-action','client:save');
+  safeAttr(saveBtn,'type','button');
   const cancelBtn = modal.querySelector('[data-modal-close]');
-  cancelBtn.id = 'clientCancelBtn';
-  bindOnce(saveBtn,'click', e=>{e.preventDefault(); handleClientSave();});
-  bindOnce(cancelBtn,'click', e=>{e.preventDefault(); closeClientModal();});
+  safeAttr(cancelBtn,'data-action','client:cancel');
   const form = body.querySelector('#cliente-form');
   form.dataset.id = id || '';
   const idInput = form.querySelector('#cliente-id');
@@ -1048,7 +1050,8 @@ function openCompraModal(clienteId, compraId, onSave) {
   const cliente = db.buscarPorId(clienteId);
   const compra = compraId ? cliente.compras.find(cp => cp.id === compraId) : null;
   title.textContent = compra ? 'Editar Compra' : 'Nova Compra';
-  body.innerHTML = `
+  body.replaceChildren();
+  body.insertAdjacentHTML('afterbegin', `
     <form id="compra-form">
       <input type="hidden" id="purchaseClientId">
       <input type="hidden" id="purchaseId">
@@ -1059,7 +1062,7 @@ function openCompraModal(clienteId, compraId, onSave) {
           <div class="form-field col-span-4"><label for="compra-valor">Valor da Lente (R$)</label><input id="compra-valor" name="valorLente" class="text-input" placeholder="0,00" inputmode="decimal"></div>
           <div class="form-field col-span-4"><label for="compra-nfe">NFE/NFC-e</label><input id="compra-nfe" name="nfe" class="text-input"></div>
           <div class="form-field col-span-12"><label for="compra-armacao">Armação</label><input id="compra-armacao" name="armacao" class="text-input"></div>
-          <div class="form-field col-span-12"><label>Material da armação</label>
+            <div class="form-field col-span-12"><span class="field-label">Material da armação</span>
             <div class="segmented" id="compra-material" role="group">
               <button type="button" class="seg-btn" data-value="ACETATO" aria-pressed="false">ACETATO</button>
               <button type="button" class="seg-btn" data-value="METAL" aria-pressed="false">METAL</button>
@@ -1068,7 +1071,7 @@ function openCompraModal(clienteId, compraId, onSave) {
             </div>
           </div>
           <div class="form-field col-span-12"><label for="compra-lente">Lente</label><input id="compra-lente" name="lente" class="text-input"></div>
-          <div class="form-field col-span-12"><label>Tipos de compra</label>
+            <div class="form-field col-span-12"><span class="field-label">Tipos de compra</span>
             <div class="segmented" id="compra-tipos" role="group">
               <button type="button" class="seg-btn" data-value="V.S" aria-pressed="false">V.S</button>
               <button type="button" class="seg-btn" data-value="M.F" aria-pressed="false">M.F</button>
@@ -1091,14 +1094,13 @@ function openCompraModal(clienteId, compraId, onSave) {
           </fieldset>
         </div>
       </div>
-    </form>`;
-  const saveBtn = modal.querySelector('#modal-save');
-  saveBtn.setAttribute('form','compra-form');
-  saveBtn.id = 'purchaseSaveBtn';
+    </form>`);
+  const saveBtn = modal.querySelector('.modal-footer .btn-primary');
+  safeAttr(saveBtn,'form','compra-form');
+  safeAttr(saveBtn,'data-action','purchase:save');
+  safeAttr(saveBtn,'type','button');
   const cancelBtn = modal.querySelector('[data-modal-close]');
-  cancelBtn.id = 'purchaseCancelBtn';
-  bindOnce(saveBtn,'click', e=>{ e.preventDefault(); handlePurchaseSave(); });
-  bindOnce(cancelBtn,'click', e=>{ e.preventDefault(); closePurchaseModal(); });
+  safeAttr(cancelBtn,'data-action','purchase:cancel');
   const form = body.querySelector('#compra-form');
   form.dataset.clienteId = clienteId;
   form.dataset.compraId = compraId || '';
@@ -1676,7 +1678,6 @@ function initClientesPage() {
   const tbody = document.getElementById('clientsTbody');
   const searchInput = document.getElementById('clientSearch');
   const tagBtn = document.getElementById('tagMenuBtn');
-  const addBtn = document.getElementById('addClientBtn');
   const detail = document.querySelector('.detalhe-body');
   const headers = document.querySelectorAll('.table-clients th.sortable');
   const pag = document.querySelector('.clients-pagination');
@@ -1779,9 +1780,9 @@ function initClientesPage() {
         <div class="mini-card">
           <div class="detalhe-head">
             <h3>Histórico de Compras</h3>
-            <div class="detalhe-actions">
-              <button id="btnNovaCompra" class="btn btn-primary btn-nova-compra">Nova Compra</button>
-            </div>
+              <div class="detalhe-actions">
+                <button id="btnNovaCompra" class="btn btn-primary btn-nova-compra" data-action="purchase:add">Nova Compra</button>
+              </div>
           </div>
           ${compras.length ? `<div id="purchaseTabs" class="purchase-pills">${pills}</div><div class="purchase-detail"></div>` : '<p>Sem compras registradas</p>'}
         </div>`;
@@ -1878,8 +1879,6 @@ function initClientesPage() {
         renderDetail();
         ui.toast('Cliente excluído');
       });
-      const novaBtn = detail.querySelector('#btnNovaCompra');
-      on(novaBtn, 'click', e => { e.preventDefault(); openCompraModal(c.id, null, () => { updateTable(); renderDetail(); }); });
     }
 
     function selectCliente(id, tr) {
@@ -1900,10 +1899,10 @@ function initClientesPage() {
   prevBtn.addEventListener('click',()=>{ if(page>1){ page--; updateTable(); }});
   nextBtn.addEventListener('click',()=>{ page++; updateTable(); });
   pageSizeSel.addEventListener('change',()=>{ pageSize=parseInt(pageSizeSel.value,10); page=1; updateTable(); });
-
-  addBtn.addEventListener('click', () => openClienteModal(null, id => { state.setClienteSelecionado(id); updateTable(); renderDetail(); }));
-    window.refreshClientsTable = updateTable;
-    window.renderClientsTable = updateTable;
+  window.openNovoCliente = () => openClienteModal(null, id => { state.setClienteSelecionado(id); updateTable(); renderDetail(); });
+  window.refreshClientsTable = updateTable;
+  window.renderClientsTable = updateTable;
+  window.renderClientDetail = renderDetail;
 
   headers.forEach(th => {
     th.addEventListener('click', () => {
@@ -2324,17 +2323,11 @@ function closeModal(id){
 }
 
 function closeClientModal(){
-  const modal = document.getElementById('app-modal');
-  const saveBtn = modal?.querySelector('#clientSaveBtn') || modal?.querySelector('#purchaseSaveBtn') || modal?.querySelector('#modal-save');
-  if (saveBtn) saveBtn.id = 'modal-save';
   closeModal();
   refreshUI();
 }
 
 function closePurchaseModal(){
-  const modal = document.getElementById('app-modal');
-  const saveBtn = modal?.querySelector('#purchaseSaveBtn') || modal?.querySelector('#clientSaveBtn') || modal?.querySelector('#modal-save');
-  if (saveBtn) saveBtn.id = 'modal-save';
   closeModal();
   refreshUI();
 }
@@ -2355,11 +2348,12 @@ function bindUI(){
     const btn=e.target.closest('[data-action]');
     if(!btn) return;
     const act=btn.dataset.action;
-    switch(act){
-      case 'client:add': openContactModalForSelected?.(); break;
-      case 'client:save': handleClientSave(); break;
-      case 'client:cancel': closeClientModal(); break;
-      case 'purchase:add': openPurchaseModalForSelected?.(); break;
+      switch(act){
+        case 'client:add': openContactModalForSelected?.(); break;
+        case 'client:new': window.openNovoCliente?.(); break;
+        case 'client:save': handleClientSave(); break;
+        case 'client:cancel': closeClientModal(); break;
+        case 'purchase:add': openPurchaseModalForSelected?.(); break;
       case 'purchase:save': handlePurchaseSave(); break;
       case 'purchase:cancel': closePurchaseModal(); break;
       case 'purchase:delete': deletePurchase?.(btn.dataset.purchaseId, currentClientId); break;
