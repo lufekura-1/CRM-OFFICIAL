@@ -77,7 +77,7 @@ function deleteClient(clientId, profile=currentProfile()){
     return cid !== clientId;
   });
   setCalendar(cal, profile);
-  renderClientsTable?.(); renderCalendarMonth?.(); renderDashboard?.();
+  window.renderClientsTable?.(); renderCalendarMonth?.(); renderDashboard?.();
 }
 
 function deletePurchase(purchaseId, clientId, profile=currentProfile()){
@@ -89,7 +89,7 @@ function deletePurchase(purchaseId, clientId, profile=currentProfile()){
   setClients(clients, profile);
   const cal = getCalendar(profile).filter(ev => ev.meta?.purchaseId !== purchaseId);
   setCalendar(cal, profile);
-  renderClientsTable?.();
+  window.renderClientsTable?.();
   renderCalendarMonth?.();
   renderDashboard?.();
   renderSelectedPurchaseDetails?.();
@@ -144,7 +144,7 @@ function seedAllDash(){ PROFILES.forEach(ensureSeed); }
 function onProfileChanged(){
   ensureSeed(getPerfil());
   renderDashboard();
-  renderClientsTable?.();
+  window.renderClientsTable?.();
   renderCalendarMonth?.();
 }
 
@@ -163,7 +163,10 @@ function upsertEvent(list, ev){
 }
 
 function scheduleFollowUpsForPurchase(cliente, compra){
-  const cal = getCalendar();
+  let cal = getCalendar();
+  // Remove qualquer evento laranja residual desta compra
+  cal = cal.filter(ev => !(ev.meta?.purchaseId === compra.id && ev.meta?.kind === 'purchase' && ev.color === 'orange'));
+
   const baseId = `${currentProfile()}:${cliente.id}:${compra.id}:0`;
   const baseDate = parseDDMMYYYY(compra.dataCompra);
   if(isNaN(baseDate)) return;
@@ -304,7 +307,7 @@ function renderTagMenu(){
   document.getElementById('tagMenuContent')?.addEventListener('change',e=>{
     const cb=e.target.closest('input[type="checkbox"][data-tag]'); if(!cb) return;
     toggleTagFilter(cb.dataset.tag, cb.checked);
-    renderClientsTable?.();
+    window.renderClientsTable?.();
   });
 }
 
@@ -1932,6 +1935,7 @@ function renderWidgetContent(cardInner, slot){
   if(slot.id === 'widget.clientsCount'){
     title.textContent = 'Quantidade de clientes';
     value.textContent = String(getClients().length);
+    cardInner.parentElement?.classList.add('card-success');
   } else if(slot.id === 'widget.followupsToday'){
     title.textContent = 'Contatos para Hoje';
     value.textContent = String(getFollowupsStats().todayCount);
@@ -2172,24 +2176,24 @@ function readClientForm(){
     id: document.getElementById('cliente-id')?.value || null,
     nome: document.getElementById('cliente-nome').value.trim(),
     telefone: document.getElementById('cliente-telefone').value.trim(),
-    nascimento: document.getElementById('cliente-dataNascimento').value.trim(),
+    dataNascimento: document.getElementById('cliente-dataNascimento').value.trim(),
     cpf: document.getElementById('cliente-cpf').value.trim(),
     usos: getSelectedTagUsosFromForm(),
     compras: []
   };
 
-  const dataCompraEl = document.getElementById('dataCompra');
+  const dataCompraEl = document.getElementById('compra-data');
   if(dataCompraEl){
     const compra = {
       id: `cmp_${Date.now()}_${Math.random().toString(36).slice(2,7)}`,
       dataCompra: dataCompraEl.value,
-      valorLente: parseCurrency(document.getElementById('valorLente')?.value),
+      valorLente: parseCurrency(document.getElementById('compra-valor')?.value),
       nfe: document.getElementById('compra-nfe')?.value.trim() || '',
-      armacao: document.getElementById('armacao')?.value.trim() || '',
-      armacaoMaterial: document.querySelector('#armacao-material .seg-btn[aria-pressed="true"]')?.dataset.value || '',
-      lente: document.getElementById('lente')?.value.trim() || '',
-      tiposCompra: Array.from(document.querySelectorAll('#tipos-compra .seg-btn[aria-pressed="true"]')).map(b=>b.dataset.value),
-      observacoes: document.getElementById('obs-compra')?.value.trim() || '',
+      armacao: document.getElementById('compra-armacao')?.value.trim() || '',
+      armacaoMaterial: document.querySelector('#compra-material .seg-btn[aria-pressed="true"]')?.dataset.value || '',
+      lente: document.getElementById('compra-lente')?.value.trim() || '',
+      tiposCompra: Array.from(document.querySelectorAll('#compra-tipos .seg-btn[aria-pressed="true"]')).map(b=>b.dataset.value),
+      observacoes: document.getElementById('compra-observacoes')?.value.trim() || '',
       receituario: {
         oe: {
           esferico: document.querySelector('[name="oe_esferico"]')?.value.trim() || '',
