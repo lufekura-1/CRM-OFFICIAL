@@ -77,7 +77,7 @@ function deleteClient(clientId, profile=currentProfile()){
     return cid !== clientId;
   });
   setCalendar(cal, profile);
-  renderClientsTable?.(); renderCalendarMonth?.(); renderDashboard?.();
+  window.renderClientsTable?.(); renderCalendarMonth?.(); renderDashboard?.();
 }
 
 function deletePurchase(purchaseId, clientId, profile=currentProfile()){
@@ -89,7 +89,7 @@ function deletePurchase(purchaseId, clientId, profile=currentProfile()){
   setClients(clients, profile);
   const cal = getCalendar(profile).filter(ev => ev.meta?.purchaseId !== purchaseId);
   setCalendar(cal, profile);
-  renderClientsTable?.();
+  window.renderClientsTable?.();
   renderCalendarMonth?.();
   renderDashboard?.();
   renderSelectedPurchaseDetails?.();
@@ -144,7 +144,7 @@ function seedAllDash(){ PROFILES.forEach(ensureSeed); }
 function onProfileChanged(){
   ensureSeed(getPerfil());
   renderDashboard();
-  renderClientsTable?.();
+  window.renderClientsTable?.();
   renderCalendarMonth?.();
 }
 
@@ -163,18 +163,15 @@ function upsertEvent(list, ev){
 }
 
 function scheduleFollowUpsForPurchase(cliente, compra){
-  const cal = getCalendar();
-  const baseId = `${currentProfile()}:${cliente.id}:${compra.id}:0`;
+  let cal = getCalendar();
+  // Remove quaisquer eventos de compra existentes desta compra
+  cal = cal.filter(ev => !(
+    (ev.meta?.purchaseId === compra.id || ev.meta?.compraId === compra.id) &&
+    ev.meta?.kind === 'purchase'
+  ));
+
   const baseDate = parseDDMMYYYY(compra.dataCompra);
   if(isNaN(baseDate)) return;
-
-  upsertEvent(cal, {
-    id: baseId,
-    date: fmtYMD(baseDate),
-    title: cliente.nome,
-    color: 'green',
-    meta: { clientId: cliente.id, purchaseId: compra.id, followupOffsetDays: 0, kind:'purchase' }
-  });
 
   for (const d of [90,180,365]){
     const id = `${currentProfile()}:${cliente.id}:${compra.id}:${d}`;
@@ -182,18 +179,35 @@ function scheduleFollowUpsForPurchase(cliente, compra){
     upsertEvent(cal, {
       id, date: fmtYMD(dt),
       title: `${cliente.nome} (${d===90?'3 meses':d===180?'6 meses':'12 meses'})`,
-      color: 'blue',
-      meta: { clientId: cliente.id, purchaseId: compra.id, followupOffsetDays: d, kind:'followup' }
+      color: 'followup',
+      meta: {
+        clientId: cliente.id,
+        clienteId: cliente.id,
+        purchaseId: compra.id,
+        compraId: compra.id,
+        followupOffsetDays: d,
+        kind:'followup',
+        type:'followup'
+      }
     });
   }
   setCalendar(cal); renderCalendarMonth?.();
 }
 
-// MIGRAÇÃO – limpar laranjas existentes de compras
-(function removeOrangePurchaseEvents(){
+// MIGRAÇÃO – remover eventos de compra e ajustar follow-ups antigos
+(function migrateCalendarEvents(){
   const cal = getCalendar();
-  const filtered = cal.filter(ev => !(ev.meta?.kind==='purchase' && ev.color==='orange'));
-  if(filtered.length !== cal.length){ setCalendar(filtered); }
+  let changed = false;
+  const filtered = cal.filter(ev => {
+    if(ev.meta?.kind === 'purchase'){ changed = true; return false; }
+    if(ev.color === 'blue'){
+      ev.color = 'followup';
+      ev.meta = { ...ev.meta, kind:'followup', type:'followup' };
+      changed = true;
+    }
+    return true;
+  });
+  if(changed) setCalendar(filtered);
 })();
 
 function scheduleFollowUpsOnClientSave(cliente){
@@ -304,7 +318,7 @@ function renderTagMenu(){
   document.getElementById('tagMenuContent')?.addEventListener('change',e=>{
     const cb=e.target.closest('input[type="checkbox"][data-tag]'); if(!cb) return;
     toggleTagFilter(cb.dataset.tag, cb.checked);
-    renderClientsTable?.();
+    window.renderClientsTable?.();
   });
 }
 
@@ -1925,26 +1939,27 @@ function getFollowupsStats(){
   return { todayCount, late, doneWeek, doneMonth };
 }
 
-function renderWidgetContent(cardInner, slot){
+function renderWidgetContent(card, cardInner, slot){
   const title = document.createElement('div'); title.className='dash-card-title';
   const value = document.createElement('div'); value.className='dash-card-value';
 
   if(slot.id === 'widget.clientsCount'){
     title.textContent = 'Quantidade de clientes';
     value.textContent = String(getClients().length);
+    card.classList.add('card-success');
   } else if(slot.id === 'widget.followupsToday'){
     title.textContent = 'Contatos para Hoje';
     value.textContent = String(getFollowupsStats().todayCount);
-    cardInner.parentElement?.classList.add('card-info');
+    card.classList.add('card-info');
   } else if(slot.id === 'widget.followupsLate'){
     title.textContent = 'Contatos Atrasados';
     value.textContent = String(getFollowupsStats().late);
-    cardInner.parentElement?.classList.add('card-danger');
+    card.classList.add('card-danger');
   } else if(slot.id === 'widget.followupsDone'){
     title.textContent = 'Contatos Efetuados';
     const s = getFollowupsStats();
     value.innerHTML = `<div class="subline">Semana: ${s.doneWeek}</div><div class="subline">Mês: ${s.doneMonth}</div>`;
-    cardInner.parentElement?.classList.add('card-success','card-compact');
+    card.classList.add('card-success','card-compact');
   }
 
   cardInner.appendChild(title); cardInner.appendChild(value);
@@ -1987,7 +2002,7 @@ function renderDashboard(){
       };
 
       const wrap = document.createElement('div'); wrap.className = 'dash-card-inner';
-      renderWidgetContent(wrap, slot);
+      renderWidgetContent(card, wrap, slot);
       card.appendChild(close);
       card.appendChild(wrap);
       slotEl.appendChild(card);
@@ -2172,24 +2187,24 @@ function readClientForm(){
     id: document.getElementById('cliente-id')?.value || null,
     nome: document.getElementById('cliente-nome').value.trim(),
     telefone: document.getElementById('cliente-telefone').value.trim(),
-    nascimento: document.getElementById('cliente-dataNascimento').value.trim(),
+    dataNascimento: document.getElementById('cliente-dataNascimento').value.trim(),
     cpf: document.getElementById('cliente-cpf').value.trim(),
     usos: getSelectedTagUsosFromForm(),
     compras: []
   };
 
-  const dataCompraEl = document.getElementById('dataCompra');
+  const dataCompraEl = document.getElementById('compra-data');
   if(dataCompraEl){
     const compra = {
       id: `cmp_${Date.now()}_${Math.random().toString(36).slice(2,7)}`,
       dataCompra: dataCompraEl.value,
-      valorLente: parseCurrency(document.getElementById('valorLente')?.value),
+      valorLente: parseCurrency(document.getElementById('compra-valor')?.value),
       nfe: document.getElementById('compra-nfe')?.value.trim() || '',
-      armacao: document.getElementById('armacao')?.value.trim() || '',
-      armacaoMaterial: document.querySelector('#armacao-material .seg-btn[aria-pressed="true"]')?.dataset.value || '',
-      lente: document.getElementById('lente')?.value.trim() || '',
-      tiposCompra: Array.from(document.querySelectorAll('#tipos-compra .seg-btn[aria-pressed="true"]')).map(b=>b.dataset.value),
-      observacoes: document.getElementById('obs-compra')?.value.trim() || '',
+      armacao: document.getElementById('compra-armacao')?.value.trim() || '',
+      armacaoMaterial: document.querySelector('#compra-material .seg-btn[aria-pressed="true"]')?.dataset.value || '',
+      lente: document.getElementById('compra-lente')?.value.trim() || '',
+      tiposCompra: Array.from(document.querySelectorAll('#compra-tipos .seg-btn[aria-pressed="true"]')).map(b=>b.dataset.value),
+      observacoes: document.getElementById('compra-observacoes')?.value.trim() || '',
       receituario: {
         oe: {
           esferico: document.querySelector('[name="oe_esferico"]')?.value.trim() || '',
