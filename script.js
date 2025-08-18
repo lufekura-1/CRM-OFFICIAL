@@ -1,5 +1,5 @@
 const PERFIL_KEY = 'activePerfil';
-function getPerfil(){ return localStorage.getItem(PERFIL_KEY) || 'Teste'; }
+function getPerfil(){ return localStorage.getItem(PERFIL_KEY) || 'Usuario Teste'; }
 function activeProfile(){ const sel=document.getElementById('profileSelect'); return sel?sel.value:getPerfil(); }
 function setActivePerfil(p){ localStorage.setItem(PERFIL_KEY, p); }
 const prefix = () => `perfil:${activeProfile()}:`;
@@ -14,9 +14,17 @@ function setJSONForPerfil(perfil,key,val){ localStorage.setItem(`perfil:${perfil
 
 const calKey = () => `${prefix()}calendar`;
 
-const PROFILES = ['Exótica','Jorel Chicuta','Jorel Avenida','Administrador','Teste'];
+const PROFILES = ['Exótica','Jorel Chicuta','Jorel Avenida','Administrador','Usuario Teste'];
 
-const ALL_PROFILES = ['Exótica','Jorel Chicuta','Jorel Avenida','Administrador','Teste'];
+const ALL_PROFILES = ['Exótica','Jorel Chicuta','Jorel Avenida','Administrador','Usuario Teste'];
+
+// remove dados antigos do perfil "Teste"
+(function purgeOldTestProfile(){
+  Object.keys(localStorage).forEach(k=>{
+    if(k.startsWith('perfil:Teste:') || k.startsWith('Teste:')) localStorage.removeItem(k);
+  });
+})();
+
 (function hardResetOnce(){
   const k = 'RESET_2025_08_16_DONE';
   if(localStorage.getItem(k)) return;
@@ -27,15 +35,15 @@ const ALL_PROFILES = ['Exótica','Jorel Chicuta','Jorel Avenida','Administrador'
   localStorage.setItem(k,'1');
 })();
 
-function seedProfile(profile='Teste'){
+function seedProfile(profile='Usuario Teste'){
   setJSONForPerfil(profile,'clientes',[]);
   setJSONForPerfil(profile,'calendar',[]);
   setJSONForPerfil(profile,'dashboard',{slots:Array(8).fill(null)});
 }
 
 function ensureProfileBoot(profile=currentProfile()){
-  profile = profile || 'Teste';
-  if(!ALL_PROFILES.includes(profile)) profile='Teste';
+  profile = profile || 'Usuario Teste';
+  if(!ALL_PROFILES.includes(profile)) profile='Usuario Teste';
   const clientes=getJSONForPerfil(profile,'clientes',null);
   const calendario=getJSONForPerfil(profile,'calendar',null);
   const dashboard=getJSONForPerfil(profile,'dashboard',null);
@@ -141,8 +149,13 @@ function onProfileChanged(){
 }
 
 function addDaysUTC(date, days){ const d = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate())); d.setUTCDate(d.getUTCDate()+days); return d; }
-function parseDDMMYYYY(s){ const [dd,mm,yy] = s.split('/').map(Number); return new Date(Date.UTC(yy, mm-1, dd)); }
-function fmtYMD(d){ return d.toISOString().slice(0,10); }
+function parseDDMMYYYY(s){
+  if(!s) return new Date(NaN);
+  if(s.includes('-')) return new Date(s);
+  const [dd,mm,yy] = s.split('/').map(Number);
+  return new Date(Date.UTC(yy, mm-1, dd));
+}
+function fmtYMD(d){ return isNaN(d) ? '' : d.toISOString().slice(0,10); }
 
 function upsertEvent(list, ev){
   const idx = list.findIndex(e => e.id === ev.id);
@@ -153,6 +166,7 @@ function scheduleFollowUpsForPurchase(cliente, compra){
   const cal = getCalendar();
   const baseId = `${currentProfile()}:${cliente.id}:${compra.id}:0`;
   const baseDate = parseDDMMYYYY(compra.dataCompra);
+  if(isNaN(baseDate)) return;
 
   upsertEvent(cal, {
     id: baseId,
@@ -189,19 +203,23 @@ function scheduleFollowUpsOnClientSave(cliente){
 function migrateToProfiles(){
   if(!localStorage.getItem('migrated_to_profiles_v1')){
     const legacy=['clientes','calendario','calendar','lembretes','contato','usuarios'];
-    legacy.forEach(k=>{ const val=localStorage.getItem(k); if(val){ localStorage.setItem(`perfil:Teste:${k}`, val); localStorage.removeItem(k); } });
+    legacy.forEach(k=> localStorage.removeItem(k));
+    // remove resquícios do perfil antigo "Teste"
+    Object.keys(localStorage).forEach(k=>{
+      if(k.startsWith('perfil:Teste:') || k.startsWith('Teste:')) localStorage.removeItem(k);
+    });
     localStorage.setItem('migrated_to_profiles_v1','1');
   }
 }
 
 function ensurePerfilSeeds(){
-  if(getPerfil()==='Administrador'){
-    const usuarios=getJSON(prefix()+'usuarios', []);
-    if(usuarios.length===0){
-      const seeds=["Jorel Chicuta","Jorel Avenida","Exótica","Teste"].map(n=>({id:uuid(), nome:n, email:'', perfil:''}));
-      setJSON(prefix()+'usuarios', seeds);
+    if(getPerfil()==='Administrador'){
+      const usuarios=getJSON(prefix()+'usuarios', []);
+      if(usuarios.length===0){
+        const seeds=["Jorel Chicuta","Jorel Avenida","Exótica","Usuario Teste"].map(n=>({id:uuid(), nome:n, email:'', perfil:''}));
+        setJSON(prefix()+'usuarios', seeds);
+      }
     }
-  }
 }
 
 function cleanupDesfalques(){
@@ -329,7 +347,7 @@ function toggleTagFilter(code, on){
 }
 
 // ===== State =====
-const PERFIS = ['Exótica','Jorel Chicuta','Jorel Avenida','Administrador','Teste'];
+const PERFIS = ['Exótica','Jorel Chicuta','Jorel Avenida','Administrador','Usuario Teste'];
 
 const state = {
   getRoute() {
@@ -398,63 +416,19 @@ function removeFollowUpEvents(clienteId,compraId){
   reloadCalendario();
 }
 
-const db = {
-  _get() {
-    const data = getJSON(prefix()+'clientes', []);
-    const filtered = data.filter(c => c.nome !== 'José' && !isNomeBloqueado(c.nome));
-    if (filtered.length !== data.length) setJSON(prefix()+'clientes', filtered);
-    return filtered;
-  },
-  _set(data) {
-    setJSON(prefix()+'clientes', data);
-  },
-  initComSeeds() {
-    if (getPerfil() !== 'Teste') return;
-    if (this._get().length) return;
-    const seeds = [];
-    for (let i = 1; i <= 10; i++) {
-      const now = new Date();
-      const id = uuid();
-      const nome = `Cliente ${i}`;
-      if (isNomeBloqueado(nome)) continue;
-      const compras = [];
-      for (let j = 1; j <= 2; j++) {
-        const dataCompra = new Date(now.getTime() - (i * j) * 86400000).toISOString().slice(0, 10);
-        const cp={
-          id: uuid(),
-          dataCompra,
-          armacao: `A${i}${j}`,
-          lente: `L${i}${j}`,
-          valorLente: 100 + i * j,
-          nfe: '',
-          tiposCompra: [],
-          armacaoMaterial: 'OUTRO',
-          receituario: {
-            oe: { esferico: '-1.00', cilindrico: '-0.50', eixo: '90', dnp: '30', adicao: '1.00' },
-            od: { esferico: '-1.00', cilindrico: '-0.50', eixo: '90', dnp: '30', adicao: '1.00' }
-          },
-          followUps: {}
-        };
-        compras.push(cp);
-      }
-      compras.sort((a, b) => b.dataCompra.localeCompare(a.dataCompra));
-      const cliente={
-        id,
-        nome,
-        telefone: `11999${String(i).padStart(4, '0')}`,
-        dataNascimento: `1990-01-${String(i).padStart(2, '0')}`,
-        cpf: `${String(i).padStart(11, '0')}`,
-        observacoes: '',
-        usos: [],
-        compras,
-        criadoEm: now.toISOString(),
-        atualizadoEm: now.toISOString()
-      };
-      compras.forEach(cp=>{ cp.dataISO=cp.dataCompra; scheduleFollowUpsForPurchase(cliente,cp); });
-      seeds.push(cliente);
-    }
-    this._set(seeds);
-  },
+  const db = {
+    _get() {
+      const data = getJSON(prefix()+'clientes', []);
+      const filtered = data.filter(c => c.nome !== 'José' && !isNomeBloqueado(c.nome));
+      if (filtered.length !== data.length) setJSON(prefix()+'clientes', filtered);
+      return filtered;
+    },
+    _set(data) {
+      setJSON(prefix()+'clientes', data);
+    },
+    initComSeeds() {
+      // seeds removidos
+    },
   listarClientes({ search = '', sortBy = 'nome', sortDir = 'asc' } = {}) {
     let data = this._get();
     if (search) {
@@ -593,11 +567,11 @@ const dbUsuarios = {
   adicionar(u){ const arr=this.listar(); arr.push(u); this.salvar(arr); },
   atualizar(id,patch){ const arr=this.listar(); const idx=arr.findIndex(u=>u.id===id); if(idx>-1){ arr[idx]={...arr[idx],...patch}; this.salvar(arr);} },
   remover(id){ const arr=this.listar().filter(u=>u.id!==id); this.salvar(arr); },
-  initSeeds(){
-    if(this.listar().length) return;
-    const seeds=[...PROTECTED_USERS,'Teste'].map(n=>({id:uuid(), nome:n, email:'', perfil:''}));
-    this.salvar(seeds);
-  }
+    initSeeds(){
+      if(this.listar().length) return;
+      const seeds=[...PROTECTED_USERS,'Usuario Teste'].map(n=>({id:uuid(), nome:n, email:'', perfil:''}));
+      this.salvar(seeds);
+    }
 };
 
 // ===== Cards =====
@@ -2354,12 +2328,11 @@ function handleClientSave(){
     f.id = `cli_${Date.now()}_${Math.random().toString(36).slice(2,7)}`;
     list.push(f);
   }
-  setClients(list);
-  (f.compras||[]).forEach(c=>scheduleFollowUpsForPurchase(f,c));
-  closeModal();
-  if(typeof clientModalOnSave === 'function') clientModalOnSave(f.id);
-  refreshUI();
-}
+    setClients(list);
+    (f.compras||[]).forEach(c=>scheduleFollowUpsForPurchase(f,c));
+    if(typeof clientModalOnSave === 'function') clientModalOnSave(f.id);
+    closeClientModal();
+  }
 
 function handlePurchaseSave(){
   const {clienteId, compra} = readPurchaseForm();
@@ -2371,12 +2344,11 @@ function handlePurchaseSave(){
   if(!compra.id) compra.id = `cmp_${Date.now()}_${Math.random().toString(36).slice(2,7)}`;
   const pIdx = list[idx].compras.findIndex(x=>x.id===compra.id);
   if(pIdx>=0) list[idx].compras[pIdx]=compra; else list[idx].compras.push(compra);
-  setClients(list);
-  scheduleFollowUpsForPurchase(list[idx], compra);
-  closeModal();
-  if(typeof purchaseModalOnSave === 'function') purchaseModalOnSave();
-  refreshUI();
-}
+    setClients(list);
+    scheduleFollowUpsForPurchase(list[idx], compra);
+    if(typeof purchaseModalOnSave === 'function') purchaseModalOnSave();
+    closePurchaseModal();
+  }
 
 // ===== Theme =====
 function toggleTheme() {
@@ -2392,7 +2364,7 @@ function toggleTheme() {
 document.addEventListener('DOMContentLoaded', async () => {
   migrateToProfiles();
   seedAllDash();
-  if(!localStorage.getItem(PERFIL_KEY)) setActivePerfil('Teste');
+  if(!localStorage.getItem(PERFIL_KEY)) setActivePerfil('Usuario Teste');
   ensurePerfilSeeds();
   cleanupDesfalques();
   cleanupOrphanEventos();
