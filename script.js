@@ -18,6 +18,8 @@ const PROFILES = ['Exótica','Jorel Chicuta','Jorel Avenida','Administrador','Us
 
 const ALL_PROFILES = ['Exótica','Jorel Chicuta','Jorel Avenida','Administrador','Usuario Teste'];
 
+const CLIENTES_REMOVIDOS = ['José','Joana do Carmo Pederal','Josélito Adams'];
+
 // remove dados antigos do perfil "Teste"
 (function purgeOldTestProfile(){
   Object.keys(localStorage).forEach(k=>{
@@ -94,6 +96,28 @@ function deletePurchase(purchaseId, clientId, profile=currentProfile()){
   renderDashboard?.();
   renderSelectedPurchaseDetails?.();
 }
+
+(function purgeSpecificClients(){
+  for(const profile of ALL_PROFILES){
+    const clients = getClients(profile);
+    const toRemove = clients.filter(c => CLIENTES_REMOVIDOS.includes(c.nome));
+    if(!toRemove.length) continue;
+    const remaining = clients.filter(c => !CLIENTES_REMOVIDOS.includes(c.nome));
+    setClients(remaining, profile);
+    const removedIds = new Set(toRemove.map(c=>c.id));
+    const cal = getCalendar(profile).filter(ev => {
+      const cid = ev.meta?.clientId ?? ev.meta?.clienteId;
+      return !removedIds.has(cid);
+    });
+    setCalendar(cal, profile);
+    const stateKey = `app:${profile}`;
+    const state = getJSON(stateKey, {});
+    if(Array.isArray(state.lembretes)){
+      state.lembretes = state.lembretes.filter(l => !removedIds.has(l.clienteId));
+      localStorage.setItem(stateKey, JSON.stringify(state));
+    }
+  }
+})();
 
 function on(el, ev, fn){ el && (el._h?.[ev] && el.removeEventListener(ev, el._h[ev]), (el._h=el._h||{}, el._h[ev]=fn), el.addEventListener(ev, fn)); }
 
@@ -436,7 +460,7 @@ function removeFollowUpEvents(clienteId,compraId){
   const db = {
     _get() {
       const data = getJSON(prefix()+'clientes', []);
-      const filtered = data.filter(c => c.nome !== 'José' && !isNomeBloqueado(c.nome));
+    const filtered = data.filter(c => !CLIENTES_REMOVIDOS.includes(c.nome) && !isNomeBloqueado(c.nome));
       if (filtered.length !== data.length) setJSON(prefix()+'clientes', filtered);
       return filtered;
     },
