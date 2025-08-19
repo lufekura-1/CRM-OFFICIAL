@@ -2335,8 +2335,10 @@ function readClientForm(){
 
 function readPurchaseForm(){
   const materialBtn = document.querySelector('#compra-material .seg-btn[aria-pressed="true"]');
+  const clientIdEl = document.getElementById('purchaseClientId');
+  if(!clientIdEl) return { clienteId: null, compra: {} };
   return {
-    clienteId: document.getElementById('purchaseClientId').value,
+    clienteId: clientIdEl.value,
     compra: {
       id: document.getElementById('purchaseId').value || null,
       dataCompra: document.getElementById('compra-data').value,
@@ -2451,7 +2453,7 @@ function handleClientSave(){
 
 function handlePurchaseSave(){
   const {clienteId, compra} = readPurchaseForm();
-  if(!clienteId) return toast('Cliente inválido');
+  if(clienteId == null) { toast('Cliente inválido'); return; }
   const list = getClients();
   const idx = list.findIndex(c=>c.id===clienteId);
   if(idx<0) return toast('Cliente não encontrado');
