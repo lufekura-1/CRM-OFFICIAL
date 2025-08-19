@@ -1852,7 +1852,8 @@ function initClientesPage() {
             fu.done=input.checked;
             fu.doneAt=fu.done?new Date().toISOString():null;
             cp.followUps[period]=fu;
-            db.atualizarCompra(id, cpId, { followUps: cp.followUps });
+            db.atualizarCompra(id, cpId, { followUps: cp.followUps }, { skipReload: true, skipDashboard: true });
+            renderCalendarMonth();
             renderDashboard();
           });
         });
