@@ -721,6 +721,14 @@ input[name="telefone"] { width:18ch; }
 .card-compact .dash-card-value{font-size:22px}
 .card-compact .subline{font-size:14px; font-weight:700; margin:4px 0}
 .card-compact .dot{display:none}
+.bar-chart{display:flex; height:100px; align-items:flex-end; gap:4px;}
+.bar-chart .bar-group{flex:1; display:flex; align-items:flex-end; gap:2px;}
+.bar-chart .bar{flex:1; background:var(--color-border);} 
+.bar-chart .bar.green{background:#4caf50;}
+.bar-chart .bar.blue{background:#2196f3;}
+.bar-chart-labels{display:flex; justify-content:space-between; font-size:12px; margin-top:4px;}
+.bar-chart-labels span{flex:1; text-align:center;}
+.year-select{align-self:flex-end; margin-bottom:4px;}
 .dash-card .card-close{position:absolute; right:8px; top:8px; background:transparent; border:0; cursor:pointer; font-size:16px; opacity:.6}
 
 .dash-toolbar{display:flex; align-items:center; justify-content:space-between; margin-bottom:8px}

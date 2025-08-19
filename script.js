@@ -153,7 +153,7 @@ function insertWidgetOnce(type){
   const layout = ensureFreeSlot(loadDashLayout());
   const firstEmpty = layout.slots.findIndex(s => s == null);
   if(firstEmpty === -1) return toast('Sem espaço');
-  layout.slots[firstEmpty] = { id:type, size:'1x1' };
+  layout.slots[firstEmpty] = { id:type, size: type==='widget.clientsContactsChart' ? '2x1' : '1x1' };
   saveDashLayout(layout);
   renderDashboard?.();
 }
@@ -216,7 +216,8 @@ const baseId = `${currentProfile()}:${cliente.id}:${compra.id}:0`;
         compraId: compra.id,
         followupOffsetDays: d,
         kind:'followup',
-        type:'followup'
+        type:'followup',
+        stage: d===90?'3m':d===180?'6m':'12m'
       }
     });
   }
@@ -232,6 +233,13 @@ const baseId = `${currentProfile()}:${cliente.id}:${compra.id}:0`;
     if(ev.color === 'blue'){
       ev.color = 'followup';
       ev.meta = { ...ev.meta, kind:'followup', type:'followup' };
+      changed = true;
+    }
+    if(ev.color === 'followup'){
+      const map = {90:'3m',180:'6m',365:'12m'};
+      const offset = ev.meta?.followupOffsetDays;
+      const stage = ev.meta?.stage || map[offset];
+      ev.meta = { ...ev.meta, kind:'followup', type:'followup', stage };
       changed = true;
     }
     return true;
@@ -1250,12 +1258,15 @@ function initCalendarioPage() {
       const compra=(cliente.compras||[]).find(c=>c.id===ev.meta?.compraId);
       if(compra){
         compra.followUps=compra.followUps||{};
-        const fu=compra.followUps[ev.meta.stage]||{};
+        const map={90:'3m',180:'6m',365:'12m'};
+        const stage=ev.meta?.stage || map[ev.meta?.followupOffsetDays];
+        if(stage && idx>-1 && !eventos[idx].meta.stage){ eventos[idx].meta.stage=stage; saveEventos(); }
+        const fu=compra.followUps[stage]||{};
         fu.done=value;
         fu.doneAt=value?new Date().toISOString():null;
         fu.eventId=ev.id;
         fu.dueDateISO=fu.dueDateISO||ev.date;
-        compra.followUps[ev.meta.stage]=fu;
+        if(stage) compra.followUps[stage]=fu;
         db.atualizarCompra(cliente.id, compra.id, {followUps: compra.followUps});
       }
     }
@@ -1375,8 +1386,9 @@ function initCalendarioPage() {
             if(color) chip.classList.add(`event-color-${color}`);
             if(ev.meta?.type==='followup' || color==='followup') chip.classList.add('followup');
             chip.textContent=ev.title || ev.titulo;
-            const done = ev.meta?.done ?? ev.efetuado;
-            if(done!==undefined) chip.setAttribute('data-efetuado', done);
+            const done = ev.meta?.done ?? ev.efetuado ?? false;
+            const hasToggle = ev.meta?.type==='followup' || ev.efetuado!==undefined;
+            if(hasToggle) chip.setAttribute('data-efetuado', done);
             chip.tabIndex=0;
             setupCalendarChipEvents(chip,()=>showEventoPopover(chip,ev));
             item.appendChild(chip);
@@ -1449,14 +1461,15 @@ function initCalendarioPage() {
           if(color) card.classList.add(`event-color-${color}`);
           if(ev.meta?.type==='followup' || color==='followup') card.classList.add('followup');
           card.innerHTML=`<strong>${ev.title || ev.titulo}</strong>${ev.observacao?`<p>${ev.observacao}</p>`:''}`;
-          const done = ev.meta?.done ?? ev.efetuado;
-          if(done!==undefined){
+          const done = ev.meta?.done ?? ev.efetuado ?? false;
+          const hasToggle = ev.meta?.type==='followup' || ev.efetuado!==undefined;
+          if(hasToggle){
             card.setAttribute('data-efetuado', done);
             card.innerHTML += `<label>Efetuado <input type="checkbox" class="switch" ${done?'checked':''}></label>`;
             const sw=card.querySelector('.switch');
             if(sw){
               sw.addEventListener('click',e=>e.stopPropagation());
-              if(ev.meta?.type==='followup') sw.addEventListener('change',()=>onToggleFollowUp(ev, sw.checked));
+              if(ev.meta?.type==='followup' || color==='followup') sw.addEventListener('change',()=>onToggleFollowUp(ev, sw.checked));
               else sw.addEventListener('change',()=>onToggleEfetuado(ev.id, sw.checked));
             }
           }
@@ -1569,14 +1582,17 @@ function initCalendarioPage() {
       setupPopoverDismiss(pop,target);
       return;
     }
-    if(ev.meta?.type==='followup'){
+    if(ev.meta?.type==='followup' || ev.color==='followup'){
       pop.innerHTML=`<div class="pop-head"><span class="pop-date">${formatDateBr(ev.date)}</span></div><div class="pop-title">${ev.title || ''}</div><div class="pop-footer"><label>Contato efetuado <input type="checkbox" class="switch" ${ev.meta?.done?'checked':''}></label></div>`;
       const layer=document.getElementById('calPopoverLayer');
       if(!layer) return;
       layer.appendChild(pop);
       positionPopover(target,pop);
       const chk=pop.querySelector('.switch');
-      if(chk) chk.addEventListener('change',()=>onToggleFollowUp(ev,chk.checked));
+      if(chk){
+        chk.addEventListener('click',e=>e.stopPropagation());
+        chk.addEventListener('change',()=>onToggleFollowUp(ev,chk.checked));
+      }
       setupPopoverDismiss(pop,target);
       return;
     }
@@ -1973,7 +1989,46 @@ function getFollowupsStats(){
   return { todayCount, late, doneWeek, doneMonth };
 }
 
+function getClientsContactsStats(year){
+  const clients=getClients();
+  const events=getJSON(calKey(), []).filter(e=>e.meta?.type==='followup' && e.meta.done);
+  const cCounts=Array(12).fill(0);
+  const fCounts=Array(12).fill(0);
+  clients.forEach(c=>{
+    const ts=parseInt((c.id||'').split('_')[1]);
+    if(!isNaN(ts)){
+      const d=new Date(ts);
+      if(d.getFullYear()===year) cCounts[d.getMonth()]++; }
+  });
+  events.forEach(ev=>{
+    const d=new Date(ev.meta?.doneAt||ev.date);
+    if(d.getFullYear()===year) fCounts[d.getMonth()]++; });
+  return { clientes:cCounts, contatos:fCounts };
+}
+
 function renderWidgetContent(card, cardInner, slot){
+  if(slot.id === 'widget.clientsContactsChart'){
+    const title=document.createElement('div'); title.className='dash-card-title'; title.textContent='Clientes x Contatos';
+    const select=document.createElement('select'); select.className='year-select';
+    const year=new Date().getFullYear();
+    for(let y=year; y>=year-4; y--){ const opt=document.createElement('option'); opt.value=String(y); opt.textContent=String(y); select.appendChild(opt); }
+    const chart=document.createElement('div'); chart.className='bar-chart';
+    const groups=[]; for(let m=0;m<12;m++){ const g=document.createElement('div'); g.className='bar-group'; const b1=document.createElement('div'); b1.className='bar green'; const b2=document.createElement('div'); b2.className='bar blue'; g.append(b1,b2); groups.push({b1,b2}); chart.appendChild(g); }
+    const labels=document.createElement('div'); labels.className='bar-chart-labels';
+    ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'].forEach(m=>{ const s=document.createElement('span'); s.textContent=m; labels.appendChild(s); });
+    cardInner.appendChild(title); cardInner.appendChild(select); cardInner.appendChild(chart); cardInner.appendChild(labels);
+    card.style.background='#fff';
+    function render(){
+      const stats=getClientsContactsStats(parseInt(select.value,10));
+      const max=Math.max(...stats.clientes,...stats.contatos,1);
+      groups.forEach((g,i)=>{
+        g.b1.style.height=`${stats.clientes[i]/max*100}%`;
+        g.b2.style.height=`${stats.contatos[i]/max*100}%`;
+      });
+    }
+    select.addEventListener('change',render); select.value=String(year); render();
+    return;
+  }
   const title = document.createElement('div'); title.className='dash-card-title';
   const value = document.createElement('div'); value.className='dash-card-value';
 
@@ -2014,6 +2069,7 @@ function renderDashboard(){
     const slotEl = document.createElement('div');
     slotEl.className = 'dash-slot' + (slot? '' : ' empty');
     slotEl.dataset.slot = i;
+    if(slot?.size==='2x1') slotEl.style.gridColumn='span 2';
     slotEl.addEventListener('dragover', e=>{e.preventDefault(); slotEl.classList.add('dropping');});
     slotEl.addEventListener('dragleave', ()=>slotEl.classList.remove('dropping'));
     slotEl.addEventListener('drop', e=>{
