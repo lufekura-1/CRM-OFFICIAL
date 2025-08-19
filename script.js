@@ -136,7 +136,6 @@ on(document.getElementById('btnNovoContato'), 'click', e => { e.preventDefault()
 
 function renderCalendarMonth(){
   purgeOrphanEvents();
-  reloadCalendario?.();
 }
 
 let addGuard = false;
@@ -1178,7 +1177,8 @@ function initCalendarioPage() {
   const weekdaysEl = wrapper.querySelector('.cal-weekdays');
   const dias = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
   dias.forEach(d => { const div = document.createElement('div'); div.textContent = d; weekdaysEl.appendChild(div); });
-  let currentDate = new Date();
+  let currentDate = window.currentDate || new Date();
+  window.currentDate = currentDate;
   let modo = 'mes';
   const eventosKey = calKey();
   let eventos = getJSON(calKey(), []).filter(e=>!isNomeBloqueado(e.titulo));
@@ -1314,6 +1314,8 @@ function initCalendarioPage() {
     if(modo==='mes'){ renderMonth(); weekNav.style.display='none'; }
     else { renderWeek(); weekNav.style.display='flex'; }
   }
+
+  window.renderCalendarMonth = render;
 
   function renderMonth(){
     const mes=currentDate.getMonth();
@@ -1484,7 +1486,7 @@ function initCalendarioPage() {
   }
   yearSelect.addEventListener('change',()=>{ currentDate.setFullYear(parseInt(yearSelect.value,10)); render(); });
   monthSelect.addEventListener('change',()=>{ currentDate.setMonth(parseInt(monthSelect.value,10)); render(); });
-  btnHoje.addEventListener('click',()=>{ currentDate=new Date(); modo='mes'; segBtns.forEach(b=>b.setAttribute('aria-pressed', b.dataset.modo===modo?'true':'false')); render(); });
+  btnHoje.addEventListener('click',()=>{ currentDate=new Date(); window.currentDate=currentDate; modo='mes'; segBtns.forEach(b=>b.setAttribute('aria-pressed', b.dataset.modo===modo?'true':'false')); render(); });
   btnCriar.addEventListener('click',()=>openEventoModal());
   btnPrev.addEventListener('click',()=>onChangeMonth(-1));
   btnNext.addEventListener('click',()=>onChangeMonth(1));
@@ -2251,9 +2253,15 @@ async function limparCachesJoaoClaro(){
   }
 }
 
-function reloadCalendario(){
+function reloadCalendario(currentDate){
   purgeOrphanEvents();
-  if(currentRoute==='calendario') renderRoute('calendario');
+  if(currentRoute==='calendario'){
+    if(typeof renderCalendarMonth === 'function'){
+      renderCalendarMonth(currentDate ?? window.currentDate);
+    }else{
+      renderRoute('calendario');
+    }
+  }
 }
 
 let clientModalOnSave=null;
