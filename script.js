@@ -563,7 +563,7 @@ function removeFollowUpEvents(clienteId,compraId){
     reloadCalendario();
     renderDashboard();
   },
-  atualizarCompra(clienteId, compraId, patch) {
+  atualizarCompra(clienteId, compraId, patch, opts = {}) {
     const data = this._get();
     const cIdx = data.findIndex(c => c.id === clienteId);
     if (cIdx === -1) return;
@@ -575,8 +575,8 @@ function removeFollowUpEvents(clienteId,compraId){
     scheduleFollowUpsForPurchase(data[cIdx], compras[compIdx]);
     data[cIdx].atualizadoEm = new Date().toISOString();
     this._set(data);
-    reloadCalendario();
-    renderDashboard();
+    if (!opts.skipReload) reloadCalendario();
+    if (!opts.skipDashboard) renderDashboard();
   },
   adicionarCompra(clienteId, compra) {
     const data = this._get();
@@ -1267,7 +1267,7 @@ function initCalendarioPage() {
         fu.eventId=ev.id;
         fu.dueDateISO=fu.dueDateISO||ev.date;
         if(stage) compra.followUps[stage]=fu;
-        db.atualizarCompra(cliente.id, compra.id, {followUps: compra.followUps});
+        db.atualizarCompra(cliente.id, compra.id, {followUps: compra.followUps}, {skipReload:true, skipDashboard:true});
       }
     }
     renderDashboard();
