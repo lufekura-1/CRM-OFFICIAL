@@ -1590,10 +1590,11 @@ function initCalendarioPage() {
       if(!layer) return;
       layer.appendChild(pop);
       positionPopover(target,pop);
-      const chk=pop.querySelector('.switch');
-      if(chk){
-        chk.addEventListener('click',e=>e.stopPropagation());
-        chk.addEventListener('change',()=>onToggleFollowUp(ev,chk.checked));
+      const lbl=pop.querySelector('.pop-footer label');
+      if(lbl){
+        lbl.addEventListener('click',e=>e.stopPropagation());
+        const chk=lbl.querySelector('.switch');
+        if(chk) chk.addEventListener('change',()=>onToggleFollowUp(ev,chk.checked));
       }
       setupPopoverDismiss(pop,target);
       return;
