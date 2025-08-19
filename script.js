@@ -914,6 +914,9 @@ const iconTrash='<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" 
 
 function openClienteModal(id, onSave) {
   const modal = document.getElementById('app-modal');
+  const saveBtn = modal.querySelector('#modal-save');
+  saveBtn.removeAttribute('data-action');
+  saveBtn.setAttribute('type','submit');
   const title = document.getElementById('modal-title');
   const body = modal.querySelector('.modal-body');
   const content = modal.querySelector('.modal-dialog');
@@ -986,12 +989,11 @@ function openClienteModal(id, onSave) {
         </div>
         `}
         </form>`);
-  const saveBtn = modal.querySelector('.modal-footer .btn-primary');
-  safeAttr(saveBtn,'form','cliente-form');
-  safeAttr(saveBtn,'data-action','client:save');
-  safeAttr(saveBtn,'type','button');
+  saveBtn.setAttribute('form','cliente-form');
+  saveBtn.setAttribute('data-action','client:save');
+  saveBtn.setAttribute('type','button');
   const cancelBtn = modal.querySelector('[data-modal-close]');
-  safeAttr(cancelBtn,'data-action','client:cancel');
+  cancelBtn.setAttribute('data-action','client:cancel');
   const form = body.querySelector('#cliente-form');
   form.dataset.id = id || '';
   const idInput = form.querySelector('#cliente-id');
@@ -1049,6 +1051,9 @@ function openClienteModal(id, onSave) {
 
 function openCompraModal(clienteId, compraId, onSave) {
   const modal = document.getElementById('app-modal');
+  const saveBtn = modal.querySelector('#modal-save');
+  saveBtn.removeAttribute('data-action');
+  saveBtn.setAttribute('type','submit');
   const title = document.getElementById('modal-title');
   const body = modal.querySelector('.modal-body');
   const content = modal.querySelector('.modal-dialog');
@@ -1102,12 +1107,11 @@ function openCompraModal(clienteId, compraId, onSave) {
         </div>
       </div>
     </form>`);
-  const saveBtn = modal.querySelector('.modal-footer .btn-primary');
-  safeAttr(saveBtn,'form','compra-form');
-  safeAttr(saveBtn,'data-action','purchase:save');
-  safeAttr(saveBtn,'type','button');
+  saveBtn.setAttribute('form','compra-form');
+  saveBtn.setAttribute('data-action','purchase:save');
+  saveBtn.setAttribute('type','button');
   const cancelBtn = modal.querySelector('[data-modal-close]');
-  safeAttr(cancelBtn,'data-action','purchase:cancel');
+  cancelBtn.setAttribute('data-action','purchase:cancel');
   const form = body.querySelector('#compra-form');
   form.dataset.clienteId = clienteId;
   form.dataset.compraId = compraId || '';
@@ -1495,6 +1499,9 @@ function initCalendarioPage() {
   segBtns.forEach(btn=>{ btn.addEventListener('click',()=>{ modo=btn.dataset.modo; segBtns.forEach(b=>b.setAttribute('aria-pressed', b===btn?'true':'false')); render(); }); });
   function openEventoModal(dataISO, ev){
     const modal=document.getElementById('app-modal');
+    const saveBtn = modal.querySelector('#modal-save');
+    saveBtn.removeAttribute('data-action');
+    saveBtn.setAttribute('type','submit');
     const title=document.getElementById('modal-title');
     const body=modal.querySelector('.modal-body');
     const content = modal.querySelector('.modal-dialog');
@@ -1504,7 +1511,7 @@ function initCalendarioPage() {
     title.textContent=isEdit?'Editar evento':'Criar evento';
     const destHtml=isAdmin&&!isEdit?`<div class="form-field col-span-12"><label>Destinos</label><table class="destinos-table"><thead><tr><th>Perfil</th><th>Enviar</th></tr></thead><tbody>${PERFIS.map(p=>`<tr><td>${p}</td><td><input type='checkbox' value='${p}' class='switch'></td></tr>`).join('')}</tbody></table></div>`:'';
     body.innerHTML=`<form id="evento-form"><div class="form-grid"><div class="form-field col-span-4"><label for="evento-data">Data *</label><input id="evento-data" type="date" name="data" class="date-input" required></div><div class="form-field col-span-8"><label for="evento-titulo">Título *</label><input id="evento-titulo" name="titulo" class="text-input" required></div><div class="form-field col-span-12"><label for="evento-obs">Observação</label><textarea id="evento-obs" name="obs" class="textarea" rows="3"></textarea></div>${destHtml}</div></form>`;
-    modal.querySelector('#modal-save').setAttribute('form','evento-form');
+    saveBtn.setAttribute('form','evento-form');
     const form=body.querySelector('#evento-form');
     const destChecks=form.querySelectorAll('.destinos-table input');
     form.data.value=ev?.dataISO||dataISO||'';
@@ -1546,11 +1553,14 @@ function initCalendarioPage() {
 
   function openDesfalqueModal(){
     const modal=document.getElementById('app-modal');
+    const saveBtn = modal.querySelector('#modal-save');
+    saveBtn.removeAttribute('data-action');
+    saveBtn.setAttribute('type','submit');
     const title=document.getElementById('modal-title');
     const body=modal.querySelector('.modal-body');
     title.textContent='Novo desfalque';
     body.innerHTML=`<form id="desfalque-form"><div class="form-grid"><div class="form-field col-span-12"><label for="d-nome">Nome *</label><input id="d-nome" class="text-input" required></div><div class="form-field col-span-12"><label for="d-data">Data *</label><input id="d-data" type="date" class="date-input" required></div><div class="form-field col-span-12"><label>Manhã ⇄ Dia todo <input type="checkbox" id="d-periodo" class="switch"></label></div></div></form>`;
-    modal.querySelector('#modal-save').setAttribute('form','desfalque-form');
+    saveBtn.setAttribute('form','desfalque-form');
     const form=body.querySelector('#desfalque-form');
     modal.open();
     form.addEventListener('submit',e=>{
@@ -2142,9 +2152,12 @@ function initGerenciaPage(){
   const title=document.getElementById('modal-title');
   const body=modal.querySelector('.modal-body');
   function openPrompt(){
+    const saveBtn = modal.querySelector('#modal-save');
+    saveBtn.removeAttribute('data-action');
+    saveBtn.setAttribute('type','submit');
     title.textContent='Senha';
     body.innerHTML=`<form id="gerencia-form"><div class="form-field col-span-12"><label for="gerencia-pass">Senha</label><input id="gerencia-pass" type="password" class="text-input" required></div></form>`;
-    modal.querySelector('#modal-save').setAttribute('form','gerencia-form');
+    saveBtn.setAttribute('form','gerencia-form');
     modal.open();
     body.querySelector('#gerencia-form').addEventListener('submit',e=>{
       e.preventDefault();
@@ -2184,11 +2197,14 @@ function initConfiguracoesPage(){
   }
   function openUsuarioModal(id){
     const modal=document.getElementById('app-modal');
+    const saveBtn = modal.querySelector('#modal-save');
+    saveBtn.removeAttribute('data-action');
+    saveBtn.setAttribute('type','submit');
     const title=document.getElementById('modal-title');
     const body=modal.querySelector('.modal-body');
     title.textContent=id?'Editar usuário':'Novo usuário';
     body.innerHTML=`<form id="usuario-form"><div class="form-grid"><div class="form-field col-span-12"><label for="u-nome">Nome *</label><input id="u-nome" name="nome" class="text-input" required></div><div class="form-field col-span-12"><label for="u-email">Email</label><input id="u-email" name="email" class="text-input"></div><div class="form-field col-span-12"><label for="u-perfil">Perfil</label><input id="u-perfil" name="perfil" class="text-input"></div></div></form>`;
-    modal.querySelector('#modal-save').setAttribute('form','usuario-form');
+    saveBtn.setAttribute('form','usuario-form');
     const form=body.querySelector('#usuario-form');
     if(id){ const u=dbUsuarios.listar().find(x=>x.id===id); form['u-nome'].value=u.nome; form['u-email'].value=u.email||''; form['u-perfil'].value=u.perfil||''; }
     modal.open();
