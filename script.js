@@ -2739,24 +2739,48 @@ function bindUI(){
 function handleClientSave(){
   const f = readClientForm();
   if(!f.nome?.trim()) return toast('Informe o Nome');
-  let list = getClients();
-  const newPurchases = f.compras;
-  if(f.id){
-    const clienteExistente = list.find(c=>c.id===f.id);
-    if(newPurchases){
-      f.compras = (clienteExistente?.compras||[]).concat(newPurchases);
-    }else{
-      f.compras = clienteExistente?.compras;
-    }
-    list = list.map(c=>c.id===f.id ? {...c, ...f} : c);
-  }else{
-    f.id = `cli_${Date.now()}_${Math.random().toString(36).slice(2,7)}`;
-    if(!f.compras) f.compras = [];
-    list.push(f);
+// Salva cliente (cria ou atualiza) preservando compras antigas e agendando follow-ups para novas
+function handleClientSave(f) {
+  // Garanta que novas compras venham como array (ou vazio)
+  const incoming = Array.isArray(f.compras)
+    ? f.compras
+    : (f.compras ? [f.compras] : []);
+
+  let list = getClients(); // persiste via localStorage (ajuste se usar outro backend)
+  let finalId = f.id;
+
+  if (f.id) {
+    // UPDATE: mescla com o cliente existente
+    const existing = list.find(c => c.id === f.id) || {};
+    const mergedPurchases = [...(existing.compras || [])];
+
+    // Anexa somente as compras novas (por id, se houver)
+    incoming.forEach(p => {
+      if (!p) return;
+      const pid = p.id || null;
+      const already = pid
+        ? mergedPurchases.some(x => x && x.id === pid)
+        : false;
+      if (!already) mergedPurchases.push(p);
+    });
+
+    const updated = { ...existing, ...f, compras: mergedPurchases };
+    const idx = list.findIndex(c => c.id === f.id);
+    if (idx > -1) list[idx] = updated; else list.push(updated);
+  } else {
+    // CREATE: gera id e guarda as compras que vieram
+    finalId = `cli_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+    list.push({ ...f, id: finalId, compras: incoming });
   }
+
   setClients(list);
-  (newPurchases||[]).forEach(c=>scheduleFollowUpsForPurchase(f,c));
-  if(typeof clientModalOnSave === 'function') clientModalOnSave(f.id);
+
+  // Agenda follow-ups somente para as compras recém-adicionadas
+  incoming.forEach(p => scheduleFollowUpsForPurchase({ ...f, id: finalId }, p));
+
+  if (typeof clientModalOnSave === 'function') clientModalOnSave(finalId);
+}
+
   closeClientModal();
 }
 
