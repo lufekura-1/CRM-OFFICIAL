@@ -2548,6 +2548,11 @@ function handlePurchaseSave(){
 // ===== Ordem de Serviço =====
 const OS_SIGLAS = { 'Jorel Chicuta':'JC', 'Jorel Avenida':'AV', 'Exótica':'EX', 'Usuario Teste':'UT', 'Administrador':'AD' };
 const OS_STATUS_LABELS = { loja:'Em loja', oficina:'Oficina/Laboratório', aguardando:'Aguardando Retirada', completo:'Completo' };
+const OS_TIPO_LABELS = { reloj:'Relojoaria', joia:'Joalheria', optica:'Óptica' };
+const ICON_PRINTER = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>`;
+const ICON_MOVE = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="5 9 2 12 5 15"></polyline><polyline points="9 5 12 2 15 5"></polyline><polyline points="15 19 12 22 9 19"></polyline><polyline points="19 9 22 12 19 15"></polyline><line x1="2" y1="12" x2="22" y2="12"></line><line x1="12" y1="2" x2="12" y2="22"></line></svg>`;
+const ICON_EDIT = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"></path></svg>`;
+const ICON_TRASH = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-2 14H7L5 6"></path><path d="M10 11v6"></path><path d="M14 11v6"></path><path d="M9 6V4h6v2"></path></svg>`;
 const OS_PAGE_SIZE=20;
 function osListKey(profile=currentProfile()){ return `os:${profile}:reloj`; }
 function osSeqKey(profile=currentProfile()){ return `os:${profile}:seq:reloj`; }
@@ -2635,18 +2640,18 @@ function renderOSKanban(){
         `<div class="os-card-body">`+
         `<div><strong>${os.campos.cliente}</strong> - ${os.campos.telefone}</div>`+
         `<div>Marca: ${os.campos.marca||''}</div>`+
-        `${os.campos.marcasUso?'<div class="badge">Marcas de uso</div>':''}`+
+        `${os.campos.marcasUso?'<div class=\"badge\">Marcas de uso</div>':''}`+
         `${dates.length?`<div class="os-card-dates">${dates.join('')}</div>`:''}`+
         `</div>`+
         `<div class="os-card-actions">`+
-        `<button class="btn-os-imprimir" data-id="${os.id}">Imprimir</button>`+
-        `<button class="btn-os-mover" data-id="${os.id}">Mover</button>`+
+        `<button class="os-action btn-os-imprimir" title="Imprimir" aria-label="Imprimir" data-id="${os.id}">${ICON_PRINTER}</button>`+
+        `<button class="os-action btn-os-mover" title="Mover" aria-label="Mover" data-id="${os.id}">${ICON_MOVE}</button>`+
         `<select class="os-move-select" data-id="${os.id}" hidden>`+
         `<option value="">Mover para...</option>`+
         `${Object.entries(OS_STATUS_LABELS).map(([k,v])=>`<option value="${k}">${v}</option>`).join('')}`+
         `</select>`+
-        `<button class="btn-os-editar" data-id="${os.id}">Editar</button>`+
-        `<button class="btn-os-excluir" data-id="${os.id}">Excluir</button>`+
+        `<button class="os-action btn-os-editar" title="Editar" aria-label="Editar" data-id="${os.id}">${ICON_EDIT}</button>`+
+        `<button class="os-action btn-os-excluir" title="Excluir" aria-label="Excluir" data-id="${os.id}">${ICON_TRASH}</button>`+
         `</div>`;
       container.appendChild(card);
     });
@@ -2668,61 +2673,59 @@ function renderOSKanban(){
   board.hidden=total===0;
 }
 
-function printOSReloj(os){
+function printOS(os){
   const campos=os.campos;
   const hoje=formatDateDDMMYYYY(new Date());
-  const header=`<header class="os-print-header">`+
-    `<h1>Ordem de Serviço — Relojoaria</h1>`+
-    `<div class="os-print-code">${os.codigo}</div>`+
-    `<div>${os.perfil||currentProfile()} - ${hoje}</div>`+
-    `</header>`;
+  const tipo=os.tipo||'reloj';
+  const tipoLabel=OS_TIPO_LABELS[tipo]||'';
   function via(titulo,opts){
-    const dateItems=[];
-    if(opts.dataOficina && campos.dataOficina) dateItems.push(`<div><strong>Data de Oficina:</strong> ${formatDateDDMMYYYY(campos.dataOficina)}</div>`);
-    if(opts.dataEntrega && campos.dataEntrega) dateItems.push(`<div><strong>Data de Entrega:</strong> ${formatDateDDMMYYYY(campos.dataEntrega)}</div>`);
-    const dates=dateItems.length?`<div class="os-print-dates">${dateItems.join('')}</div>`:'';
-    let html=`<section class="os-print-via"><h2>${titulo}</h2>`+header+
+    let html=`<section class="os-print-via">`+
+      `<div class="os-print-head ${tipo}"><span class="code">${os.codigo}</span> <span class="tipo">${tipoLabel}</span></div>`+
+      `<h2>${titulo}</h2>`+
       `<div class="os-print-body">`+
       `<div><strong>Cliente:</strong> ${campos.cliente}</div>`+
       `<div><strong>Telefone:</strong> ${campos.telefone}</div>`+
-      `<div><strong>Marca:</strong> ${campos.marca}</div>`+
-      (campos.marcasUso?`<div><strong>Marcas de uso:</strong> Sim</div>`:'')+
-      (campos.pulseira?`<div><strong>Pulseira:</strong> ${campos.pulseira}</div>`:'')+
+      `<div><strong>Data de Hoje:</strong> ${hoje}</div>`+
+      `<div><strong>Marca do Relógio:</strong> ${campos.marca||''}</div>`+
+      `${campos.marcasUso?'<div><strong>Marcas de uso:</strong> Sim</div>':''}`+
+      `${campos.pulseira?`<div><strong>Pulseira:</strong> ${campos.pulseira}</div>`:''}`+
       `<div><strong>Serviço:</strong> ${campos.servico}</div>`+
-      (opts.garantia && campos.garantia?`<div><strong>Garantia:</strong> ${campos.garantia}</div>`:'')+
-      (campos.observacao?`<div><strong>Observação:</strong> ${campos.observacao}</div>`:'')+
-      (opts.notaOficina && campos.notaOficina?`<div><strong>Nota para Oficina:</strong> ${campos.notaOficina}</div>`:'')+
-      (opts.notaLoja && campos.notaLoja?`<div><strong>Nota para Loja:</strong> ${campos.notaLoja}</div>`:'')+
-      dates+
+      `${opts.garantia&&campos.garantia?`<div><strong>Garantia:</strong> ${campos.garantia}</div>`:''}`+
+      `${campos.observacao?`<div><strong>Observação:</strong> ${campos.observacao}</div>`:''}`+
+      `${opts.notaOficina&&campos.notaOficina?`<div><strong>Nota para Oficina:</strong> ${campos.notaOficina}</div>`:''}`+
+      `${opts.notaLoja&&campos.notaLoja?`<div><strong>Nota para Loja:</strong> ${campos.notaLoja}</div>`:''}`+
+      `</div>`+
+      `<div class="os-print-dates">`+
+      `${campos.dataOficina?`<div><strong>Data de Oficina:</strong> ${formatDateDDMMYYYY(campos.dataOficina)}</div>`:''}`+
+      `${campos.dataEntrega?`<div><strong>Data de Entrega:</strong> ${formatDateDDMMYYYY(campos.dataEntrega)}</div>`:''}`+
       `</div>`+
       `<footer class="os-print-footer"><div class="assinatura"></div><div class="assinatura"></div></footer>`+
       `</section>`;
     return html;
   }
   const content=
-    via('Via do Cliente',{dataOficina:false,dataEntrega:true,notaOficina:false,notaLoja:false,garantia:true})+
+    via('Via do Cliente',{notaOficina:false,notaLoja:false,garantia:true})+
     `<hr>`+
-    via('Via Loja',{dataOficina:true,dataEntrega:true,notaOficina:true,notaLoja:true,garantia:true})+
+    via('Via Loja',{notaOficina:true,notaLoja:true,garantia:true})+
     `<hr>`+
-    via('Via Serviço',{dataOficina:true,dataEntrega:false,notaOficina:true,notaLoja:false,garantia:false});
+    via('Via Serviço',{notaOficina:true,notaLoja:false,garantia:false});
   const w=window.open('','_blank');
   w.document.write(`<!DOCTYPE html><html><head><title>${os.codigo}</title><style>
   @page{size:A4;margin:12mm;}body{font-family:sans-serif;font-size:12pt;}
   hr{border:0;border-top:1px solid #000;margin:12mm 0;}
   .os-print-via{page-break-inside:avoid;}
-  .os-print-code{font-size:1.2rem;font-weight:bold;}
-  .os-print-footer{margin-top:12mm;display:flex;gap:12mm;}
+  .os-print-head{font-weight:bold;color:#fff;padding:4px 8px;}
+  .os-print-head.reloj{background:#183C7A;}
+  .os-print-head.joia{background:#C99700;}
+  .os-print-head.optica{background:#8B1E1E;}
+  .os-print-dates{margin-top:12px;font-weight:bold;}
+  .os-print-footer{margin-top:24px;display:flex;gap:12mm;}
   .os-print-footer .assinatura{border-top:1px solid #000;height:40px;flex:1;text-align:center;}
   .os-print-footer .assinatura:after{content:"Assinatura";position:relative;top:8px;display:block;font-size:10pt;}
-  .os-print-dates{margin-top:12px;font-weight:bold;}
-  </style></head><body>
-  <div class="print-actions">
-    <button onclick="window.print()">Imprimir</button>
-    <button onclick="window.close()">Fechar</button>
-  </div>
-  ${content}
-  </body></html>`);
+  h2{margin:4px 0 8px;font-size:1rem;}
+  </style></head><body>${content}</body></html>`);
   w.document.close();
+  w.addEventListener('load',()=>w.print());
 }
 
 function setupOSDragAndDrop(){
@@ -2870,13 +2873,15 @@ function initOSPage(){
   const board=document.getElementById('osKanban');
   if(board){
     board.addEventListener('click',e=>{
-      const id=e.target.dataset.id;
-      if(e.target.classList.contains('btn-os-imprimir')){ const os=loadOSList().find(o=>o.id==id); if(os) printOSReloj(os); }
-      if(e.target.classList.contains('btn-os-editar')){ const os=loadOSList().find(o=>o.id==id); if(os) openRelojForm(os); }
-      if(e.target.classList.contains('btn-os-excluir')){ if(confirm('Excluir OS?')){ deleteOS(Number(id)); renderOSKanban(); } }
-      if(e.target.classList.contains('btn-os-mover')){ const sel=e.target.nextElementSibling; if(sel) sel.hidden=!sel.hidden; }
-      if(e.target.classList.contains('kanban-prev')){ const st=e.target.closest('.kanban-col').dataset.status; if(ui.os.pages[st]>1){ ui.os.pages[st]--; renderOSKanban(); } }
-      if(e.target.classList.contains('kanban-next')){ const st=e.target.closest('.kanban-col').dataset.status; const total=ui.os.counts[st]||0; const max=Math.max(1,Math.ceil(total/OS_PAGE_SIZE)); if(ui.os.pages[st]<max){ ui.os.pages[st]++; renderOSKanban(); } }
+      const btn=e.target.closest('button');
+      if(!btn) return;
+      const id=btn.dataset.id;
+      if(btn.classList.contains('btn-os-imprimir')){ const os=loadOSList().find(o=>o.id==id); if(os) printOS(os); }
+      if(btn.classList.contains('btn-os-editar')){ const os=loadOSList().find(o=>o.id==id); if(os) openRelojForm(os); }
+      if(btn.classList.contains('btn-os-excluir')){ if(confirm('Excluir OS?')){ deleteOS(Number(id)); renderOSKanban(); } }
+      if(btn.classList.contains('btn-os-mover')){ const sel=btn.nextElementSibling; if(sel) sel.hidden=!sel.hidden; }
+      if(btn.classList.contains('kanban-prev')){ const st=btn.closest('.kanban-col').dataset.status; if(ui.os.pages[st]>1){ ui.os.pages[st]--; renderOSKanban(); } }
+      if(btn.classList.contains('kanban-next')){ const st=btn.closest('.kanban-col').dataset.status; const total=ui.os.counts[st]||0; const max=Math.max(1,Math.ceil(total/OS_PAGE_SIZE)); if(ui.os.pages[st]<max){ ui.os.pages[st]++; renderOSKanban(); } }
     });
     board.addEventListener('change',e=>{
       if(e.target.classList.contains('os-move-select')){

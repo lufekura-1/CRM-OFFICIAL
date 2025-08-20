@@ -342,6 +342,13 @@ input[name="telefone"] { width:18ch; }
 .os-card.joia .badge{background: var(--os-joia-color);}
 .os-card.optica .badge{background: var(--os-optica-color);}
 .os-card-actions { padding: 4px 8px; display: flex; flex-wrap: wrap; gap: 4px; }
+.os-card-actions .os-action{width:36px;height:36px;display:flex;align-items:center;justify-content:center;border:none;background:none;cursor:pointer;border-radius:var(--radius-md);}
+.os-card-actions .os-action:focus{outline:2px solid var(--color-primary);}
+.os-card-actions .os-action:hover{background:var(--surface-muted);}
+.os-card-actions .btn-os-imprimir{color:#607d8b;}
+.os-card-actions .btn-os-mover{color:#1e88e5;}
+.os-card-actions .btn-os-editar{color:#fb8c00;}
+.os-card-actions .btn-os-excluir{color:#e53935;}
 .os-move-select { margin-left: 4px; }
 .os-kanban .kanban-col.drag-over { outline:2px dashed var(--os-reloj-color); }
 .os-type-filter{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:1rem;}
