@@ -3031,6 +3031,7 @@ function printOSOptica(os){
   w.addEventListener('load',()=>w.print());
 }
 
+
 function printOS(os){
   const campos=os.campos;
   const dataAtual=campos.dataAtual||campos.dataHoje||formatDateDDMMYYYY(new Date());
@@ -3045,70 +3046,64 @@ function printOS(os){
       `<img src="${perfilInfo.logo}" alt="Logo" class="logo-img">` :
       `<div class="logo-placeholder">Logo</div>`;
     const contato = showContacts ?
-      `<div class="os-print-contact">${perfilInfo.telefone?`<div>${perfilInfo.telefone}</div>`:''}${perfilInfo.endereco?`<div>${perfilInfo.endereco}</div>`:''}${perfilInfo.instagram?`<div><a href="https://instagram.com/${perfilInfo.instagram.replace(/^@/, '')}" target="_blank">${perfilInfo.instagram}</a></div>`:''}</div>` : '';
-    const dates=[];
+      `<div class="os-print-contact">${perfilInfo.telefone?`<div>${perfilInfo.telefone}</div>`:''}${perfilInfo.endereco?`<div>${perfilInfo.endereco}</div>`:''}${perfilInfo.instagram?`<div><a href="https://instagram.com/${perfilInfo.instagram.replace(/^@/,'')}" target="_blank">${perfilInfo.instagram}</a></div>`:''}</div>` : '';
     const oficinaDate=campos.dataOficina;
     const prevDate=campos.previsaoEntrega||campos.dataEntrega;
-    if(opts.dataOficina && oficinaDate) {
-      dates.push(`<div>Data de Oficina: ${formatDateDDMMYYYY(oficinaDate)}</div>`);
+    const dates=[`<div><strong>Data de Hoje:</strong> ${formatDateDDMMYYYY(dataAtual)}</div>`];
+    if(opts.dataOficina && oficinaDate){
+      dates.push(`<div><strong>Data da Oficina:</strong> ${formatDateDDMMYYYY(oficinaDate)}</div>`);
     }
-    if(opts.previsaoEntrega && prevDate) {
-      dates.push(`<div class="previsao">Previsão de Entrega: ${formatDateDDMMYYYY(prevDate)}</div>`);
+    if(opts.previsaoEntrega && prevDate){
+      dates.push(`<div><strong>Previsão de Entrega:</strong> ${formatDateDDMMYYYY(prevDate)}</div>`);
     }
-    let html=`<section class="os-print-via">`+
-      `<div class="os-print-header">${logo}${contato}</div>`+
-      `<div class="os-print-head ${tipo}"><span class="code">${os.codigo}</span> <span class="tipo">${tipoLabel}</span></div>`+
-      `<h2>${titulo}</h2>`+
-      `<div class="os-print-body">`+
-      `<div><strong>Cliente:</strong> ${campos.cliente}</div>`+
-      `<div><strong>Telefone:</strong> ${campos.telefone}</div>`+
-      `<div><strong>Data atual:</strong> ${formatDateDDMMYYYY(dataAtual)}</div>`+
-      `<div><strong>Marca do Relógio:</strong> ${campos.marca||''}</div>`+
-      `${campos.marcasUso?'<div><strong>Marcas de uso:</strong> Sim</div>':''}`+
-      `${campos.pulseira?`<div><strong>Pulseira:</strong> ${campos.pulseira}</div>`:''}`+
-      `${campos.mostrador?`<div><strong>Mostrador:</strong> ${campos.mostrador}</div>`:''}`+
-      `<div><strong>Serviço:</strong> ${campos.servico}</div>`+
-      `${opts.garantia?`${garantiaTexto?`<div class="os-garantia">${garantiaTexto}</div>`:''}<div class="assinatura"></div>`:''}`+
-      `${opts.valor&&campos.valor?`<div><strong>Valor a Pagar:</strong> ${formatCurrency(campos.valor)}</div>`:''}`+
-      `${campos.observacao?`<div><strong>Observação:</strong> ${campos.observacao}</div>`:''}`+
-      `${opts.notaOficina&&campos.notaOficina?`<div><strong>Nota para Oficina:</strong> ${campos.notaOficina}</div>`:''}`+
-      `${opts.notaLoja&&campos.notaLoja?`<div><strong>Nota para Loja:</strong> ${campos.notaLoja}</div>`:''}`+
-      `</div>`+
-      `${dates.length?`<div class="os-print-dates">${dates.join('')}</div>`:''}`+
-      `</section>`;
-    return html;
+    const valor=opts.valor&&campos.valor?`<div><strong>Valor a Pagar:</strong> ${formatCurrency(campos.valor)}</div>`:'';
+    const garantia=opts.garantia&&garantiaTexto?`<div class="os-block garantia"><div class="os-garantia">${garantiaTexto}</div></div>`:'';
+    const header=`<div class="os-print-header">${logo}${contato}</div>`+
+      `<div class="os-print-head ${tipo}"><span class="code">${os.codigo}</span><span class="via">${titulo.toUpperCase()}</span><span class="date">${formatDateDDMMYYYY(dataAtual)}</span></div>`;
+    const body=`<div class="os-print-body">`+
+      `<div class="os-block cliente"><div><strong>Cliente:</strong> ${campos.cliente}</div><div><strong>Telefone:</strong> ${campos.telefone}</div></div>`+
+      `<div class="os-block relogio">${campos.marca?`<div><strong>Marca do Relógio:</strong> ${campos.marca}</div>`:''}${campos.pulseira?`<div><strong>Pulseira:</strong> ${campos.pulseira}</div>`:''}${campos.mostrador?`<div><strong>Mostrador:</strong> ${campos.mostrador}</div>`:''}</div>`+
+      `<div class="os-block datas">${dates.join('')}${valor}</div>`+
+      `<div class="os-block servico"><div><strong>Serviço:</strong> ${campos.servico}</div></div>`+
+      `${garantia}`+
+      `<div class="assinatura"></div>`+
+      `</div>`;
+    return `<section class="os-print-via">${header}${body}</section>`;
   }
   const content=
-    via('Via do Cliente',{dataOficina:false,previsaoEntrega:true,notaOficina:false,notaLoja:false,garantia:true,showContacts:true,valor:true})+
+    `<div class="os-print-container">`+
+    via('Via do Cliente',{dataOficina:false,previsaoEntrega:true,garantia:true,showContacts:true,valor:true})+
     `<hr>`+
-    via('Via Loja',{dataOficina:true,previsaoEntrega:true,notaOficina:true,notaLoja:true,garantia:true,showContacts:false,valor:true})+
+    via('Via da Loja',{dataOficina:true,previsaoEntrega:true,garantia:true,showContacts:false,valor:true})+
     `<hr>`+
-    via('Via da Oficina',{dataOficina:true,previsaoEntrega:false,notaOficina:true,notaLoja:false,garantia:false,showContacts:true,valor:false});
+    via('Via da Oficina',{dataOficina:true,previsaoEntrega:false,garantia:false,showContacts:true,valor:false})+
+    `</div>`;
   const w=window.open('','_blank');
   w.document.write(`<!DOCTYPE html><html><head><title>${os.codigo}</title><style>
-  @page{size:A4 portrait;margin:6mm;}body{font-family:sans-serif;font-size:12pt;background:#fff;}
-  hr{border:0;border-top:1px solid #000;margin:6mm 0;}
-  .os-print-via{page-break-inside:avoid;background:#fff;border:1px solid #ccc;box-shadow:0 1px 2px rgba(0,0,0,0.1);padding:4mm;}
-  .os-print-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
-  .os-print-header .logo-img{max-height:40px;object-fit:contain;}
-  .os-print-header .logo-placeholder{width:80px;height:40px;background:#eee;display:flex;align-items:center;justify-content:center;color:#666;font-size:10pt;}
+  @page{size:A4 portrait;margin:6mm;}
+  html,body{height:100%;background:#fff;font-family:sans-serif;font-size:12pt;margin:0;}
+  button{display:none;}
+  .os-print-container{display:flex;flex-direction:column;height:100%;}
+  hr{border:0;border-top:1px solid #000;margin:0;}
+  .os-print-via{flex:1;background:#fff;border:1px solid #ccc;box-shadow:0 1px 2px rgba(0,0,0,0.1);padding:4mm;display:flex;flex-direction:column;}
+  .os-print-header{display:flex;justify-content:space-between;align-items:center;}
+  .os-print-header .logo-img{max-height:32px;object-fit:contain;}
+  .os-print-header .logo-placeholder{width:60px;height:32px;background:#eee;display:flex;align-items:center;justify-content:center;color:#666;font-size:10pt;}
   .os-print-contact{text-align:right;font-size:10pt;}
-  .os-print-head{font-weight:bold;color:#fff;padding:4px 8px;}
+  .os-print-head{display:flex;justify-content:space-between;align-items:center;font-weight:bold;color:#fff;padding:2px 8px;margin-top:4px;}
   .os-print-head.reloj{background:#183C7A;}
   .os-print-head.joia{background:#C99700;}
   .os-print-head.optica{background:#8B0000;}
-  .os-print-dates{margin-top:8px;}
-  .os-print-dates .previsao{margin-top:4px;font-weight:bold;}
-  .assinatura{border-top:1px solid #000;height:40px;width:60mm;text-align:center;margin-top:8mm;}
-  .assinatura:after{content:"Assinatura";position:relative;top:8px;display:block;font-size:10pt;}
-  h2{margin:4px 0 8px;font-size:1rem;}
-  .grau-table{width:100%;border-collapse:collapse;margin:4px 0;}
-  .grau-table th,.grau-table td{border:1px solid #000;padding:2px;font-size:10pt;text-align:center;}
-  .grau-table th:first-child{text-align:left;}
+  .os-block{margin-top:4px;font-size:10pt;}
+  .os-block > div{margin-top:2px;}
+  .assinatura{border-top:1px solid #000;width:70mm;text-align:center;margin-left:auto;margin-top:auto;height:24px;position:relative;}
+  .assinatura:after{content:"Assinatura do Cliente";position:absolute;top:4px;left:0;right:0;font-size:10pt;}
+  .os-garantia{margin-top:4px;font-size:10pt;}
   </style></head><body>${content}</body></html>`);
   w.document.close();
   w.addEventListener('load',()=>w.print());
 }
+
 
 function setupOSDragAndDrop(){
   const board=document.getElementById('osKanban');
