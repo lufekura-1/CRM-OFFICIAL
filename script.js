@@ -924,23 +924,35 @@ function renderClientes() {
   </div>`;
 }
 
-const GARANTIA_KEY = 'osGarantias';
+const GARANTIA_KEYS = {
+  optica: 'garantia.optica',
+  joia: 'garantia.joalheria',
+  reloj: 'garantia.relojoaria'
+};
 function loadGarantias(){
-  return getJSONForPerfil('Administrador', GARANTIA_KEY, { optica:'', joia:'', reloj:'' });
+  const notas={};
+  for(const k in GARANTIA_KEYS){
+    notas[k]=localStorage.getItem(GARANTIA_KEYS[k])||'';
+  }
+  return notas;
 }
 function saveGarantias(data){
-  setJSONForPerfil('Administrador', GARANTIA_KEY, data);
+  for(const k in GARANTIA_KEYS){
+    if(k in data){
+      localStorage.setItem(GARANTIA_KEYS[k], data[k]||'');
+    }
+  }
 }
 function getGarantiaTexto(tipo){
-  const notas = loadGarantias();
-  return notas[tipo] || '';
+  const key=GARANTIA_KEYS[tipo];
+  return key ? (localStorage.getItem(key)||'') : '';
 }
 function renderOS() {
   if(currentProfile()==='Administrador'){
     const notas = loadGarantias();
     const block = (label,key)=>`
       <div class="garantia-block">
-        <h3>Nota de Garantia (${label})</h3>
+        <h3>Garantia ${label}</h3>
         <textarea id="garantia-${key}" rows="4">${notas[key]||''}</textarea>
         <button class="btn btn-primary" data-save="${key}">Salvar</button>
       </div>`;
@@ -2981,7 +2993,7 @@ function printOSOptica(os){
       `<tr><th>OD</th><td>${g.OD?.esf||''}</td><td>${g.OD?.cil||''}</td><td>${g.OD?.eixo||''}</td><td>${g.OD?.dnp||''}</td><td>${g.OD?.adicao||''}</td></tr></tbody></table>`+
       `${campos.observacao?`<div><strong>Observação:</strong> ${campos.observacao}</div>`:''}`+
       `${valores}`+
-      `${opts.garantia&&garantiaTexto?`<div class="os-garantia">${garantiaTexto}</div><div class="assinatura"></div>`:''}`+
+      `${opts.garantia?`${garantiaTexto?`<div class="os-garantia">${garantiaTexto}</div>`:''}<div class="assinatura"></div>`:''}`+
       `</div>`+
       `${dates.length?`<div class="os-print-dates">${dates.join('')}</div>`:''}`+
       `</section>`;
@@ -3056,7 +3068,7 @@ function printOS(os){
       `${campos.pulseira?`<div><strong>Pulseira:</strong> ${campos.pulseira}</div>`:''}`+
       `${campos.mostrador?`<div><strong>Mostrador:</strong> ${campos.mostrador}</div>`:''}`+
       `<div><strong>Serviço:</strong> ${campos.servico}</div>`+
-      `${opts.garantia&&garantiaTexto?`<div class="os-garantia">${garantiaTexto}</div><div class="assinatura"></div>`:''}`+
+      `${opts.garantia?`${garantiaTexto?`<div class="os-garantia">${garantiaTexto}</div>`:''}<div class="assinatura"></div>`:''}`+
       `${opts.valor&&campos.valor?`<div><strong>Valor a Pagar:</strong> ${formatCurrency(campos.valor)}</div>`:''}`+
       `${campos.observacao?`<div><strong>Observação:</strong> ${campos.observacao}</div>`:''}`+
       `${opts.notaOficina&&campos.notaOficina?`<div><strong>Nota para Oficina:</strong> ${campos.notaOficina}</div>`:''}`+

@@ -29,9 +29,8 @@ export const viaLoja = {
 };
 
 export const garantia = {
-  visivelEm: ['cliente', 'loja'],
-  texto: '' // texto definido pelo administrador
-};
+  visivelEm: ['cliente', 'loja']
+}; // texto definido pelo administrador
 
 export default {
   makeCodigo,
