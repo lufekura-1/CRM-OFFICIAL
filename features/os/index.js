@@ -1,2 +1,4 @@
-// placeholder for ordem de servico feature
-export default {};
+import optica from './optica.js';
+
+export { optica };
+export default { optica };
