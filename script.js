@@ -2936,6 +2936,7 @@ function printOS(os){
   const tipo=os.tipo||'reloj';
   const tipoLabel=OS_TIPO_LABELS[tipo]||'';
   const perfilInfo=getProfileInfo();
+  const garantiaTexto=getGarantiaTexto(tipo);
   function via(titulo,opts){
     const showContacts = opts.showContacts!==false;
     const logo = perfilInfo.logo ?
@@ -2963,14 +2964,13 @@ function printOS(os){
       `${campos.pulseira?`<div><strong>Pulseira:</strong> ${campos.pulseira}</div>`:''}`+
       `${campos.mostrador?`<div><strong>Mostrador:</strong> ${campos.mostrador}</div>`:''}`+
       `<div><strong>Serviço:</strong> ${campos.servico}</div>`+
-      `${opts.garantia&&campos.garantia?`<div><strong>Garantia:</strong> ${campos.garantia}</div>`:''}`+
+      `${opts.garantia&&garantiaTexto?`<div class="os-garantia">${garantiaTexto}</div><div class="assinatura"></div>`:''}`+
       `${opts.valor&&campos.valor?`<div><strong>Valor a Pagar:</strong> ${formatCurrency(campos.valor)}</div>`:''}`+
       `${campos.observacao?`<div><strong>Observação:</strong> ${campos.observacao}</div>`:''}`+
       `${opts.notaOficina&&campos.notaOficina?`<div><strong>Nota para Oficina:</strong> ${campos.notaOficina}</div>`:''}`+
       `${opts.notaLoja&&campos.notaLoja?`<div><strong>Nota para Loja:</strong> ${campos.notaLoja}</div>`:''}`+
       `</div>`+
       `${dates.length?`<div class="os-print-dates">${dates.join('')}</div>`:''}`+
-      `<footer class="os-print-footer"><div class="assinatura"></div><div class="assinatura"></div></footer>`+
       `</section>`;
     return html;
   }
@@ -2995,9 +2995,8 @@ function printOS(os){
   .os-print-head.optica{background:#8B1E1E;}
   .os-print-dates{margin-top:8px;}
   .os-print-dates .previsao{margin-top:4px;font-weight:bold;}
-  .os-print-footer{margin-top:8mm;display:flex;gap:8mm;justify-content:flex-end;}
-  .os-print-footer .assinatura{border-top:1px solid #000;height:40px;width:60mm;text-align:center;}
-  .os-print-footer .assinatura:after{content:"Assinatura";position:relative;top:8px;display:block;font-size:10pt;}
+  .assinatura{border-top:1px solid #000;height:40px;width:60mm;text-align:center;margin-top:8mm;}
+  .assinatura:after{content:"Assinatura";position:relative;top:8px;display:block;font-size:10pt;}
   h2{margin:4px 0 8px;font-size:1rem;}
   </style></head><body>${content}</body></html>`);
   w.document.close();
@@ -3082,14 +3081,13 @@ function openOSForm(tipo, os){
   const body=modal.querySelector('.modal-body');
   const saveBtn=modal.querySelector('#modal-save');
   const campos=os?.campos||{};
-  const garantiaTexto=campos.garantia||getGarantiaTexto(tipo);
   const hoje=campos.dataHoje||formatDateDDMMYYYY(new Date());
   let reserved=null; let saved=false; let codigo=os?.codigo;
   if(!os){ reserved=reserveOSCode(); codigo=reserved.code; }
   const tipoLabel=OS_TIPO_LABELS[tipo]||'';
   title.textContent=os?`Editar OS ${codigo}`:`Nova OS ${tipoLabel}`;
   saveBtn.hidden=false;
-  body.innerHTML=`<form id="osForm"><div class="form-grid"><div class="os-code col-span-12">${codigo}</div><label class="col-span-6">Cliente*<input class="text-input" name="cliente" value="${campos.cliente||''}" required></label><label class="col-span-6">Telefone*<input class="text-input" name="telefone" value="${campos.telefone||''}" required></label><label class="col-span-6">Data de Hoje<input class="text-input" name="dataHoje" value="${hoje}" readonly></label><label class="col-span-6">Marca<input class="text-input" name="marca" value="${campos.marca||''}"></label><label class="col-span-6">Pulseira<input class="text-input" name="pulseira" value="${campos.pulseira||''}"></label><label class="col-span-6">Mostrador<input class="text-input" name="mostrador" value="${campos.mostrador||''}"></label><label class="col-span-6">Marcas de uso<input type="checkbox" class="switch" name="marcasUso" ${campos.marcasUso?'checked':''}></label><label class="col-span-12">Serviço*<textarea class="textarea" name="servico" rows="2" required>${campos.servico||''}</textarea></label><label class="col-span-12">Observação<textarea class="textarea" name="observacao" rows="3">${campos.observacao||''}</textarea></label><label class="col-span-12">Garantia<textarea class="textarea" name="garantia" rows="2" readonly>${garantiaTexto}</textarea></label><label class="col-span-12">Valor a Pagar (R$)<input class="text-input" name="valor" value="${campos.valor?formatCurrency(campos.valor):''}" placeholder="0,00" inputmode="decimal"></label><label class="col-span-6">Data de Oficina<input type="date" class="date-input" name="dataOficina" value="${campos.dataOficina?formatDateYYYYMMDD(campos.dataOficina):''}"></label><label class="col-span-6">Previsão de entrega<input type="date" class="date-input" name="dataEntrega" value="${campos.dataEntrega?formatDateYYYYMMDD(campos.dataEntrega):''}"></label><label class="col-span-12">Nota para Oficina<textarea class="textarea" name="notaOficina" rows="2">${campos.notaOficina||''}</textarea></label><label class="col-span-12">Nota para Loja<textarea class="textarea" name="notaLoja" rows="2">${campos.notaLoja||''}</textarea></label><div class="os-error col-span-12" style="color:var(--red-600);"></div></div></form>`;
+  body.innerHTML=`<form id="osForm"><div class="form-grid"><div class="os-code col-span-12">${codigo}</div><label class="col-span-6">Cliente*<input class="text-input" name="cliente" value="${campos.cliente||''}" required></label><label class="col-span-6">Telefone*<input class="text-input" name="telefone" value="${campos.telefone||''}" required></label><label class="col-span-6">Data de Hoje<input class="text-input" name="dataHoje" value="${hoje}" readonly></label><label class="col-span-6">Marca<input class="text-input" name="marca" value="${campos.marca||''}"></label><label class="col-span-6">Pulseira<input class="text-input" name="pulseira" value="${campos.pulseira||''}"></label><label class="col-span-6">Mostrador<input class="text-input" name="mostrador" value="${campos.mostrador||''}"></label><label class="col-span-6">Marcas de uso<input type="checkbox" class="switch" name="marcasUso" ${campos.marcasUso?'checked':''}></label><label class="col-span-12">Serviço*<textarea class="textarea" name="servico" rows="2" required>${campos.servico||''}</textarea></label><label class="col-span-12">Observação<textarea class="textarea" name="observacao" rows="3">${campos.observacao||''}</textarea></label><label class="col-span-12">Valor a Pagar (R$)<input class="text-input" name="valor" value="${campos.valor?formatCurrency(campos.valor):''}" placeholder="0,00" inputmode="decimal"></label><label class="col-span-6">Data de Oficina<input type="date" class="date-input" name="dataOficina" value="${campos.dataOficina?formatDateYYYYMMDD(campos.dataOficina):''}"></label><label class="col-span-6">Previsão de entrega<input type="date" class="date-input" name="dataEntrega" value="${campos.dataEntrega?formatDateYYYYMMDD(campos.dataEntrega):''}"></label><label class="col-span-12">Nota para Oficina<textarea class="textarea" name="notaOficina" rows="2">${campos.notaOficina||''}</textarea></label><label class="col-span-12">Nota para Loja<textarea class="textarea" name="notaLoja" rows="2">${campos.notaLoja||''}</textarea></label><div class="os-error col-span-12" style="color:var(--red-600);"></div></div></form>`;
   const form=body.querySelector('#osForm');
   if(form.valor){
     form.valor.addEventListener('input',()=>{
@@ -3104,6 +3102,7 @@ function openOSForm(tipo, os){
     const data=Object.fromEntries(fd.entries());
     data.marcasUso=fd.get('marcasUso')==='on';
     data.valor=parseCurrency(data.valor);
+    delete data.garantia;
     const err=form.querySelector('.os-error');
     err.textContent='';
     ['dataHoje','dataOficina','dataEntrega'].forEach(k=>{ data[k]=formatDateDDMMYYYY(data[k]); });
