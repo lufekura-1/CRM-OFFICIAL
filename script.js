@@ -922,7 +922,34 @@ function renderClientes() {
     </div>
   </div>`;
 }
+
+const GARANTIA_KEY = 'osGarantias';
+function loadGarantias(){
+  return getJSONForPerfil('Administrador', GARANTIA_KEY, { optica:'', joia:'', reloj:'' });
+}
+function saveGarantias(data){
+  setJSONForPerfil('Administrador', GARANTIA_KEY, data);
+}
+function getGarantiaTexto(tipo){
+  const notas = loadGarantias();
+  return notas[tipo] || '';
+}
 function renderOS() {
+  if(currentProfile()==='Administrador'){
+    const notas = loadGarantias();
+    const block = (label,key)=>`
+      <div class="garantia-block">
+        <h3>Nota de Garantia (${label})</h3>
+        <textarea id="garantia-${key}" rows="4">${notas[key]||''}</textarea>
+        <button class="btn btn-primary" data-save="${key}">Salvar</button>
+      </div>`;
+    return `
+    <section id="osAdminNotes" class="garantia-page">
+      ${block('Óptica','optica')}
+      ${block('Joalheria','joia')}
+      ${block('Relojoaria','reloj')}
+    </section>`;
+  }
   const cols = [
     ['loja','Em loja'],
     ['oficina','Oficina/Laboratório'],
@@ -2972,12 +2999,13 @@ function openRelojForm(os){
   const body=modal.querySelector('.modal-body');
   const saveBtn=modal.querySelector('#modal-save');
   const campos=os?.campos||{};
+  const garantiaTexto=campos.garantia||getGarantiaTexto('reloj');
   const hoje=campos.dataHoje||formatDateDDMMYYYY(new Date());
   let reserved=null; let saved=false; let codigo=os?.codigo;
   if(!os){ reserved=reserveOSCode(); codigo=reserved.code; }
   title.textContent=os?`Editar OS ${codigo}`:'Nova OS Relojoaria';
   saveBtn.hidden=false;
-  body.innerHTML=`<form id="osRelojForm"><div class="form-grid"><div class="os-code col-span-12">${codigo}</div><label class="col-span-6">Cliente*<input name="cliente" value="${campos.cliente||''}" required></label><label class="col-span-6">Telefone*<input name="telefone" value="${campos.telefone||''}" required></label><label class="col-span-6">Data de Hoje<input name="dataHoje" value="${hoje}" readonly></label><label class="col-span-6">Marca do relógio<input name="marca" value="${campos.marca||''}"></label><label class="col-span-6">Pulseira<input name="pulseira" value="${campos.pulseira||''}"></label><label class="col-span-6">Marcas de uso<input type="checkbox" class="switch" name="marcasUso" ${campos.marcasUso?'checked':''}></label><label class="col-span-12">Serviço*<textarea name="servico" rows="2" required>${campos.servico||''}</textarea></label><label class="col-span-12">Observação<textarea name="observacao" rows="3">${campos.observacao||''}</textarea></label><label class="col-span-12">Garantia<textarea name="garantia" rows="2">${campos.garantia||''}</textarea></label><label class="col-span-6">Data de Oficina<input name="dataOficina" value="${campos.dataOficina?formatDateDDMMYYYY(campos.dataOficina):''}" placeholder="dd/mm/aaaa" pattern="\d{2}/\d{2}/\d{4}"></label><label class="col-span-6">Data de Entrega<input name="dataEntrega" value="${campos.dataEntrega?formatDateDDMMYYYY(campos.dataEntrega):''}" placeholder="dd/mm/aaaa" pattern="\d{2}/\d{2}/\d{4}"></label><label class="col-span-12">Nota para Oficina<textarea name="notaOficina" rows="2">${campos.notaOficina||''}</textarea></label><label class="col-span-12">Nota para Loja<textarea name="notaLoja" rows="2">${campos.notaLoja||''}</textarea></label><div class="os-error col-span-12" style="color:var(--red-600);"></div></div></form>`;
+  body.innerHTML=`<form id="osRelojForm"><div class="form-grid"><div class="os-code col-span-12">${codigo}</div><label class="col-span-6">Cliente*<input name="cliente" value="${campos.cliente||''}" required></label><label class="col-span-6">Telefone*<input name="telefone" value="${campos.telefone||''}" required></label><label class="col-span-6">Data de Hoje<input name="dataHoje" value="${hoje}" readonly></label><label class="col-span-6">Marca do relógio<input name="marca" value="${campos.marca||''}"></label><label class="col-span-6">Pulseira<input name="pulseira" value="${campos.pulseira||''}"></label><label class="col-span-6">Marcas de uso<input type="checkbox" class="switch" name="marcasUso" ${campos.marcasUso?'checked':''}></label><label class="col-span-12">Serviço*<textarea name="servico" rows="2" required>${campos.servico||''}</textarea></label><label class="col-span-12">Observação<textarea name="observacao" rows="3">${campos.observacao||''}</textarea></label><label class="col-span-12">Garantia<textarea name="garantia" rows="2" readonly>${garantiaTexto}</textarea></label><label class="col-span-6">Data de Oficina<input name="dataOficina" value="${campos.dataOficina?formatDateDDMMYYYY(campos.dataOficina):''}" placeholder="dd/mm/aaaa" pattern="\d{2}/\d{2}/\d{4}"></label><label class="col-span-6">Data de Entrega<input name="dataEntrega" value="${campos.dataEntrega?formatDateDDMMYYYY(campos.dataEntrega):''}" placeholder="dd/mm/aaaa" pattern="\d{2}/\d{2}/\d{4}"></label><label class="col-span-12">Nota para Oficina<textarea name="notaOficina" rows="2">${campos.notaOficina||''}</textarea></label><label class="col-span-12">Nota para Loja<textarea name="notaLoja" rows="2">${campos.notaLoja||''}</textarea></label><div class="os-error col-span-12" style="color:var(--red-600);"></div></div></form>`;
   const form=body.querySelector('#osRelojForm');
   form.addEventListener('keydown',e=>{ if(e.key==='Enter' && e.target.tagName!=='TEXTAREA'){ e.preventDefault(); saveBtn.click(); }});
   saveBtn.onclick=e=>{
@@ -3012,6 +3040,19 @@ function openRelojForm(os){
   modal.open();
 }
 function initOSPage(){
+  if(currentProfile()==='Administrador'){
+    document.querySelectorAll('.garantia-block button').forEach(btn=>{
+      btn.addEventListener('click',()=>{
+        const type=btn.dataset.save;
+        const ta=document.getElementById(`garantia-${type}`);
+        const notas=loadGarantias();
+        notas[type]=ta.value;
+        saveGarantias(notas);
+        toast('Salvo');
+      });
+    });
+    return;
+  }
   const btn=document.getElementById('btnNovaOS');
   const btnEmpty=document.getElementById('btnNovaOSEmpty');
   if(btn) btn.addEventListener('click',openOSTypeModal);
