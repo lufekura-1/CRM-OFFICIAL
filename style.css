@@ -335,6 +335,7 @@ input[name="telefone"] { width:18ch; }
 .os-card.joia .os-card-head{ background: var(--os-joia-color); }
 .os-card.optica .os-card-head{ background: var(--os-optica-color); }
 .os-card-body { padding: 4px 8px; font-size: 0.875rem; }
+.os-card-dates{margin-top:8px;font-weight:bold;}
 .badge{display:inline-block;padding:2px 4px;border-radius:var(--radius-sm);font-size:0.75rem;}
 .os-card .badge{color:#fff;}
 .os-card.reloj .badge{background: var(--os-reloj-color);}
