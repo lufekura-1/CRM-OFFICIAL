@@ -2589,9 +2589,11 @@ function readClientForm(){
     dataNascimento: document.getElementById('cliente-dataNascimento').value.trim(),
     cpf: document.getElementById('cliente-cpf').value.trim(),
     genero: document.querySelector('#cliente-genero .seg-btn[aria-pressed="true"]')?.dataset.value || '',
-    interesses: getSelectedInteressesFromForm(),
-    compras: []
+    interesses: getSelectedInteressesFromForm()
   };
+
+  const obsEl = document.getElementById('cliente-observacoes');
+  if(obsEl) formData.observacoes = obsEl.value.trim();
 
   const dataCompraEl = document.getElementById('compra-data');
   if(dataCompraEl){
@@ -2622,7 +2624,10 @@ function readClientForm(){
         }
       }
     };
-    formData.compras.push(compra);
+    const hasCompraData = compra.dataCompra || compra.valorLente || compra.nfe || compra.armacao ||
+      compra.armacaoMaterial || compra.lente || compra.tiposCompra.length || compra.observacoes ||
+      Object.values(compra.receituario.oe).some(v=>v) || Object.values(compra.receituario.od).some(v=>v);
+    if(hasCompraData) formData.compras = [compra];
   }
 
   return formData;
@@ -2734,17 +2739,25 @@ function handleClientSave(){
   const f = readClientForm();
   if(!f.nome?.trim()) return toast('Informe o Nome');
   let list = getClients();
+  const newPurchases = f.compras;
   if(f.id){
+    const clienteExistente = list.find(c=>c.id===f.id);
+    if(newPurchases){
+      f.compras = (clienteExistente?.compras||[]).concat(newPurchases);
+    }else{
+      f.compras = clienteExistente?.compras;
+    }
     list = list.map(c=>c.id===f.id ? {...c, ...f} : c);
   }else{
     f.id = `cli_${Date.now()}_${Math.random().toString(36).slice(2,7)}`;
+    if(!f.compras) f.compras = [];
     list.push(f);
   }
-    setClients(list);
-    (f.compras||[]).forEach(c=>scheduleFollowUpsForPurchase(f,c));
-    if(typeof clientModalOnSave === 'function') clientModalOnSave(f.id);
-    closeClientModal();
-  }
+  setClients(list);
+  (newPurchases||[]).forEach(c=>scheduleFollowUpsForPurchase(f,c));
+  if(typeof clientModalOnSave === 'function') clientModalOnSave(f.id);
+  closeClientModal();
+}
 
 function handlePurchaseSave(){
   const {clienteId, compra} = readPurchaseForm();
