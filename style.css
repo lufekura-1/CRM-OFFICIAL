@@ -892,6 +892,26 @@ input[name="telefone"] { width:18ch; }
 }
 .cli-phone{font-weight:800}
 
+/* Prescrição de grau compacta para Óptica */
+.grau-table{
+  width:100%;
+  border-collapse:collapse;
+  font-size:0.8rem;
+}
+.grau-table th,
+.grau-table td{
+  border:1px solid #ccc;
+  padding:2px;
+  text-align:center;
+}
+.grau-table th:first-child{
+  text-align:left;
+}
+.grau-table input{
+  width:55px;
+  padding:2px;
+}
+
 @media (max-width:600px){
   .os-kanban{flex-wrap:nowrap;overflow-x:auto;scroll-snap-type:x mandatory;}
   .os-kanban .kanban-col{flex:0 0 80%;scroll-snap-align:start;}
