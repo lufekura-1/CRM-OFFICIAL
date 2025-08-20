@@ -2589,9 +2589,11 @@ function readClientForm(){
     dataNascimento: document.getElementById('cliente-dataNascimento').value.trim(),
     cpf: document.getElementById('cliente-cpf').value.trim(),
     genero: document.querySelector('#cliente-genero .seg-btn[aria-pressed="true"]')?.dataset.value || '',
-    interesses: getSelectedInteressesFromForm(),
-    compras: []
+    interesses: getSelectedInteressesFromForm()
   };
+
+  const obsEl = document.getElementById('cliente-observacoes');
+  if(obsEl) formData.observacoes = obsEl.value.trim();
 
   const dataCompraEl = document.getElementById('compra-data');
   if(dataCompraEl){
@@ -2622,7 +2624,10 @@ function readClientForm(){
         }
       }
     };
-    formData.compras.push(compra);
+    const hasCompraData = compra.dataCompra || compra.valorLente || compra.nfe || compra.armacao ||
+      compra.armacaoMaterial || compra.lente || compra.tiposCompra.length || compra.observacoes ||
+      Object.values(compra.receituario.oe).some(v=>v) || Object.values(compra.receituario.od).some(v=>v);
+    if(hasCompraData) formData.compras = [compra];
   }
 
   return formData;
@@ -2697,6 +2702,7 @@ function closePurchaseModal(){
 
 function refreshUI(){
   window.renderClientsTable?.();
+  window.renderClientDetail?.();
   renderSelectedPurchaseDetails?.();
   renderCalendarMonth?.();
   renderDashboard?.();
@@ -2733,14 +2739,48 @@ function bindUI(){
 function handleClientSave(){
   const f = readClientForm();
   if(!f.nome?.trim()) return toast('Informe o Nome');
-  let id;
-  if(f.id){
-    db.atualizarCliente(f.id, f);
-    id = f.id;
-  }else{
-    id = db.criarCliente(f);
+// Salva cliente (cria ou atualiza) preservando compras antigas e agendando follow-ups para novas
+function handleClientSave(f) {
+  // Garanta que novas compras venham como array (ou vazio)
+  const incoming = Array.isArray(f.compras)
+    ? f.compras
+    : (f.compras ? [f.compras] : []);
+
+  let list = getClients(); // persiste via localStorage (ajuste se usar outro backend)
+  let finalId = f.id;
+
+  if (f.id) {
+    // UPDATE: mescla com o cliente existente
+    const existing = list.find(c => c.id === f.id) || {};
+    const mergedPurchases = [...(existing.compras || [])];
+
+    // Anexa somente as compras novas (por id, se houver)
+    incoming.forEach(p => {
+      if (!p) return;
+      const pid = p.id || null;
+      const already = pid
+        ? mergedPurchases.some(x => x && x.id === pid)
+        : false;
+      if (!already) mergedPurchases.push(p);
+    });
+
+    const updated = { ...existing, ...f, compras: mergedPurchases };
+    const idx = list.findIndex(c => c.id === f.id);
+    if (idx > -1) list[idx] = updated; else list.push(updated);
+  } else {
+    // CREATE: gera id e guarda as compras que vieram
+    finalId = `cli_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+    list.push({ ...f, id: finalId, compras: incoming });
   }
-  if(typeof clientModalOnSave === 'function') clientModalOnSave(id);
+
+  setClients(list);
+
+  // Agenda follow-ups somente para as compras recém-adicionadas
+  incoming.forEach(p => scheduleFollowUpsForPurchase({ ...f, id: finalId }, p));
+
+  if (typeof clientModalOnSave === 'function') clientModalOnSave(finalId);
+}
+
   closeClientModal();
 }
 
