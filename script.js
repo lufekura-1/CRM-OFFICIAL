@@ -2737,11 +2737,11 @@ function bindUI(){
 }
 
 function handleClientSave(){
+  // Lê os dados do formulário
   const f = readClientForm();
   if(!f.nome?.trim()) return toast('Informe o Nome');
-// Salva cliente (cria ou atualiza) preservando compras antigas e agendando follow-ups para novas
-function handleClientSave(f) {
-  // Garanta que novas compras venham como array (ou vazio)
+
+  // Garante que novas compras venham como array (ou vazio)
   const incoming = Array.isArray(f.compras)
     ? f.compras
     : (f.compras ? [f.compras] : []);
@@ -2779,7 +2779,6 @@ function handleClientSave(f) {
   incoming.forEach(p => scheduleFollowUpsForPurchase({ ...f, id: finalId }, p));
 
   if (typeof clientModalOnSave === 'function') clientModalOnSave(finalId);
-}
 
   closeClientModal();
 }
