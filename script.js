@@ -1181,7 +1181,7 @@ function initCalendarioPage() {
   const weekdaysEl = wrapper.querySelector('.cal-weekdays');
   const dias = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
   dias.forEach(d => { const div = document.createElement('div'); div.textContent = d; weekdaysEl.appendChild(div); });
-  let currentDate = window.currentDate || new Date();
+  let currentDate = new Date();
   window.currentDate = currentDate;
   let modo = 'mes';
   const eventosKey = calKey();
@@ -2273,9 +2273,10 @@ async function limparCachesJoaoClaro(){
 
 function reloadCalendario(currentDate){
   purgeOrphanEvents();
+  const date = currentDate ?? window.currentDate ?? new Date();
   if(currentRoute==='calendario'){
     if(typeof renderCalendarMonth === 'function'){
-      renderCalendarMonth(currentDate ?? window.currentDate);
+      renderCalendarMonth(date);
     }else{
       renderRoute('calendario');
     }
