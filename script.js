@@ -710,7 +710,7 @@ const routes = {
   dashboard: dashboardPage,
   calendario: renderCalendario,
   clientes: renderClientes,
-  lembretes: renderLembretes,
+  os: renderOS,
   contato: renderContato,
   gerencia: renderGerencia,
   configuracoes: renderConfig
@@ -727,7 +727,7 @@ function renderRoute(name){
     dashboard: 'Dashboard',
     calendario: 'Calendario',
     clientes: 'Clientes',
-    lembretes: 'Lembretes',
+    os: 'Ordem de Serviço',
     contato: 'Contato a ser executado',
     gerencia: 'Gerencia',
     configuracoes: 'Configurações'
@@ -737,6 +737,7 @@ function renderRoute(name){
   if(currentRoute === 'dashboard') initDashboardPage();
   if(currentRoute === 'clientes') initClientesPage();
   if(currentRoute === 'calendario') initCalendarioPage();
+  if(currentRoute === 'os') initOSPage();
   if(currentRoute === 'gerencia') initGerenciaPage();
   if(currentRoute === 'configuracoes') initConfiguracoesPage();
 }
@@ -839,8 +840,20 @@ function renderClientes() {
     </div>
   </div>`;
 }
-function renderLembretes() {
-  return renderCardGrid('Lembretes') + '<div class="kanban-area empty-state">Quadro de Kanban</div>';
+function renderOS() {
+  const cols = [
+    ['loja','Em loja'],
+    ['oficina','Oficina/Laboratório'],
+    ['aguardando','Aguardando Retirada'],
+    ['completo','Completo']
+  ];
+  return `
+  <section id="osPage">
+    <div class="os-toolbar"><button id="btnNovaOS" class="btn btn-primary">Nova OS</button></div>
+    <div class="os-kanban" id="osKanban">
+      ${cols.map(c=>`<div class="kanban-col" data-status="${c[0]}"><h3>${c[1]} (<span class="count">0</span>)</h3><div class="cards"></div></div>`).join('')}
+    </div>
+  </section>`;
 }
 
 function dashboardPage() {
@@ -2488,6 +2501,151 @@ function handlePurchaseSave(){
     if(typeof purchaseModalOnSave === 'function') purchaseModalOnSave();
     closePurchaseModal();
   }
+
+// ===== Ordem de Serviço =====
+const OS_SIGLAS = { 'Jorel Chicuta':'JC', 'Jorel Avenida':'AV', 'Exótica':'EX', 'Usuario Teste':'UT', 'Administrador':'AD' };
+const OS_STATUS_LABELS = { loja:'Em loja', oficina:'Oficina/Laboratório', aguardando:'Aguardando Retirada', completo:'Completo' };
+function osListKey(profile=currentProfile()){ return `os:${profile}:reloj`; }
+function osSeqKey(profile=currentProfile()){ return `os:${profile}:seq:reloj`; }
+function loadOSList(profile=currentProfile()){ return getJSON(osListKey(profile), []); }
+function saveOSList(list, profile=currentProfile()){ setJSON(osListKey(profile), list); }
+function nextOSCode(profile=currentProfile()){
+  const k=osSeqKey(profile);
+  let seq=parseInt(localStorage.getItem(k)||'0',10)+1;
+  localStorage.setItem(k, seq);
+  const sig=OS_SIGLAS[profile]||'UT';
+  return `RE${String(seq).padStart(4,'0')}${sig}`;
+}
+function upsertOS(os, profile=currentProfile()){
+  const list=loadOSList(profile);
+  const idx=list.findIndex(o=>o.id===os.id);
+  if(idx>=0) list[idx]=os; else list.push(os);
+  saveOSList(list, profile);
+}
+function deleteOS(id, profile=currentProfile()){
+  const list=loadOSList(profile).filter(o=>o.id!==id);
+  saveOSList(list, profile);
+}
+function renderOSKanban(){
+  const board=document.getElementById('osKanban');
+  if(!board) return;
+  const cols={};
+  Object.keys(OS_STATUS_LABELS).forEach(k=>{
+    cols[k]=board.querySelector(`[data-status="${k}"] .cards`);
+    if(cols[k]) cols[k].innerHTML='';
+  });
+  const counts={loja:0,oficina:0,aguardando:0,completo:0};
+  const list=loadOSList();
+  list.forEach(os=>{
+    const col=cols[os.status||'loja'];
+    if(!col) return;
+    const card=document.createElement('div');
+    card.className='os-card reloj';
+    card.innerHTML=`<div class="os-card-head">${os.codigo}</div>`+
+      `<div class="os-card-body">`+
+      `<div><strong>${os.campos.cliente}</strong> - ${os.campos.telefone}</div>`+
+      `<div>Marca: ${os.campos.marca}</div>`+
+      `<div>Serviço: ${os.campos.servico}</div>`+
+      `<div class="os-card-dates">${os.campos.dataHoje||''}${os.campos.dataOficina?` | ${os.campos.dataOficina}`:''}${os.campos.dataEntrega?` | ${os.campos.dataEntrega}`:''}</div>`+
+      `${os.campos.marcasUso?'<div class="badge">Marcas de uso</div>':''}`+
+      `</div>`+
+      `<div class="os-card-actions">`+
+      `<button class="btn-os-imprimir" data-id="${os.id}">Imprimir</button>`+
+      `<button class="btn-os-mover" data-id="${os.id}">Mover</button>`+
+      `<select class="os-move-select" data-id="${os.id}" hidden>`+
+      `<option value="">Mover para...</option>`+
+      `${Object.entries(OS_STATUS_LABELS).map(([k,v])=>`<option value="${k}">${v}</option>`).join('')}`+
+      `</select>`+
+      `<button class="btn-os-editar" data-id="${os.id}">Editar</button>`+
+      `<button class="btn-os-excluir" data-id="${os.id}">Excluir</button>`+
+      `</div>`;
+    col.appendChild(card);
+    counts[os.status||'loja']++;
+  });
+  Object.keys(OS_STATUS_LABELS).forEach(k=>{
+    const cnt=board.querySelector(`[data-status="${k}"] .count`);
+    if(cnt) cnt.textContent=counts[k]||0;
+  });
+}
+function openOSTypeModal(){
+  const modal=document.getElementById('app-modal');
+  const title=document.getElementById('modal-title');
+  const body=modal.querySelector('.modal-body');
+  const saveBtn=modal.querySelector('#modal-save');
+  title.textContent='Nova OS';
+  saveBtn.hidden=true;
+  body.innerHTML=`<div class="os-type-choices"><button class="os-type" data-type="reloj">Relojoaria</button><button class="os-type" disabled>Joalheria<br><small>em breve</small></button><button class="os-type" disabled>Óptica<br><small>em breve</small></button></div>`;
+  body.querySelector('[data-type="reloj"]').addEventListener('click',()=>{ modal.close(); openRelojForm(); });
+  modal.open();
+}
+function openRelojForm(os){
+  const modal=document.getElementById('app-modal');
+  const title=document.getElementById('modal-title');
+  const body=modal.querySelector('.modal-body');
+  const saveBtn=modal.querySelector('#modal-save');
+  const campos=os?.campos||{};
+  const hoje=campos.dataHoje||new Date().toLocaleDateString('pt-BR');
+  title.textContent=os?`Editar OS ${os.codigo}`:'Nova OS Relojoaria';
+  saveBtn.hidden=false;
+  body.innerHTML=`<form id="osRelojForm" class="form-os"><div class="modal-section"><label>Cliente*<input name="cliente" value="${campos.cliente||''}" required></label><label>Telefone*<input name="telefone" value="${campos.telefone||''}" required></label><label>Data de Hoje<input name="dataHoje" value="${hoje}"></label><label>Marca do relógio*<input name="marca" value="${campos.marca||''}" required></label><label><input type="checkbox" name="marcasUso" ${campos.marcasUso?'checked':''}> Marcas de uso</label><label>Pulseira<input name="pulseira" value="${campos.pulseira||''}"></label><label>Data oficina<input type="date" name="dataOficina" value="${campos.dataOficina||''}"></label><label>Data de entrega<input type="date" name="dataEntrega" value="${campos.dataEntrega||''}"></label><label>Observações de Garantia<textarea name="garantia">${campos.garantia||''}</textarea></label><label>Serviço*<textarea name="servico" required>${campos.servico||''}</textarea></label><label>Observação<textarea name="observacao">${campos.observacao||''}</textarea></label><label>Nota para Oficina<textarea name="notaOficina">${campos.notaOficina||''}</textarea></label><label>Nota para Loja<textarea name="notaLoja">${campos.notaLoja||''}</textarea></label></div><div class="os-error" style="color:var(--red-600);"></div></form>`;
+  saveBtn.onclick=e=>{
+    e.preventDefault();
+    const form=body.querySelector('#osRelojForm');
+    const fd=new FormData(form);
+    const data=Object.fromEntries(fd.entries());
+    data.marcasUso=fd.get('marcasUso')==='on';
+    const err=form.querySelector('.os-error');
+    err.textContent='';
+    if(!data.cliente.trim()||!data.telefone.trim()||!data.marca.trim()||!data.servico.trim()){
+      err.textContent='Preencha os campos obrigatórios.';
+      return;
+    }
+    const now=new Date().toISOString();
+    if(os){
+      os.campos=data;
+      os.updatedAt=now;
+      upsertOS(os);
+    } else {
+      const codigo=nextOSCode();
+      const novo={id:Date.now(),codigo,tipo:'reloj',perfil:currentProfile(),status:'loja',campos:data,createdAt:now,updatedAt:now};
+      const list=loadOSList();
+      list.push(novo);
+      saveOSList(list);
+    }
+    modal.close();
+    renderOSKanban();
+  };
+  modal.open();
+}
+function initOSPage(){
+  const btn=document.getElementById('btnNovaOS');
+  if(btn) btn.addEventListener('click',openOSTypeModal);
+  const board=document.getElementById('osKanban');
+  if(board){
+    board.addEventListener('click',e=>{
+      const id=e.target.dataset.id;
+      if(e.target.classList.contains('btn-os-imprimir')) toast('Em breve');
+      if(e.target.classList.contains('btn-os-editar')){ const os=loadOSList().find(o=>o.id==id); if(os) openRelojForm(os); }
+      if(e.target.classList.contains('btn-os-excluir')){ if(confirm('Excluir OS?')){ deleteOS(Number(id)); renderOSKanban(); } }
+      if(e.target.classList.contains('btn-os-mover')){ const sel=e.target.nextElementSibling; if(sel) sel.hidden=!sel.hidden; }
+    });
+    board.addEventListener('change',e=>{
+      if(e.target.classList.contains('os-move-select')){
+        const id=Number(e.target.dataset.id);
+        const status=e.target.value;
+        const list=loadOSList();
+        const os=list.find(o=>o.id===id);
+        if(os&&status){
+          os.status=status;
+          os.updatedAt=new Date().toISOString();
+          saveOSList(list);
+          renderOSKanban();
+        }
+      }
+    });
+  }
+  renderOSKanban();
+}
 
 // ===== Theme =====
 function toggleTheme() {
