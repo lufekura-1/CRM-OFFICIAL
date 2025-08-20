@@ -29,7 +29,7 @@ export const viaLoja = {
 };
 
 export const garantia = {
-  visivelEm: ['cliente', 'loja']
+  visivelEm: ['cliente']
 }; // texto definido pelo administrador
 
 export default {

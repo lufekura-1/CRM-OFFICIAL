@@ -2952,80 +2952,65 @@ function printOSOptica(os){
   const campos=os.campos;
   const dataAtual=campos.dataAtual||campos.dataHoje||formatDateDDMMYYYY(new Date());
   const tipo='optica';
-  const tipoLabel=OS_TIPO_LABELS[tipo];
   const perfilInfo=getProfileInfo();
   const garantiaTexto=getGarantiaTexto(tipo);
   function via(titulo,opts){
-    const showContacts = opts.showContacts!==false;
-    const logo = perfilInfo.logo ?
-      `<img src="${perfilInfo.logo}" alt="Logo" class="logo-img">` :
+    const showContacts=opts.showContacts!==false;
+    const logo=perfilInfo.logo?
+      `<img src="${perfilInfo.logo}" alt="Logo" class="logo-img">`:
       `<div class="logo-placeholder">Logo</div>`;
-    const contato = showContacts ?
-      `<div class="os-print-contact">${perfilInfo.telefone?`<div>${perfilInfo.telefone}</div>`:''}${perfilInfo.endereco?`<div>${perfilInfo.endereco}</div>`:''}${perfilInfo.instagram?`<div><a href="https://instagram.com/${perfilInfo.instagram.replace(/^@/,'')}" target="_blank">${perfilInfo.instagram}</a></div>`:''}</div>` : '';
-    const dates=[];
-    const prevDate=campos.previsaoEntrega;
-    if(opts.previsaoEntrega && prevDate) {
-      dates.push(`<div class="previsao">Previsão de Entrega: ${formatDateDDMMYYYY(prevDate)}</div>`);
+    const contato=showContacts?
+      `<div class="os-print-contact">${perfilInfo.telefone?`<div>${perfilInfo.telefone}</div>`:''}${perfilInfo.endereco?`<div>${perfilInfo.endereco}</div>`:''}${perfilInfo.instagram?`<div><a href="https://instagram.com/${perfilInfo.instagram.replace(/^@/,'')}" target="_blank">${perfilInfo.instagram}</a></div>`:''}</div>`:'';
+    const g=campos.grau||{};
+    const cliente=`<div class="os-block cliente"><div><strong>Cliente:</strong> ${campos.nome||''}</div><div><strong>Telefone:</strong> ${campos.telefone||''}</div>${campos.cpf?`<div><strong>CPF:</strong> ${campos.cpf}</div>`:''}</div>`;
+    const opticaBlock=`<div class="os-block optica">${campos.armacao?`<div><strong>Armação:</strong> ${campos.armacao}</div>`:''}${campos.lente?`<div><strong>Lente:</strong> ${campos.lente}</div>`:''}<table class="grau-table"><thead><tr><th></th><th>ESF</th><th>CIL</th><th>EIXO</th><th>DNP</th><th>ADIÇÃO</th></tr></thead><tbody><tr><th>OE</th><td>${g.OE?.esf||''}</td><td>${g.OE?.cil||''}</td><td>${g.OE?.eixo||''}</td><td>${g.OE?.dnp||''}</td><td>${g.OE?.adicao||''}</td></tr><tr><th>OD</th><td>${g.OD?.esf||''}</td><td>${g.OD?.cil||''}</td><td>${g.OD?.eixo||''}</td><td>${g.OD?.dnp||''}</td><td>${g.OD?.adicao||''}</td></tr></tbody></table>${campos.observacao?`<div><strong>Observação:</strong> ${campos.observacao}</div>`:''}</div>`;
+    const dates=[`<div><strong>Data de Hoje:</strong> ${formatDateDDMMYYYY(dataAtual)}</div>`];
+    if(opts.previsaoEntrega && campos.previsaoEntrega){
+      dates.push(`<div><strong>Previsão de Entrega:</strong> ${formatDateDDMMYYYY(campos.previsaoEntrega)}</div>`);
     }
     let valores='';
     if(opts.valor){
       const va=campos.valores?.armacao||0;
       const vl=campos.valores?.lente||0;
       const vt=campos.valores?.total||va+vl;
-      valores=`<div><strong>Valor Armação:</strong> ${formatCurrency(va)}</div>`+
-              `<div><strong>Valor Lente:</strong> ${formatCurrency(vl)}</div>`+
-              `<div><strong>Valor Total:</strong> ${formatCurrency(vt)}</div>`;
+      valores=`<div><strong>Valor Armação:</strong> ${formatCurrency(va)}</div><div><strong>Valor Lente:</strong> ${formatCurrency(vl)}</div><div><strong>Valor Total:</strong> ${formatCurrency(vt)}</div>`;
     }
-    const g=campos.grau||{};
-    let html=`<section class="os-print-via">`+
-      `<div class="os-print-header">${logo}${contato}</div>`+
-      `<div class="os-print-head ${tipo}"><span class="code">${os.codigo}</span> <span class="tipo">${tipoLabel}</span></div>`+
-      `<h2>${titulo}</h2>`+
-      `<div class="os-print-body">`+
-      `<div><strong>Nome:</strong> ${campos.nome||campos.cliente||''}</div>`+
-      `<div><strong>Telefone:</strong> ${campos.telefone||''}</div>`+
-      `${campos.cpf?`<div><strong>CPF:</strong> ${campos.cpf}</div>`:''}`+
-      `<div><strong>Data atual:</strong> ${formatDateDDMMYYYY(dataAtual)}</div>`+
-      `${campos.armacao?`<div><strong>Armação:</strong> ${campos.armacao}</div>`:''}`+
-      `${campos.lente?`<div><strong>Lente:</strong> ${campos.lente}</div>`:''}`+
-      `<table class="grau-table"><thead><tr><th></th><th>ESF</th><th>CIL</th><th>EIXO</th><th>DNP</th><th>ADIÇÃO</th></tr></thead>`+
-      `<tbody><tr><th>OE</th><td>${g.OE?.esf||''}</td><td>${g.OE?.cil||''}</td><td>${g.OE?.eixo||''}</td><td>${g.OE?.dnp||''}</td><td>${g.OE?.adicao||''}</td></tr>`+
-      `<tr><th>OD</th><td>${g.OD?.esf||''}</td><td>${g.OD?.cil||''}</td><td>${g.OD?.eixo||''}</td><td>${g.OD?.dnp||''}</td><td>${g.OD?.adicao||''}</td></tr></tbody></table>`+
-      `${campos.observacao?`<div><strong>Observação:</strong> ${campos.observacao}</div>`:''}`+
-      `${valores}`+
-      `${opts.garantia?`${garantiaTexto?`<div class="os-garantia">${garantiaTexto}</div>`:''}<div class="assinatura"></div>`:''}`+
-      `</div>`+
-      `${dates.length?`<div class="os-print-dates">${dates.join('')}</div>`:''}`+
-      `</section>`;
-    return html;
+    const datas=`<div class="os-block datas">${dates.join('')}${valores}</div>`;
+    const garantia=opts.garantia&&garantiaTexto?`<div class="os-block garantia"><div class="os-garantia">${garantiaTexto}</div></div>`:'';
+    const header=`<div class="os-print-header">${logo}${contato}</div><div class="os-print-head ${tipo}"><span class="code">${os.codigo}</span><span class="via">${titulo.toUpperCase()}</span><span class="date">${formatDateDDMMYYYY(dataAtual)}</span></div>`;
+    const body=`<div class="os-print-body">${cliente}${opticaBlock}${datas}${garantia}<div class="assinatura"></div></div>`;
+    return `<section class="os-print-via">${header}${body}</section>`;
   }
   const content=
+    `<div class="os-print-container">`+
     via('Via do Cliente',{previsaoEntrega:true,garantia:true,valor:true,showContacts:true})+
     `<hr>`+
-    via('Via Loja',{previsaoEntrega:true,garantia:true,valor:true,showContacts:false})+
+    via('Via da Loja',{previsaoEntrega:true,garantia:false,valor:true,showContacts:false})+
     `<hr>`+
-    via('Via da Oficina',{previsaoEntrega:false,garantia:false,valor:false,showContacts:true});
+    via('Via do Laboratório',{previsaoEntrega:true,garantia:false,valor:false,showContacts:true})+
+    `</div>`;
   const w=window.open('','_blank');
   w.document.write(`<!DOCTYPE html><html><head><title>${os.codigo}</title><style>
-  @page{size:A4 portrait;margin:6mm;}body{font-family:sans-serif;font-size:12pt;background:#fff;}
-  hr{border:0;border-top:1px solid #000;margin:6mm 0;}
-  .os-print-via{page-break-inside:avoid;background:#fff;border:1px solid #ccc;box-shadow:0 1px 2px rgba(0,0,0,0.1);padding:4mm;}
-  .os-print-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
-  .os-print-header .logo-img{max-height:40px;object-fit:contain;}
-  .os-print-header .logo-placeholder{width:80px;height:40px;background:#eee;display:flex;align-items:center;justify-content:center;color:#666;font-size:10pt;}
+  @page{size:A4 portrait;margin:6mm;}
+  html,body{height:100%;background:#fff;font-family:sans-serif;font-size:12pt;margin:0;}
+  button{display:none;}
+  .os-print-container{display:flex;flex-direction:column;height:100%;}
+  hr{border:0;border-top:1px solid #000;margin:0;}
+  .os-print-via{flex:1;background:#fff;border:1px solid #ccc;box-shadow:0 1px 2px rgba(0,0,0,0.1);padding:4mm;display:flex;flex-direction:column;}
+  .os-print-header{display:flex;justify-content:space-between;align-items:center;}
+  .os-print-header .logo-img{max-height:32px;object-fit:contain;}
+  .os-print-header .logo-placeholder{width:60px;height:32px;background:#eee;display:flex;align-items:center;justify-content:center;color:#666;font-size:10pt;}
   .os-print-contact{text-align:right;font-size:10pt;}
-  .os-print-head{font-weight:bold;color:#fff;padding:4px 8px;}
-  .os-print-head.reloj{background:#183C7A;}
-  .os-print-head.joia{background:#C99700;}
+  .os-print-head{display:flex;justify-content:space-between;align-items:center;font-weight:bold;color:#fff;padding:2px 8px;margin-top:4px;}
   .os-print-head.optica{background:#8B0000;}
-  .os-print-dates{margin-top:8px;}
-  .os-print-dates .previsao{margin-top:4px;font-weight:bold;}
-  .assinatura{border-top:1px solid #000;height:40px;width:60mm;text-align:center;margin-top:8mm;}
-  .assinatura:after{content:"Assinatura";position:relative;top:8px;display:block;font-size:10pt;}
-  h2{margin:4px 0 8px;font-size:1rem;}
-  .grau-table{width:100%;border-collapse:collapse;margin:4px 0;}
-  .grau-table th,.grau-table td{border:1px solid #000;padding:2px;font-size:10pt;text-align:center;}
+  .os-block{margin-top:4px;font-size:10pt;}
+  .os-block > div{margin-top:2px;}
+  .grau-table{width:100%;border-collapse:collapse;margin-top:4px;}
+  .grau-table th,.grau-table td{border:1px solid #000;padding:1px;font-size:9pt;text-align:center;}
   .grau-table th:first-child{text-align:left;}
+  .assinatura{border-top:1px solid #000;width:70mm;text-align:center;margin-left:auto;margin-top:auto;height:24px;position:relative;}
+  .assinatura:after{content:"Assinatura do Cliente";position:absolute;top:4px;left:0;right:0;font-size:10pt;}
+  .os-garantia{margin-top:4px;font-size:10pt;}
   </style></head><body>${content}</body></html>`);
   w.document.close();
   w.addEventListener('load',()=>w.print());
