@@ -2541,6 +2541,8 @@ function renderOSKanban(){
     if(!col) return;
     const card=document.createElement('div');
     card.className='os-card reloj';
+    card.draggable=true;
+    card.dataset.id=os.id;
     card.innerHTML=`<div class="os-card-head">${os.codigo}</div>`+
       `<div class="os-card-body">`+
       `<div><strong>${os.campos.cliente}</strong> - ${os.campos.telefone}</div>`+
@@ -2565,6 +2567,108 @@ function renderOSKanban(){
   Object.keys(OS_STATUS_LABELS).forEach(k=>{
     const cnt=board.querySelector(`[data-status="${k}"] .count`);
     if(cnt) cnt.textContent=counts[k]||0;
+  });
+}
+
+function printOSReloj(os){
+  const campos=os.campos;
+  const hoje=new Date().toLocaleDateString('pt-BR');
+  const header=`<header class="os-print-header">`+
+    `<h1>Ordem de Serviço — Relojoaria</h1>`+
+    `<div class="os-print-code">${os.codigo}</div>`+
+    `<div>${os.perfil||currentProfile()} - ${hoje}</div>`+
+    `</header>`;
+  function via(titulo,opts){
+    let html=`<section class="os-print-via"><h2>${titulo}</h2>`+header+
+      `<div class="os-print-body">`+
+      `<div><strong>Cliente:</strong> ${campos.cliente}</div>`+
+      `<div><strong>Telefone:</strong> ${campos.telefone}</div>`+
+      `<div><strong>Marca:</strong> ${campos.marca}</div>`+
+      (campos.marcasUso?`<div><strong>Marcas de uso:</strong> Sim</div>`:'')+
+      (campos.pulseira?`<div><strong>Pulseira:</strong> ${campos.pulseira}</div>`:'')+
+      (opts.dataOficina && campos.dataOficina?`<div><strong>Data oficina:</strong> ${campos.dataOficina}</div>`:'')+
+      (opts.dataEntrega && campos.dataEntrega?`<div><strong>Data entrega:</strong> ${campos.dataEntrega}</div>`:'')+
+      `<div><strong>Serviço:</strong> ${campos.servico}</div>`+
+      (campos.garantia?`<div><strong>Garantia:</strong> ${campos.garantia}</div>`:'')+
+      (campos.observacao?`<div><strong>Observação:</strong> ${campos.observacao}</div>`:'')+
+      (opts.notaOficina && campos.notaOficina?`<div><strong>Nota para Oficina:</strong> ${campos.notaOficina}</div>`:'')+
+      (opts.notaLoja && campos.notaLoja?`<div><strong>Nota para Loja:</strong> ${campos.notaLoja}</div>`:'')+
+      `</div>`+
+      `<footer class="os-print-footer"><div class="assinatura"></div></footer>`+
+      `</section>`;
+    return html;
+  }
+  const content=
+    via('Via do Cliente',{dataOficina:false,dataEntrega:true,notaOficina:false,notaLoja:false})+
+    `<hr>`+
+    via('Via Loja',{dataOficina:true,dataEntrega:true,notaOficina:true,notaLoja:true})+
+    `<hr>`+
+    via('Via Serviço',{dataOficina:true,dataEntrega:false,notaOficina:true,notaLoja:false});
+  const w=window.open('','_blank');
+  w.document.write(`<!DOCTYPE html><html><head><title>${os.codigo}</title><style>
+  @page{size:A4;margin:12mm;}body{font-family:sans-serif;font-size:12pt;}
+  hr{border:0;border-top:1px solid #000;margin:12mm 0;}
+  .os-print-via{page-break-inside:avoid;}
+  .os-print-code{font-size:1.2rem;font-weight:bold;}
+  .os-print-footer{margin-top:12mm;}
+  .os-print-footer .assinatura{border-top:1px solid #000;height:40px;}
+  </style></head><body>
+  <div class="print-actions">
+    <button onclick="window.print()">Imprimir</button>
+    <button onclick="window.close()">Fechar</button>
+  </div>
+  ${content}
+  </body></html>`);
+  w.document.close();
+}
+
+function setupOSDragAndDrop(){
+  const board=document.getElementById('osKanban');
+  if(!board) return;
+  board.addEventListener('dragstart',e=>{
+    const card=e.target.closest('.os-card');
+    if(card) e.dataTransfer.setData('text/plain', card.dataset.id);
+  });
+  board.querySelectorAll('.kanban-col').forEach(col=>{
+    col.addEventListener('dragover',e=>{ e.preventDefault(); col.classList.add('drag-over'); });
+    col.addEventListener('dragleave',()=>col.classList.remove('drag-over'));
+    col.addEventListener('drop',e=>{
+      e.preventDefault();
+      col.classList.remove('drag-over');
+      const id=e.dataTransfer.getData('text/plain');
+      if(id){
+        const list=loadOSList();
+        const os=list.find(o=>o.id==id);
+        if(os){
+          os.status=col.dataset.status;
+          os.updatedAt=new Date().toISOString();
+          saveOSList(list);
+          renderOSKanban();
+        }
+      }
+    });
+  });
+  let touchId=null;
+  board.addEventListener('touchstart',e=>{
+    const card=e.target.closest('.os-card');
+    if(card) touchId=card.dataset.id;
+  });
+  board.addEventListener('touchend',e=>{
+    if(!touchId) return;
+    const t=e.changedTouches[0];
+    const el=document.elementFromPoint(t.clientX,t.clientY);
+    const col=el && el.closest('.kanban-col');
+    if(col){
+      const list=loadOSList();
+      const os=list.find(o=>o.id==touchId);
+      if(os){
+        os.status=col.dataset.status;
+        os.updatedAt=new Date().toISOString();
+        saveOSList(list);
+        renderOSKanban();
+      }
+    }
+    touchId=null;
   });
 }
 function openOSTypeModal(){
@@ -2624,7 +2728,7 @@ function initOSPage(){
   if(board){
     board.addEventListener('click',e=>{
       const id=e.target.dataset.id;
-      if(e.target.classList.contains('btn-os-imprimir')) toast('Em breve');
+      if(e.target.classList.contains('btn-os-imprimir')){ const os=loadOSList().find(o=>o.id==id); if(os) printOSReloj(os); }
       if(e.target.classList.contains('btn-os-editar')){ const os=loadOSList().find(o=>o.id==id); if(os) openRelojForm(os); }
       if(e.target.classList.contains('btn-os-excluir')){ if(confirm('Excluir OS?')){ deleteOS(Number(id)); renderOSKanban(); } }
       if(e.target.classList.contains('btn-os-mover')){ const sel=e.target.nextElementSibling; if(sel) sel.hidden=!sel.hidden; }
@@ -2643,6 +2747,7 @@ function initOSPage(){
         }
       }
     });
+    setupOSDragAndDrop();
   }
   renderOSKanban();
 }

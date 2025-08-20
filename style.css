@@ -311,6 +311,7 @@ input[name="telefone"] { width:18ch; }
 .os-card .badge { display: inline-block; padding: 2px 4px; background: var(--os-reloj-color); color: #fff; border-radius: var(--radius-sm); font-size: 0.75rem; }
 .os-card-actions { padding: 4px 8px; display: flex; flex-wrap: wrap; gap: 4px; }
 .os-move-select { margin-left: 4px; }
+.os-kanban .kanban-col.drag-over { outline:2px dashed var(--os-reloj-color); }
 .toast-stack {
   position: fixed;
   bottom: 1rem;
