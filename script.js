@@ -1097,6 +1097,24 @@ function formatDateDDMMYYYY(dateLike) {
   return `${day}/${month}/${year}`;
 }
 
+function formatDateYYYYMMDD(dateLike){
+  if(!dateLike) return '';
+  let d;
+  if(typeof dateLike === 'string'){
+    const parts=dateLike.split('/');
+    if(parts.length===3){
+      const [dd,mm,yy]=parts.map(Number);
+      d=new Date(yy,mm-1,dd);
+    } else {
+      d=new Date(dateLike);
+    }
+  } else {
+    d=new Date(dateLike);
+  }
+  if(isNaN(d.getTime())) return '';
+  return d.toISOString().split('T')[0];
+}
+
 function formatCurrency(v) {
   return Number(v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 }
@@ -2815,14 +2833,8 @@ function renderOSKanban(){
       card.tabIndex=0;
       const dates=[];
       if(os.campos.dataOficina) dates.push(`<div><strong>Data de Oficina:</strong> ${formatDateDDMMYYYY(os.campos.dataOficina)}</div>`);
-      if(os.campos.dataEntrega) dates.push(`<div><strong>Data de Entrega:</strong> ${formatDateDDMMYYYY(os.campos.dataEntrega)}</div>`);
-      card.innerHTML=`<div class="os-card-head">${os.codigo}</div>`+
-        `<div class="os-card-body">`+
-        `<div><strong>${os.campos.cliente}</strong> - ${os.campos.telefone}</div>`+
-        `<div>Marca: ${os.campos.marca||''}</div>`+
-        `${os.campos.marcasUso?'<div class=\"badge\">Marcas de uso</div>':''}`+
-        `${dates.length?`<div class="os-card-dates">${dates.join('')}</div>`:''}`+
-        `</div>`+
+      if(os.campos.dataEntrega) dates.push(`<div><strong>Previsão de entrega:</strong> ${formatDateDDMMYYYY(os.campos.dataEntrega)}</div>`);
+      card.innerHTML=`<div class="os-card-top"><div class="os-card-title"><span class="os-code">${os.codigo}</span> <strong>${os.campos.cliente}</strong> - ${os.campos.telefone}</div>`+
         `<div class="os-card-actions">`+
         `<button class="os-action btn-os-imprimir" title="Imprimir" aria-label="Imprimir" data-id="${os.id}">${ICON_PRINTER}</button>`+
         `<button class="os-action btn-os-mover" title="Mover" aria-label="Mover" data-id="${os.id}">${ICON_MOVE}</button>`+
@@ -2832,6 +2844,11 @@ function renderOSKanban(){
         `</select>`+
         `<button class="os-action btn-os-editar" title="Editar" aria-label="Editar" data-id="${os.id}">${ICON_EDIT}</button>`+
         `<button class="os-action btn-os-excluir" title="Excluir" aria-label="Excluir" data-id="${os.id}">${ICON_TRASH}</button>`+
+        `</div></div>`+
+        `<div class="os-card-body">`+
+        `<div>Marca: ${os.campos.marca||''}</div>`+
+        `${os.campos.marcasUso?'<div class=\"badge\">Marcas de uso</div>':''}`+
+        `${dates.length?`<div class="os-card-dates">${dates.join('')}</div>`:''}`+
         `</div>`;
       container.appendChild(card);
     });
@@ -2886,7 +2903,7 @@ function printOS(os){
       `</div>`+
       `<div class="os-print-dates">`+
       `${campos.dataOficina?`<div><strong>Data de Oficina:</strong> ${formatDateDDMMYYYY(campos.dataOficina)}</div>`:''}`+
-      `${campos.dataEntrega?`<div><strong>Data de Entrega:</strong> ${formatDateDDMMYYYY(campos.dataEntrega)}</div>`:''}`+
+      `${campos.dataEntrega?`<div><strong>Previsão de entrega:</strong> ${formatDateDDMMYYYY(campos.dataEntrega)}</div>`:''}`+
       `</div>`+
       `<footer class="os-print-footer"><div class="assinatura"></div><div class="assinatura"></div></footer>`+
       `</section>`;
@@ -3005,7 +3022,7 @@ function openRelojForm(os){
   if(!os){ reserved=reserveOSCode(); codigo=reserved.code; }
   title.textContent=os?`Editar OS ${codigo}`:'Nova OS Relojoaria';
   saveBtn.hidden=false;
-  body.innerHTML=`<form id="osRelojForm"><div class="form-grid"><div class="os-code col-span-12">${codigo}</div><label class="col-span-6">Cliente*<input name="cliente" value="${campos.cliente||''}" required></label><label class="col-span-6">Telefone*<input name="telefone" value="${campos.telefone||''}" required></label><label class="col-span-6">Data de Hoje<input name="dataHoje" value="${hoje}" readonly></label><label class="col-span-6">Marca do relógio<input name="marca" value="${campos.marca||''}"></label><label class="col-span-6">Pulseira<input name="pulseira" value="${campos.pulseira||''}"></label><label class="col-span-6">Marcas de uso<input type="checkbox" class="switch" name="marcasUso" ${campos.marcasUso?'checked':''}></label><label class="col-span-12">Serviço*<textarea name="servico" rows="2" required>${campos.servico||''}</textarea></label><label class="col-span-12">Observação<textarea name="observacao" rows="3">${campos.observacao||''}</textarea></label><label class="col-span-12">Garantia<textarea name="garantia" rows="2" readonly>${garantiaTexto}</textarea></label><label class="col-span-6">Data de Oficina<input name="dataOficina" value="${campos.dataOficina?formatDateDDMMYYYY(campos.dataOficina):''}" placeholder="dd/mm/aaaa" pattern="\d{2}/\d{2}/\d{4}"></label><label class="col-span-6">Data de Entrega<input name="dataEntrega" value="${campos.dataEntrega?formatDateDDMMYYYY(campos.dataEntrega):''}" placeholder="dd/mm/aaaa" pattern="\d{2}/\d{2}/\d{4}"></label><label class="col-span-12">Nota para Oficina<textarea name="notaOficina" rows="2">${campos.notaOficina||''}</textarea></label><label class="col-span-12">Nota para Loja<textarea name="notaLoja" rows="2">${campos.notaLoja||''}</textarea></label><div class="os-error col-span-12" style="color:var(--red-600);"></div></div></form>`;
+  body.innerHTML=`<form id="osRelojForm"><div class="form-grid"><div class="os-code col-span-12">${codigo}</div><label class="col-span-6">Cliente*<input class="text-input" name="cliente" value="${campos.cliente||''}" required></label><label class="col-span-6">Telefone*<input class="text-input" name="telefone" value="${campos.telefone||''}" required></label><label class="col-span-6">Data de Hoje<input class="text-input" name="dataHoje" value="${hoje}" readonly></label><label class="col-span-6">Marca do relógio<input class="text-input" name="marca" value="${campos.marca||''}"></label><label class="col-span-6">Pulseira<input class="text-input" name="pulseira" value="${campos.pulseira||''}"></label><label class="col-span-6">Marcas de uso<input type="checkbox" class="switch" name="marcasUso" ${campos.marcasUso?'checked':''}></label><label class="col-span-12">Serviço*<textarea class="textarea" name="servico" rows="2" required>${campos.servico||''}</textarea></label><label class="col-span-12">Observação<textarea class="textarea" name="observacao" rows="3">${campos.observacao||''}</textarea></label><label class="col-span-12">Garantia<textarea class="textarea" name="garantia" rows="2" readonly>${garantiaTexto}</textarea></label><label class="col-span-6">Data de Oficina<input type="date" class="date-input" name="dataOficina" value="${campos.dataOficina?formatDateYYYYMMDD(campos.dataOficina):''}"></label><label class="col-span-6">Previsão de entrega<input type="date" class="date-input" name="dataEntrega" value="${campos.dataEntrega?formatDateYYYYMMDD(campos.dataEntrega):''}"></label><label class="col-span-12">Nota para Oficina<textarea class="textarea" name="notaOficina" rows="2">${campos.notaOficina||''}</textarea></label><label class="col-span-12">Nota para Loja<textarea class="textarea" name="notaLoja" rows="2">${campos.notaLoja||''}</textarea></label><div class="os-error col-span-12" style="color:var(--red-600);"></div></div></form>`;
   const form=body.querySelector('#osRelojForm');
   form.addEventListener('keydown',e=>{ if(e.key==='Enter' && e.target.tagName!=='TEXTAREA'){ e.preventDefault(); saveBtn.click(); }});
   saveBtn.onclick=e=>{

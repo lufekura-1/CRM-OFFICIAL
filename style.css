@@ -243,7 +243,7 @@ select option { color: var(--color-text); background: var(--color-bg); }
   min-height:36px;
   padding:0 0.75rem;
   border:1px solid var(--color-border);
-  border-radius:var(--radius-lg);
+  border-radius:var(--radius-sm);
   background:var(--color-bg);
   color:var(--color-text);
 }
@@ -327,13 +327,15 @@ input[name="telefone"] { width:18ch; }
 .col-kanban--aguardo{background-color:var(--kanban-aguardo);}
 .col-kanban--completo{background-color:var(--kanban-completo);}
 .os-card { border: 1px solid var(--color-border); border-radius: var(--radius-md); margin-bottom: 0.5rem; overflow: hidden; background:#fff; box-shadow:0 1px 2px rgba(0,0,0,0.05); }
-.os-card-head { padding: 4px 8px; font-weight: bold; color: #fff; }
+.os-card-top { padding:4px 8px; font-weight:bold; color:#fff; display:flex; justify-content:space-between; align-items:center; }
+.os-card-title{flex:1;}
+.os-card-top .os-code{margin-bottom:0;}
 .os-card.reloj { border-color: var(--os-reloj-color); }
 .os-card.joia { border-color: var(--os-joia-color); }
 .os-card.optica { border-color: var(--os-optica-color); }
-.os-card.reloj .os-card-head{ background: var(--os-reloj-color); }
-.os-card.joia .os-card-head{ background: var(--os-joia-color); }
-.os-card.optica .os-card-head{ background: var(--os-optica-color); }
+.os-card.reloj .os-card-top{ background: var(--os-reloj-color); }
+.os-card.joia .os-card-top{ background: var(--os-joia-color); }
+.os-card.optica .os-card-top{ background: var(--os-optica-color); }
 .os-card-body { padding: 4px 8px; font-size: 0.875rem; }
 .os-card-dates{margin-top:8px;font-weight:bold;}
 .badge{display:inline-block;padding:2px 4px;border-radius:var(--radius-sm);font-size:0.75rem;}
@@ -347,7 +349,7 @@ input[name="telefone"] { width:18ch; }
 .os-card.reloj .badge{background: var(--os-reloj-color);}
 .os-card.joia .badge{background: var(--os-joia-color);}
 .os-card.optica .badge{background: var(--os-optica-color);}
-.os-card-actions { padding: 4px 8px; display: flex; flex-wrap: wrap; gap: 4px; }
+.os-card-actions { display:flex; gap:4px; }
 .os-card-actions .os-action{width:36px;height:36px;display:flex;align-items:center;justify-content:center;border:none;background:none;cursor:pointer;border-radius:var(--radius-md);}
 .os-card-actions .os-action:focus{outline:2px solid var(--color-primary);}
 .os-card-actions .os-action:hover{background:var(--surface-muted);}
