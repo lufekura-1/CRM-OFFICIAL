@@ -326,7 +326,7 @@ input[name="telefone"] { width:18ch; }
 .col-kanban--oficina{background-color:var(--kanban-oficina);}
 .col-kanban--aguardo{background-color:var(--kanban-aguardo);}
 .col-kanban--completo{background-color:var(--kanban-completo);}
-.os-card { border: 1px solid var(--color-border); border-radius: var(--radius-md); margin-bottom: 0.5rem; overflow: hidden; }
+.os-card { border: 1px solid var(--color-border); border-radius: var(--radius-md); margin-bottom: 0.5rem; overflow: hidden; background:#fff; box-shadow:0 1px 2px rgba(0,0,0,0.05); }
 .os-card-head { padding: 4px 8px; font-weight: bold; color: #fff; }
 .os-card.reloj { border-color: var(--os-reloj-color); }
 .os-card.joia { border-color: var(--os-joia-color); }
@@ -838,4 +838,11 @@ input[name="telefone"] { width:18ch; }
 @media (max-width:600px){
   .os-kanban{flex-wrap:nowrap;overflow-x:auto;scroll-snap-type:x mandatory;}
   .os-kanban .kanban-col{flex:0 0 80%;scroll-snap-align:start;}
+}
+
+@media print {
+  .os-card-actions,
+  .os-card-actions .os-action {
+    display:none!important;
+  }
 }

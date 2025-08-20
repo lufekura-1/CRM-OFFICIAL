@@ -60,6 +60,10 @@ function setClients(arr, profile=currentProfile()){ setJSON(`${profile}:clients`
 function getCalendar(profile=currentProfile()){ return getJSON(`${profile}:calendar`, getJSON(`perfil:${profile}:calendar`, [])); }
 function setCalendar(arr, profile=currentProfile()){ setJSON(`${profile}:calendar`, arr); setJSON(`perfil:${profile}:calendar`, arr); }
 
+function getProfileInfo(profile=currentProfile()){
+  return getJSON(`perfil:${profile}:info`, { telefone:'', endereco:'', instagram:'', logo:'' });
+}
+
 // remove eventos cujo meta.clientId não existe mais
 function purgeOrphanEvents(profile=currentProfile()){
   const cliIdx = new Set(getClients(profile).map(c=>c.id));
@@ -2678,8 +2682,16 @@ function printOS(os){
   const hoje=formatDateDDMMYYYY(new Date());
   const tipo=os.tipo||'reloj';
   const tipoLabel=OS_TIPO_LABELS[tipo]||'';
+  const perfilInfo=getProfileInfo();
   function via(titulo,opts){
+    const showContacts = opts.showContacts!==false;
+    const logo = perfilInfo.logo ?
+      `<img src="${perfilInfo.logo}" alt="Logo" class="logo-img">` :
+      `<div class="logo-placeholder">Logo</div>`;
+    const contato = showContacts ?
+      `<div class="os-print-contact">${perfilInfo.telefone?`<div>${perfilInfo.telefone}</div>`:''}${perfilInfo.endereco?`<div>${perfilInfo.endereco}</div>`:''}${perfilInfo.instagram?`<div>${perfilInfo.instagram}</div>`:''}</div>` : '';
     let html=`<section class="os-print-via">`+
+      `<div class="os-print-header">${logo}${contato}</div>`+
       `<div class="os-print-head ${tipo}"><span class="code">${os.codigo}</span> <span class="tipo">${tipoLabel}</span></div>`+
       `<h2>${titulo}</h2>`+
       `<div class="os-print-body">`+
@@ -2704,16 +2716,20 @@ function printOS(os){
     return html;
   }
   const content=
-    via('Via do Cliente',{notaOficina:false,notaLoja:false,garantia:true})+
+    via('Via do Cliente',{notaOficina:false,notaLoja:false,garantia:true,showContacts:true})+
     `<hr>`+
-    via('Via Loja',{notaOficina:true,notaLoja:true,garantia:true})+
+    via('Via Loja',{notaOficina:true,notaLoja:true,garantia:true,showContacts:false})+
     `<hr>`+
-    via('Via Serviço',{notaOficina:true,notaLoja:false,garantia:false});
+    via('Via Serviço',{notaOficina:true,notaLoja:false,garantia:false,showContacts:true});
   const w=window.open('','_blank');
   w.document.write(`<!DOCTYPE html><html><head><title>${os.codigo}</title><style>
-  @page{size:A4;margin:12mm;}body{font-family:sans-serif;font-size:12pt;}
+  @page{size:A4;margin:12mm;}body{font-family:sans-serif;font-size:12pt;background:#fff;}
   hr{border:0;border-top:1px solid #000;margin:12mm 0;}
-  .os-print-via{page-break-inside:avoid;}
+  .os-print-via{page-break-inside:avoid;background:#fff;border:1px solid #ccc;box-shadow:0 1px 2px rgba(0,0,0,0.1);padding:8px;}
+  .os-print-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
+  .os-print-header .logo-img{max-height:40px;object-fit:contain;}
+  .os-print-header .logo-placeholder{width:80px;height:40px;background:#eee;display:flex;align-items:center;justify-content:center;color:#666;font-size:10pt;}
+  .os-print-contact{text-align:right;font-size:10pt;}
   .os-print-head{font-weight:bold;color:#fff;padding:4px 8px;}
   .os-print-head.reloj{background:#183C7A;}
   .os-print-head.joia{background:#C99700;}
