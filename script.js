@@ -202,8 +202,10 @@ const baseId = `${currentProfile()}:${cliente.id}:${compra.id}:0`;
   if(isNaN(baseDate)) return;
 
   for (const d of [90,180,365]){
+    const stage = d===90?'3m':d===180?'6m':'12m';
     const id = `${currentProfile()}:${cliente.id}:${compra.id}:${d}`;
     const dt = addDaysUTC(baseDate, d);
+    const done = !!compra.followUps?.[stage]?.done;
     upsertEvent(cal, {
       id, date: fmtYMD(dt),
       title: `${cliente.nome} (${d===90?'3 meses':d===180?'6 meses':'12 meses'})`,
@@ -216,7 +218,8 @@ const baseId = `${currentProfile()}:${cliente.id}:${compra.id}:0`;
         followupOffsetDays: d,
         kind:'followup',
         type:'followup',
-        stage: d===90?'3m':d===180?'6m':'12m'
+        stage,
+        done
       }
     });
   }
