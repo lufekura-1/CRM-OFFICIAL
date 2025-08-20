@@ -649,7 +649,7 @@ const cards = {
 const ui = {
   clients: { filters: { usos: [] }, search: '' },
   dashboard: { layout: null },
-  os: { filters: { text:'', types:['reloj'], status:'', from:'', to:'' } },
+  os: { filters: { text:'', types:['reloj','joia','optica'], status:'', from:'', to:'' }, pages:{loja:1,oficina:1,aguardando:1,completo:1}, counts:{loja:0,oficina:0,aguardando:0,completo:0} },
   initDropdowns() {
     document.querySelectorAll('.ui-dropdown').forEach(dd => {
       const btn = dd.querySelector('.dropdown-toggle');
@@ -853,11 +853,6 @@ function renderOS() {
     <div class="os-toolbar">
       <div class="os-filters">
         <input id="osSearch" type="search" placeholder="Buscar..." aria-label="Buscar OS">
-        <select id="osTypeFilter" multiple aria-label="Tipo">
-          <option value="reloj" selected>Relojoaria</option>
-          <option value="joia" disabled>Joalheria</option>
-          <option value="optica" disabled>Óptica</option>
-        </select>
         <select id="osStatusFilter" aria-label="Coluna">
           <option value="">Todas</option>
           ${Object.entries(OS_STATUS_LABELS).map(([k,v])=>`<option value="${k}">${v}</option>`).join('')}
@@ -867,12 +862,22 @@ function renderOS() {
       </div>
       <button id="btnNovaOS" class="btn btn-primary">Nova OS</button>
     </div>
+    <div class="os-type-filter" id="osTypeButtons">
+      <span>Tipo:</span>
+      <button class="filter-btn active" data-type="all">Todos</button>
+      <button class="filter-btn" data-type="reloj">Relojoaria</button>
+      <button class="filter-btn" data-type="joia">Joalheria</button>
+      <button class="filter-btn" data-type="optica">Óptica</button>
+    </div>
     <div id="osEmpty" class="os-empty" hidden>
       <p>Nenhuma OS encontrada</p>
       <button id="btnNovaOSEmpty" class="btn btn-primary">Criar sua primeira OS</button>
     </div>
     <div class="os-kanban" id="osKanban">
-      ${cols.map(c=>`<div class="kanban-col" data-status="${c[0]}"><h3>${c[1]} <span class="badge count">0</span></h3><div class="cards"></div></div>`).join('')}
+      ${cols.map(([k,label])=>{
+        const cls={loja:'col-kanban--loja',oficina:'col-kanban--oficina',aguardando:'col-kanban--aguardo',completo:'col-kanban--completo'}[k];
+        return `<div class="kanban-col ${cls}" data-status="${k}"><div class="kanban-header"><h3>${label} (<span class="count">0</span>)</h3></div><div class="cards"></div><div class="kanban-footer"><button class="kanban-prev" disabled>Anterior</button><span class="sep">|</span><span class="page-info">1 / 1</span><span class="sep">|</span><button class="kanban-next" disabled>Próxima</button></div></div>`;
+      }).join('')}
     </div>
   </section>`;
 }
@@ -2526,6 +2531,7 @@ function handlePurchaseSave(){
 // ===== Ordem de Serviço =====
 const OS_SIGLAS = { 'Jorel Chicuta':'JC', 'Jorel Avenida':'AV', 'Exótica':'EX', 'Usuario Teste':'UT', 'Administrador':'AD' };
 const OS_STATUS_LABELS = { loja:'Em loja', oficina:'Oficina/Laboratório', aguardando:'Aguardando Retirada', completo:'Completo' };
+const OS_PAGE_SIZE=20;
 function osListKey(profile=currentProfile()){ return `os:${profile}:reloj`; }
 function osSeqKey(profile=currentProfile()){ return `os:${profile}:seq:reloj`; }
 function loadOSList(profile=currentProfile()){ return getJSON(osListKey(profile), []); }
@@ -2559,16 +2565,21 @@ function renderOSKanban(){
   const board=document.getElementById('osKanban');
   if(!board) return;
   const empty=document.getElementById('osEmpty');
-  const cols={};
+  const colEls={};
   Object.keys(OS_STATUS_LABELS).forEach(k=>{
-    cols[k]=board.querySelector(`[data-status="${k}"] .cards`);
-    if(cols[k]) cols[k].innerHTML='';
+    const col=board.querySelector(`[data-status="${k}"]`);
+    if(col){
+      colEls[k]=col;
+      const cards=col.querySelector('.cards');
+      if(cards) cards.innerHTML='';
+    }
   });
-  const counts={loja:0,oficina:0,aguardando:0,completo:0};
   const f=ui.os.filters;
   const list=loadOSList();
+  const grouped={loja:[],oficina:[],aguardando:[],completo:[]};
   list.forEach(os=>{
-    if(!f.types.includes(os.tipo||'reloj')) return;
+    const tipo=os.tipo||'reloj';
+    if(!f.types.includes(tipo)) return;
     if(f.status && os.status!==f.status) return;
     if(f.text){
       const t=f.text;
@@ -2578,37 +2589,60 @@ function renderOSKanban(){
     const osDate=os.createdAt?os.createdAt.slice(0,10):'';
     if(f.from && osDate < f.from) return;
     if(f.to && osDate > f.to) return;
-    const col=cols[os.status||'loja'];
+    const st=os.status||'loja';
+    grouped[st].push(os);
+  });
+  const perPage=OS_PAGE_SIZE;
+  const counts={loja:0,oficina:0,aguardando:0,completo:0};
+  Object.keys(grouped).forEach(st=>{
+    const arr=grouped[st];
+    counts[st]=arr.length;
+    const col=colEls[st];
     if(!col) return;
-    const card=document.createElement('div');
-    card.className=`os-card ${os.tipo}`;
-    card.draggable=true;
-    card.dataset.id=os.id;
-    card.tabIndex=0;
-    card.innerHTML=`<div class="os-card-head">${os.codigo}</div>`+
-      `<div class="os-card-body">`+
-      `<div><strong>${os.campos.cliente}</strong> - ${os.campos.telefone}</div>`+
-      `<div>Marca: ${os.campos.marca}</div>`+
-      `<div class="os-card-dates">${os.campos.dataHoje||formatDateBr(os.createdAt)}${os.campos.dataOficina?` | ${os.campos.dataOficina}`:''}${os.campos.dataEntrega?` | ${os.campos.dataEntrega}`:''}</div>`+
-      `${os.campos.marcasUso?'<div class="badge">Marcas de uso</div>':''}`+
-      `</div>`+
-      `<div class="os-card-actions">`+
-      `<button class="btn-os-imprimir" data-id="${os.id}">Imprimir</button>`+
-      `<button class="btn-os-mover" data-id="${os.id}">Mover</button>`+
-      `<select class="os-move-select" data-id="${os.id}" hidden>`+
-      `<option value="">Mover para...</option>`+
-      `${Object.entries(OS_STATUS_LABELS).map(([k,v])=>`<option value="${k}">${v}</option>`).join('')}`+
-      `</select>`+
-      `<button class="btn-os-editar" data-id="${os.id}">Editar</button>`+
-      `<button class="btn-os-excluir" data-id="${os.id}">Excluir</button>`+
-      `</div>`;
-    col.appendChild(card);
-    counts[os.status||'loja']++;
+    const page=ui.os.pages[st]||1;
+    const totalPages=Math.max(1,Math.ceil(arr.length/perPage));
+    const curPage=page>totalPages?1:page;
+    ui.os.pages[st]=curPage;
+    const slice=arr.slice((curPage-1)*perPage, curPage*perPage);
+    const container=col.querySelector('.cards');
+    slice.forEach(os=>{
+      const card=document.createElement('div');
+      card.className=`os-card ${os.tipo}`;
+      card.draggable=true;
+      card.dataset.id=os.id;
+      card.tabIndex=0;
+      card.innerHTML=`<div class="os-card-head">${os.codigo}</div>`+
+        `<div class="os-card-body">`+
+        `<div><strong>${os.campos.cliente}</strong> - ${os.campos.telefone}</div>`+
+        `<div>Marca: ${os.campos.marca}</div>`+
+        `<div class="os-card-dates">${os.campos.dataHoje||formatDateBr(os.createdAt)}${os.campos.dataOficina?` | ${os.campos.dataOficina}`:''}${os.campos.dataEntrega?` | ${os.campos.dataEntrega}`:''}</div>`+
+        `${os.campos.marcasUso?'<div class="badge">Marcas de uso</div>':''}`+
+        `</div>`+
+        `<div class="os-card-actions">`+
+        `<button class="btn-os-imprimir" data-id="${os.id}">Imprimir</button>`+
+        `<button class="btn-os-mover" data-id="${os.id}">Mover</button>`+
+        `<select class="os-move-select" data-id="${os.id}" hidden>`+
+        `<option value="">Mover para...</option>`+
+        `${Object.entries(OS_STATUS_LABELS).map(([k,v])=>`<option value="${k}">${v}</option>`).join('')}`+
+        `</select>`+
+        `<button class="btn-os-editar" data-id="${os.id}">Editar</button>`+
+        `<button class="btn-os-excluir" data-id="${os.id}">Excluir</button>`+
+        `</div>`;
+      container.appendChild(card);
+    });
+    const cnt=col.querySelector('.count');
+    if(cnt) cnt.textContent=counts[st];
+    const footer=col.querySelector('.kanban-footer');
+    if(footer){
+      const info=footer.querySelector('.page-info');
+      const prev=footer.querySelector('.kanban-prev');
+      const next=footer.querySelector('.kanban-next');
+      if(info) info.textContent=`${curPage} / ${totalPages}`;
+      if(prev) prev.disabled=curPage<=1;
+      if(next) next.disabled=curPage>=totalPages;
+    }
   });
-  Object.keys(OS_STATUS_LABELS).forEach(k=>{
-    const cnt=board.querySelector(`[data-status="${k}"] .count`);
-    if(cnt) cnt.textContent=counts[k]||0;
-  });
+  ui.os.counts=counts;
   const total=Object.values(counts).reduce((a,b)=>a+b,0);
   if(empty){ empty.hidden=total>0; }
   board.hidden=total===0;
@@ -2792,12 +2826,21 @@ function initOSPage(){
   const status=document.getElementById('osStatusFilter');
   const from=document.getElementById('osFrom');
   const to=document.getElementById('osTo');
-  const type=document.getElementById('osTypeFilter');
-  if(search) search.addEventListener('input',e=>{ f.text=e.target.value.toLowerCase(); renderOSKanban(); });
-  if(status) status.addEventListener('change',e=>{ f.status=e.target.value; renderOSKanban(); });
-  if(from) from.addEventListener('change',e=>{ f.from=e.target.value; renderOSKanban(); });
-  if(to) to.addEventListener('change',e=>{ f.to=e.target.value; renderOSKanban(); });
-  if(type) type.addEventListener('change',()=>{ f.types=[...type.selectedOptions].map(o=>o.value); renderOSKanban(); });
+  const typeBtns=document.getElementById('osTypeButtons');
+  const resetPages=()=>{ Object.keys(ui.os.pages).forEach(k=>ui.os.pages[k]=1); };
+  if(search) search.addEventListener('input',e=>{ f.text=e.target.value.toLowerCase(); resetPages(); renderOSKanban(); });
+  if(status) status.addEventListener('change',e=>{ f.status=e.target.value; resetPages(); renderOSKanban(); });
+  if(from) from.addEventListener('change',e=>{ f.from=e.target.value; resetPages(); renderOSKanban(); });
+  if(to) to.addEventListener('change',e=>{ f.to=e.target.value; resetPages(); renderOSKanban(); });
+  if(typeBtns) typeBtns.addEventListener('click',e=>{
+    const btn=e.target.closest('button[data-type]');
+    if(!btn) return;
+    typeBtns.querySelectorAll('button').forEach(b=>b.classList.toggle('active', b===btn));
+    const t=btn.dataset.type;
+    f.types=t==='all'?['reloj','joia','optica']:[t];
+    resetPages();
+    renderOSKanban();
+  });
   const board=document.getElementById('osKanban');
   if(board){
     board.addEventListener('click',e=>{
@@ -2806,6 +2849,8 @@ function initOSPage(){
       if(e.target.classList.contains('btn-os-editar')){ const os=loadOSList().find(o=>o.id==id); if(os) openRelojForm(os); }
       if(e.target.classList.contains('btn-os-excluir')){ if(confirm('Excluir OS?')){ deleteOS(Number(id)); renderOSKanban(); } }
       if(e.target.classList.contains('btn-os-mover')){ const sel=e.target.nextElementSibling; if(sel) sel.hidden=!sel.hidden; }
+      if(e.target.classList.contains('kanban-prev')){ const st=e.target.closest('.kanban-col').dataset.status; if(ui.os.pages[st]>1){ ui.os.pages[st]--; renderOSKanban(); } }
+      if(e.target.classList.contains('kanban-next')){ const st=e.target.closest('.kanban-col').dataset.status; const total=ui.os.counts[st]||0; const max=Math.max(1,Math.ceil(total/OS_PAGE_SIZE)); if(ui.os.pages[st]<max){ ui.os.pages[st]++; renderOSKanban(); } }
     });
     board.addEventListener('change',e=>{
       if(e.target.classList.contains('os-move-select')){
