@@ -2004,20 +2004,22 @@ function getFollowupsStats(){
 }
 
 function getClientsContactsStats(year){
-  const clients=getClients();
-  const events=getJSON(calKey(), []).filter(e=>e.meta?.type==='followup' && e.meta.done);
-  const cCounts=Array(12).fill(0);
-  const fCounts=Array(12).fill(0);
-  clients.forEach(c=>{
-    const ts=parseInt((c.id||'').split('_')[1]);
+  const clients = getClients();
+  const events = getJSON(calKey(), []).filter(e => e.meta?.type === 'followup');
+  const cCounts = Array(12).fill(0);
+  const fCounts = Array(12).fill(0);
+  clients.forEach(c => {
+    const ts = parseInt((c.id || '').split('_')[1]);
     if(!isNaN(ts)){
-      const d=new Date(ts);
-      if(d.getFullYear()===year) cCounts[d.getMonth()]++; }
+      const d = new Date(ts);
+      if(d.getFullYear() === year) cCounts[d.getMonth()]++;
+    }
   });
-  events.forEach(ev=>{
-    const d=new Date(ev.meta?.doneAt||ev.date);
-    if(d.getFullYear()===year) fCounts[d.getMonth()]++; });
-  return { clientes:cCounts, contatos:fCounts };
+  events.forEach(ev => {
+    const d = new Date(ev.date);
+    if(d.getFullYear() === year) fCounts[d.getMonth()]++;
+  });
+  return { clientes: cCounts, contatos: fCounts };
 }
 
 function renderWidgetContent(card, cardInner, slot){
@@ -2027,7 +2029,7 @@ function renderWidgetContent(card, cardInner, slot){
     const year=new Date().getFullYear();
     for(let y=year; y>=year-4; y--){ const opt=document.createElement('option'); opt.value=String(y); opt.textContent=String(y); select.appendChild(opt); }
     const chart=document.createElement('div'); chart.className='bar-chart';
-    const groups=[]; for(let m=0;m<12;m++){ const g=document.createElement('div'); g.className='bar-group'; const b1=document.createElement('div'); b1.className='bar green'; const b2=document.createElement('div'); b2.className='bar blue'; g.append(b1,b2); groups.push({b1,b2}); chart.appendChild(g); }
+    const groups=[]; for(let m=0;m<12;m++){ const g=document.createElement('div'); g.className='bar-group'; const b1=document.createElement('div'); b1.className='bar green'; const b2=document.createElement('div'); b2.className='bar orange'; g.append(b1,b2); groups.push({b1,b2}); chart.appendChild(g); }
     const labels=document.createElement('div'); labels.className='bar-chart-labels';
     ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'].forEach(m=>{ const s=document.createElement('span'); s.textContent=m; labels.appendChild(s); });
     cardInner.appendChild(title); cardInner.appendChild(select); cardInner.appendChild(chart); cardInner.appendChild(labels);

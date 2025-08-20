@@ -725,7 +725,7 @@ input[name="telefone"] { width:18ch; }
 .bar-chart .bar-group{flex:1; display:flex; align-items:flex-end; gap:2px;}
 .bar-chart .bar{flex:1; background:var(--color-border);} 
 .bar-chart .bar.green{background:#4caf50;}
-.bar-chart .bar.blue{background:#2196f3;}
+.bar-chart .bar.orange{background:var(--accent-orange);}
 .bar-chart-labels{display:flex; justify-content:space-between; font-size:12px; margin-top:4px;}
 .bar-chart-labels span{flex:1; text-align:center;}
 .year-select{align-self:flex-end; margin-bottom:4px;}
