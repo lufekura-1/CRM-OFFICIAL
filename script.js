@@ -649,6 +649,7 @@ const cards = {
 const ui = {
   clients: { filters: { usos: [] }, search: '' },
   dashboard: { layout: null },
+  os: { filters: { text:'', types:['reloj'], status:'', from:'', to:'' } },
   initDropdowns() {
     document.querySelectorAll('.ui-dropdown').forEach(dd => {
       const btn = dd.querySelector('.dropdown-toggle');
@@ -849,9 +850,29 @@ function renderOS() {
   ];
   return `
   <section id="osPage">
-    <div class="os-toolbar"><button id="btnNovaOS" class="btn btn-primary">Nova OS</button></div>
+    <div class="os-toolbar">
+      <div class="os-filters">
+        <input id="osSearch" type="search" placeholder="Buscar..." aria-label="Buscar OS">
+        <select id="osTypeFilter" multiple aria-label="Tipo">
+          <option value="reloj" selected>Relojoaria</option>
+          <option value="joia" disabled>Joalheria</option>
+          <option value="optica" disabled>Óptica</option>
+        </select>
+        <select id="osStatusFilter" aria-label="Coluna">
+          <option value="">Todas</option>
+          ${Object.entries(OS_STATUS_LABELS).map(([k,v])=>`<option value="${k}">${v}</option>`).join('')}
+        </select>
+        <input id="osFrom" type="date" aria-label="De">
+        <input id="osTo" type="date" aria-label="Até">
+      </div>
+      <button id="btnNovaOS" class="btn btn-primary">Nova OS</button>
+    </div>
+    <div id="osEmpty" class="os-empty" hidden>
+      <p>Nenhuma OS encontrada</p>
+      <button id="btnNovaOSEmpty" class="btn btn-primary">Criar sua primeira OS</button>
+    </div>
     <div class="os-kanban" id="osKanban">
-      ${cols.map(c=>`<div class="kanban-col" data-status="${c[0]}"><h3>${c[1]} (<span class="count">0</span>)</h3><div class="cards"></div></div>`).join('')}
+      ${cols.map(c=>`<div class="kanban-col" data-status="${c[0]}"><h3>${c[1]} <span class="badge count">0</span></h3><div class="cards"></div></div>`).join('')}
     </div>
   </section>`;
 }
@@ -2509,12 +2530,20 @@ function osListKey(profile=currentProfile()){ return `os:${profile}:reloj`; }
 function osSeqKey(profile=currentProfile()){ return `os:${profile}:seq:reloj`; }
 function loadOSList(profile=currentProfile()){ return getJSON(osListKey(profile), []); }
 function saveOSList(list, profile=currentProfile()){ setJSON(osListKey(profile), list); }
-function nextOSCode(profile=currentProfile()){
+function reserveOSCode(profile=currentProfile()){
   const k=osSeqKey(profile);
-  let seq=parseInt(localStorage.getItem(k)||'0',10)+1;
+  const seq=parseInt(localStorage.getItem(k)||'0',10)+1;
   localStorage.setItem(k, seq);
   const sig=OS_SIGLAS[profile]||'UT';
-  return `RE${String(seq).padStart(4,'0')}${sig}`;
+  return { code:`RE${String(seq).padStart(4,'0')}${sig}`, seq };
+}
+function releaseOSCode(seq, profile=currentProfile()){
+  const k=osSeqKey(profile);
+  const cur=parseInt(localStorage.getItem(k)||'0',10);
+  if(cur===seq) localStorage.setItem(k, cur-1);
+}
+function nextOSCode(profile=currentProfile()){
+  return reserveOSCode(profile).code;
 }
 function upsertOS(os, profile=currentProfile()){
   const list=loadOSList(profile);
@@ -2529,26 +2558,38 @@ function deleteOS(id, profile=currentProfile()){
 function renderOSKanban(){
   const board=document.getElementById('osKanban');
   if(!board) return;
+  const empty=document.getElementById('osEmpty');
   const cols={};
   Object.keys(OS_STATUS_LABELS).forEach(k=>{
     cols[k]=board.querySelector(`[data-status="${k}"] .cards`);
     if(cols[k]) cols[k].innerHTML='';
   });
   const counts={loja:0,oficina:0,aguardando:0,completo:0};
+  const f=ui.os.filters;
   const list=loadOSList();
   list.forEach(os=>{
+    if(!f.types.includes(os.tipo||'reloj')) return;
+    if(f.status && os.status!==f.status) return;
+    if(f.text){
+      const t=f.text;
+      const hay=(os.codigo?.toLowerCase().includes(t)||os.campos.cliente?.toLowerCase().includes(t)||os.campos.marca?.toLowerCase().includes(t));
+      if(!hay) return;
+    }
+    const osDate=os.createdAt?os.createdAt.slice(0,10):'';
+    if(f.from && osDate < f.from) return;
+    if(f.to && osDate > f.to) return;
     const col=cols[os.status||'loja'];
     if(!col) return;
     const card=document.createElement('div');
-    card.className='os-card reloj';
+    card.className=`os-card ${os.tipo}`;
     card.draggable=true;
     card.dataset.id=os.id;
+    card.tabIndex=0;
     card.innerHTML=`<div class="os-card-head">${os.codigo}</div>`+
       `<div class="os-card-body">`+
       `<div><strong>${os.campos.cliente}</strong> - ${os.campos.telefone}</div>`+
       `<div>Marca: ${os.campos.marca}</div>`+
-      `<div>Serviço: ${os.campos.servico}</div>`+
-      `<div class="os-card-dates">${os.campos.dataHoje||''}${os.campos.dataOficina?` | ${os.campos.dataOficina}`:''}${os.campos.dataEntrega?` | ${os.campos.dataEntrega}`:''}</div>`+
+      `<div class="os-card-dates">${os.campos.dataHoje||formatDateBr(os.createdAt)}${os.campos.dataOficina?` | ${os.campos.dataOficina}`:''}${os.campos.dataEntrega?` | ${os.campos.dataEntrega}`:''}</div>`+
       `${os.campos.marcasUso?'<div class="badge">Marcas de uso</div>':''}`+
       `</div>`+
       `<div class="os-card-actions">`+
@@ -2568,6 +2609,9 @@ function renderOSKanban(){
     const cnt=board.querySelector(`[data-status="${k}"] .count`);
     if(cnt) cnt.textContent=counts[k]||0;
   });
+  const total=Object.values(counts).reduce((a,b)=>a+b,0);
+  if(empty){ empty.hidden=total>0; }
+  board.hidden=total===0;
 }
 
 function printOSReloj(os){
@@ -2678,8 +2722,20 @@ function openOSTypeModal(){
   const saveBtn=modal.querySelector('#modal-save');
   title.textContent='Nova OS';
   saveBtn.hidden=true;
-  body.innerHTML=`<div class="os-type-choices"><button class="os-type" data-type="reloj">Relojoaria</button><button class="os-type" disabled>Joalheria<br><small>em breve</small></button><button class="os-type" disabled>Óptica<br><small>em breve</small></button></div>`;
+  body.innerHTML=`<div class="os-type-choices"><button class="os-type os-type-reloj" data-type="reloj">Relojoaria</button><button class="os-type os-type-joia" data-type="joia">Joalheria</button><button class="os-type os-type-optica" data-type="optica">Óptica</button></div>`;
   body.querySelector('[data-type="reloj"]').addEventListener('click',()=>{ modal.close(); openRelojForm(); });
+  body.querySelector('[data-type="joia"]').addEventListener('click',()=>{ modal.close(); openComingSoon('Joalheria'); });
+  body.querySelector('[data-type="optica"]').addEventListener('click',()=>{ modal.close(); openComingSoon('Óptica'); });
+  modal.open();
+}
+function openComingSoon(label){
+  const modal=document.getElementById('app-modal');
+  const title=document.getElementById('modal-title');
+  const body=modal.querySelector('.modal-body');
+  const saveBtn=modal.querySelector('#modal-save');
+  title.textContent=label;
+  saveBtn.hidden=true;
+  body.innerHTML='<p>Em breve</p>';
   modal.open();
 }
 function openRelojForm(os){
@@ -2689,12 +2745,15 @@ function openRelojForm(os){
   const saveBtn=modal.querySelector('#modal-save');
   const campos=os?.campos||{};
   const hoje=campos.dataHoje||new Date().toLocaleDateString('pt-BR');
-  title.textContent=os?`Editar OS ${os.codigo}`:'Nova OS Relojoaria';
+  let reserved=null; let saved=false; let codigo=os?.codigo;
+  if(!os){ reserved=reserveOSCode(); codigo=reserved.code; }
+  title.textContent=os?`Editar OS ${codigo}`:'Nova OS Relojoaria';
   saveBtn.hidden=false;
-  body.innerHTML=`<form id="osRelojForm" class="form-os"><div class="modal-section"><label>Cliente*<input name="cliente" value="${campos.cliente||''}" required></label><label>Telefone*<input name="telefone" value="${campos.telefone||''}" required></label><label>Data de Hoje<input name="dataHoje" value="${hoje}"></label><label>Marca do relógio*<input name="marca" value="${campos.marca||''}" required></label><label><input type="checkbox" name="marcasUso" ${campos.marcasUso?'checked':''}> Marcas de uso</label><label>Pulseira<input name="pulseira" value="${campos.pulseira||''}"></label><label>Data oficina<input type="date" name="dataOficina" value="${campos.dataOficina||''}"></label><label>Data de entrega<input type="date" name="dataEntrega" value="${campos.dataEntrega||''}"></label><label>Observações de Garantia<textarea name="garantia">${campos.garantia||''}</textarea></label><label>Serviço*<textarea name="servico" required>${campos.servico||''}</textarea></label><label>Observação<textarea name="observacao">${campos.observacao||''}</textarea></label><label>Nota para Oficina<textarea name="notaOficina">${campos.notaOficina||''}</textarea></label><label>Nota para Loja<textarea name="notaLoja">${campos.notaLoja||''}</textarea></label></div><div class="os-error" style="color:var(--red-600);"></div></form>`;
+  body.innerHTML=`<form id="osRelojForm" class="form-os"><div class="os-code">${codigo}</div><div class="modal-section"><label>Cliente*<input name="cliente" value="${campos.cliente||''}" required></label><label>Telefone*<input name="telefone" value="${campos.telefone||''}" required></label><label>Data de Hoje<input name="dataHoje" value="${hoje}"></label><label>Marca do relógio*<input name="marca" value="${campos.marca||''}" required></label><label><input type="checkbox" name="marcasUso" ${campos.marcasUso?'checked':''}> Marcas de uso</label><label>Pulseira<input name="pulseira" value="${campos.pulseira||''}"></label><label>Data oficina<input type="date" name="dataOficina" value="${campos.dataOficina||''}"></label><label>Data de entrega<input type="date" name="dataEntrega" value="${campos.dataEntrega||''}"></label><label>Observações de Garantia<textarea name="garantia">${campos.garantia||''}</textarea></label><label>Serviço*<textarea name="servico" required>${campos.servico||''}</textarea></label><label>Observação<textarea name="observacao">${campos.observacao||''}</textarea></label><label>Nota para Oficina<textarea name="notaOficina">${campos.notaOficina||''}</textarea></label><label>Nota para Loja<textarea name="notaLoja">${campos.notaLoja||''}</textarea></label></div><div class="os-error" style="color:var(--red-600);"></div></form>`;
+  const form=body.querySelector('#osRelojForm');
+  form.addEventListener('keydown',e=>{ if(e.key==='Enter' && e.target.tagName!=='TEXTAREA'){ e.preventDefault(); saveBtn.click(); }});
   saveBtn.onclick=e=>{
     e.preventDefault();
-    const form=body.querySelector('#osRelojForm');
     const fd=new FormData(form);
     const data=Object.fromEntries(fd.entries());
     data.marcasUso=fd.get('marcasUso')==='on';
@@ -2710,20 +2769,35 @@ function openRelojForm(os){
       os.updatedAt=now;
       upsertOS(os);
     } else {
-      const codigo=nextOSCode();
       const novo={id:Date.now(),codigo,tipo:'reloj',perfil:currentProfile(),status:'loja',campos:data,createdAt:now,updatedAt:now};
       const list=loadOSList();
       list.push(novo);
       saveOSList(list);
     }
+    saved=true;
     modal.close();
     renderOSKanban();
   };
+  const originalClose=modal.close;
+  modal.close=()=>{ if(!saved && reserved) releaseOSCode(reserved.seq); modal.close=originalClose; originalClose(); };
   modal.open();
 }
 function initOSPage(){
   const btn=document.getElementById('btnNovaOS');
+  const btnEmpty=document.getElementById('btnNovaOSEmpty');
   if(btn) btn.addEventListener('click',openOSTypeModal);
+  if(btnEmpty) btnEmpty.addEventListener('click',openOSTypeModal);
+  const f=ui.os.filters;
+  const search=document.getElementById('osSearch');
+  const status=document.getElementById('osStatusFilter');
+  const from=document.getElementById('osFrom');
+  const to=document.getElementById('osTo');
+  const type=document.getElementById('osTypeFilter');
+  if(search) search.addEventListener('input',e=>{ f.text=e.target.value.toLowerCase(); renderOSKanban(); });
+  if(status) status.addEventListener('change',e=>{ f.status=e.target.value; renderOSKanban(); });
+  if(from) from.addEventListener('change',e=>{ f.from=e.target.value; renderOSKanban(); });
+  if(to) to.addEventListener('change',e=>{ f.to=e.target.value; renderOSKanban(); });
+  if(type) type.addEventListener('change',()=>{ f.types=[...type.selectedOptions].map(o=>o.value); renderOSKanban(); });
   const board=document.getElementById('osKanban');
   if(board){
     board.addEventListener('click',e=>{
@@ -2745,6 +2819,12 @@ function initOSPage(){
           saveOSList(list);
           renderOSKanban();
         }
+      }
+    });
+    board.addEventListener('keydown',e=>{
+      if(e.target.classList.contains('os-card') && e.key==='Enter'){
+        const os=loadOSList().find(o=>o.id==e.target.dataset.id);
+        if(os) openRelojForm(os);
       }
     });
     setupOSDragAndDrop();

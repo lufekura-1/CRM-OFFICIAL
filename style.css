@@ -31,7 +31,9 @@
   --card-danger-soft: #f8d7da;
   --card-success-soft: #d4edda;
   --card-info-soft: #d1ecf1;
-  --os-reloj-color: #0d47a1;
+  --os-reloj-color: #183C7A;
+  --os-joia-color: #C99700;
+  --os-optica-color: #8B1E1E;
 }
 html.theme-dark {
   --color-app-bg: #121212;
@@ -300,18 +302,36 @@ input[name="telefone"] { width:18ch; }
 .table-area, .kanban-area { margin-top: 2rem; padding: 2rem; border: 2px dashed var(--color-border); }
 
 /* ===== Ordem de Serviço ===== */
-.os-toolbar { margin-bottom: 1rem; }
+.os-toolbar { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom: 1rem; }
+.os-filters{display:flex; flex-wrap:wrap; gap:8px;}
+.os-filters input, .os-filters select{height:var(--control-height);}
 .os-kanban { display: flex; gap: 1rem; align-items: flex-start; }
 .os-kanban .kanban-col { flex: 1; background: var(--surface); border: 1px solid var(--color-border); border-radius: var(--radius-lg); padding: 0.5rem; min-height: 200px; }
 .os-kanban .kanban-col h3 { margin: 0 0 0.5rem; font-size: 1rem; display: flex; justify-content: space-between; }
 .os-card { border: 1px solid var(--color-border); border-radius: var(--radius-md); margin-bottom: 0.5rem; overflow: hidden; }
-.os-card-head { padding: 4px 8px; font-weight: bold; color: #fff; background: var(--os-reloj-color); }
+.os-card-head { padding: 4px 8px; font-weight: bold; color: #fff; }
 .os-card.reloj { border-color: var(--os-reloj-color); }
+.os-card.joia { border-color: var(--os-joia-color); }
+.os-card.optica { border-color: var(--os-optica-color); }
+.os-card.reloj .os-card-head{ background: var(--os-reloj-color); }
+.os-card.joia .os-card-head{ background: var(--os-joia-color); }
+.os-card.optica .os-card-head{ background: var(--os-optica-color); }
 .os-card-body { padding: 4px 8px; font-size: 0.875rem; }
-.os-card .badge { display: inline-block; padding: 2px 4px; background: var(--os-reloj-color); color: #fff; border-radius: var(--radius-sm); font-size: 0.75rem; }
+.badge{display:inline-block;padding:2px 4px;border-radius:var(--radius-sm);font-size:0.75rem;}
+.os-card .badge{color:#fff;}
+.os-card.reloj .badge{background: var(--os-reloj-color);}
+.os-card.joia .badge{background: var(--os-joia-color);}
+.os-card.optica .badge{background: var(--os-optica-color);}
 .os-card-actions { padding: 4px 8px; display: flex; flex-wrap: wrap; gap: 4px; }
 .os-move-select { margin-left: 4px; }
 .os-kanban .kanban-col.drag-over { outline:2px dashed var(--os-reloj-color); }
+.os-type-choices{display:flex;gap:8px;flex-wrap:wrap;}
+.os-type{padding:12px;border:0;border-radius:var(--radius-md);color:#fff;cursor:pointer;}
+.os-type-reloj{background:var(--os-reloj-color);}
+.os-type-joia{background:var(--os-joia-color);}
+.os-type-optica{background:var(--os-optica-color);}
+.os-empty{text-align:center;padding:2rem;}
+.os-code{font-weight:700;margin-bottom:8px;}
 .toast-stack {
   position: fixed;
   bottom: 1rem;
