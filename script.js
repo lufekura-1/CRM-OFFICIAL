@@ -2808,24 +2808,25 @@ const ICON_MOVE = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20
 const ICON_EDIT = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"></path></svg>`;
 const ICON_TRASH = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-2 14H7L5 6"></path><path d="M10 11v6"></path><path d="M14 11v6"></path><path d="M9 6V4h6v2"></path></svg>`;
 const OS_PAGE_SIZE=20;
-function osListKey(profile=currentProfile()){ return `os:${profile}:reloj`; }
-function osSeqKey(profile=currentProfile()){ return `os:${profile}:seq:reloj`; }
+function osListKey(profile=currentProfile()){ return `os:${profile}`; }
+function osSeqKey(profile=currentProfile(), tipo='reloj'){ return `os:${profile}:seq:${tipo}`; }
 function loadOSList(profile=currentProfile()){ return getJSON(osListKey(profile), []); }
 function saveOSList(list, profile=currentProfile()){ setJSON(osListKey(profile), list); }
-function reserveOSCode(profile=currentProfile()){
-  const k=osSeqKey(profile);
+function reserveOSCode(profile=currentProfile(), tipo='reloj'){
+  const k=osSeqKey(profile, tipo);
   const seq=parseInt(localStorage.getItem(k)||'0',10)+1;
   localStorage.setItem(k, seq);
   const sig=OS_SIGLAS[profile]||'UT';
-  return { code:`RE${String(seq).padStart(4,'0')}${sig}`, seq };
+  const prefix={ reloj:'RE', optica:'OT', joia:'JO' }[tipo]||'RE';
+  return { code:`${prefix}${String(seq).padStart(4,'0')}${sig}`, seq };
 }
-function releaseOSCode(seq, profile=currentProfile()){
-  const k=osSeqKey(profile);
+function releaseOSCode(seq, profile=currentProfile(), tipo='reloj'){
+  const k=osSeqKey(profile, tipo);
   const cur=parseInt(localStorage.getItem(k)||'0',10);
   if(cur===seq) localStorage.setItem(k, cur-1);
 }
-function nextOSCode(profile=currentProfile()){
-  return reserveOSCode(profile).code;
+function nextOSCode(profile=currentProfile(), tipo='reloj'){
+  return reserveOSCode(profile, tipo).code;
 }
 function upsertOS(os, profile=currentProfile()){
   const list=loadOSList(profile);
@@ -2859,7 +2860,9 @@ function renderOSKanban(){
     if(f.status && os.status!==f.status) return;
     if(f.text){
       const t=f.text;
-      const hay=(os.codigo?.toLowerCase().includes(t)||os.campos.cliente?.toLowerCase().includes(t)||os.campos.marca?.toLowerCase().includes(t));
+      const nome=(os.campos.nome||os.campos.cliente||'').toLowerCase();
+      const marca=(os.campos.marca||'').toLowerCase();
+      const hay=(os.codigo?.toLowerCase().includes(t)||nome.includes(t)||marca.includes(t));
       if(!hay) return;
     }
     const osDate=os.createdAt?os.createdAt.slice(0,10):'';
@@ -2883,20 +2886,22 @@ function renderOSKanban(){
     const container=col.querySelector('.cards');
     slice.forEach(os=>{
       const card=document.createElement('div');
-      card.className=`os-card ${os.tipo}`;
+      const tipo=os.tipo||'reloj';
+      card.className=`os-card ${tipo}`;
       card.draggable=true;
       card.dataset.id=os.id;
       card.tabIndex=0;
       const dates=[];
       const oficinaDate=os.campos.dataOficina;
       const prevDate=os.campos.previsaoEntrega||os.campos.dataEntrega;
-      if(oficinaDate) {
+      if(tipo!=='optica' && oficinaDate) {
         dates.push(`<div>Data de Oficina: ${formatDateDDMMYYYY(oficinaDate)}</div>`);
       }
       if(prevDate) {
-        dates.push(`<div class="previsao">Previsão de entrega: ${formatDateDDMMYYYY(prevDate)}</div>`);
+        dates.push(`<div class="previsao">Previsão de Entrega: ${formatDateDDMMYYYY(prevDate)}</div>`);
       }
-      card.innerHTML=`<div class="os-card-top"><div class="os-card-title"><span class="os-code">${os.codigo}</span> <strong>${os.campos.cliente}</strong> - ${os.campos.telefone}</div>`+
+      const nome=os.campos.nome||os.campos.cliente;
+      card.innerHTML=`<div class="os-card-top"><div class="os-card-title"><span class="os-code">${os.codigo}</span> <strong>${nome}</strong> - ${os.campos.telefone}</div>`+
         `<div class="os-card-actions">`+
         `<button class="os-action btn-os-imprimir" title="Imprimir" aria-label="Imprimir" data-id="${os.id}">${ICON_PRINTER}</button>`+
         `<button class="os-action btn-os-mover" title="Mover" aria-label="Mover" data-id="${os.id}">${ICON_MOVE}</button>`+
@@ -2908,8 +2913,7 @@ function renderOSKanban(){
         `<button class="os-action btn-os-excluir" title="Excluir" aria-label="Excluir" data-id="${os.id}">${ICON_TRASH}</button>`+
         `</div></div>`+
         `<div class="os-card-body">`+
-        `<div>Marca: ${os.campos.marca||''}</div>`+
-        `${os.campos.marcasUso?'<div class=\"badge\">Marcas de uso</div>':''}`+
+        `${tipo==='optica' ? `<div>Armação: ${os.campos.armacao||''}</div><div>Lente: ${os.campos.lente||''}</div>` : `<div>Marca: ${os.campos.marca||''}</div>${os.campos.marcasUso?'<div class=\"badge\">Marcas de uso</div>':''}`}`+
         `${dates.length?`<div class="os-card-dates">${dates.join('')}</div>`:''}`+
         `</div>`;
       container.appendChild(card);
@@ -2932,6 +2936,89 @@ function renderOSKanban(){
   board.hidden=total===0;
 }
 
+function printOSOptica(os){
+  const campos=os.campos;
+  const dataAtual=campos.dataAtual||campos.dataHoje||formatDateDDMMYYYY(new Date());
+  const tipo='optica';
+  const tipoLabel=OS_TIPO_LABELS[tipo];
+  const perfilInfo=getProfileInfo();
+  const garantiaTexto=getGarantiaTexto(tipo);
+  function via(titulo,opts){
+    const showContacts = opts.showContacts!==false;
+    const logo = perfilInfo.logo ?
+      `<img src="${perfilInfo.logo}" alt="Logo" class="logo-img">` :
+      `<div class="logo-placeholder">Logo</div>`;
+    const contato = showContacts ?
+      `<div class="os-print-contact">${perfilInfo.telefone?`<div>${perfilInfo.telefone}</div>`:''}${perfilInfo.endereco?`<div>${perfilInfo.endereco}</div>`:''}${perfilInfo.instagram?`<div><a href="https://instagram.com/${perfilInfo.instagram.replace(/^@/,'')}" target="_blank">${perfilInfo.instagram}</a></div>`:''}</div>` : '';
+    const dates=[];
+    const prevDate=campos.previsaoEntrega;
+    if(opts.previsaoEntrega && prevDate) {
+      dates.push(`<div class="previsao">Previsão de Entrega: ${formatDateDDMMYYYY(prevDate)}</div>`);
+    }
+    let valores='';
+    if(opts.valor){
+      const va=campos.valores?.armacao||0;
+      const vl=campos.valores?.lente||0;
+      const vt=campos.valores?.total||va+vl;
+      valores=`<div><strong>Valor Armação:</strong> ${formatCurrency(va)}</div>`+
+              `<div><strong>Valor Lente:</strong> ${formatCurrency(vl)}</div>`+
+              `<div><strong>Valor Total:</strong> ${formatCurrency(vt)}</div>`;
+    }
+    const g=campos.grau||{};
+    let html=`<section class="os-print-via">`+
+      `<div class="os-print-header">${logo}${contato}</div>`+
+      `<div class="os-print-head ${tipo}"><span class="code">${os.codigo}</span> <span class="tipo">${tipoLabel}</span></div>`+
+      `<h2>${titulo}</h2>`+
+      `<div class="os-print-body">`+
+      `<div><strong>Nome:</strong> ${campos.nome||campos.cliente||''}</div>`+
+      `<div><strong>Telefone:</strong> ${campos.telefone||''}</div>`+
+      `${campos.cpf?`<div><strong>CPF:</strong> ${campos.cpf}</div>`:''}`+
+      `<div><strong>Data atual:</strong> ${formatDateDDMMYYYY(dataAtual)}</div>`+
+      `${campos.armacao?`<div><strong>Armação:</strong> ${campos.armacao}</div>`:''}`+
+      `${campos.lente?`<div><strong>Lente:</strong> ${campos.lente}</div>`:''}`+
+      `<table class="grau-table"><thead><tr><th></th><th>ESF</th><th>CIL</th><th>EIXO</th><th>DNP</th><th>ADIÇÃO</th></tr></thead>`+
+      `<tbody><tr><th>OE</th><td>${g.OE?.esf||''}</td><td>${g.OE?.cil||''}</td><td>${g.OE?.eixo||''}</td><td>${g.OE?.dnp||''}</td><td>${g.OE?.adicao||''}</td></tr>`+
+      `<tr><th>OD</th><td>${g.OD?.esf||''}</td><td>${g.OD?.cil||''}</td><td>${g.OD?.eixo||''}</td><td>${g.OD?.dnp||''}</td><td>${g.OD?.adicao||''}</td></tr></tbody></table>`+
+      `${campos.observacao?`<div><strong>Observação:</strong> ${campos.observacao}</div>`:''}`+
+      `${valores}`+
+      `${opts.garantia&&garantiaTexto?`<div class="os-garantia">${garantiaTexto}</div><div class="assinatura"></div>`:''}`+
+      `</div>`+
+      `${dates.length?`<div class="os-print-dates">${dates.join('')}</div>`:''}`+
+      `</section>`;
+    return html;
+  }
+  const content=
+    via('Via do Cliente',{previsaoEntrega:true,garantia:true,valor:true,showContacts:true})+
+    `<hr>`+
+    via('Via Loja',{previsaoEntrega:true,garantia:true,valor:true,showContacts:false})+
+    `<hr>`+
+    via('Via da Oficina',{previsaoEntrega:false,garantia:false,valor:false,showContacts:true});
+  const w=window.open('','_blank');
+  w.document.write(`<!DOCTYPE html><html><head><title>${os.codigo}</title><style>
+  @page{size:A4 portrait;margin:6mm;}body{font-family:sans-serif;font-size:12pt;background:#fff;}
+  hr{border:0;border-top:1px solid #000;margin:6mm 0;}
+  .os-print-via{page-break-inside:avoid;background:#fff;border:1px solid #ccc;box-shadow:0 1px 2px rgba(0,0,0,0.1);padding:4mm;}
+  .os-print-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
+  .os-print-header .logo-img{max-height:40px;object-fit:contain;}
+  .os-print-header .logo-placeholder{width:80px;height:40px;background:#eee;display:flex;align-items:center;justify-content:center;color:#666;font-size:10pt;}
+  .os-print-contact{text-align:right;font-size:10pt;}
+  .os-print-head{font-weight:bold;color:#fff;padding:4px 8px;}
+  .os-print-head.reloj{background:#183C7A;}
+  .os-print-head.joia{background:#C99700;}
+  .os-print-head.optica{background:#8B0000;}
+  .os-print-dates{margin-top:8px;}
+  .os-print-dates .previsao{margin-top:4px;font-weight:bold;}
+  .assinatura{border-top:1px solid #000;height:40px;width:60mm;text-align:center;margin-top:8mm;}
+  .assinatura:after{content:"Assinatura";position:relative;top:8px;display:block;font-size:10pt;}
+  h2{margin:4px 0 8px;font-size:1rem;}
+  .grau-table{width:100%;border-collapse:collapse;margin:4px 0;}
+  .grau-table th,.grau-table td{border:1px solid #000;padding:2px;font-size:10pt;text-align:center;}
+  .grau-table th:first-child{text-align:left;}
+  </style></head><body>${content}</body></html>`);
+  w.document.close();
+  w.addEventListener('load',()=>w.print());
+}
+
 function printOS(os){
   const campos=os.campos;
   const dataAtual=campos.dataAtual||campos.dataHoje||formatDateDDMMYYYY(new Date());
@@ -2939,6 +3026,7 @@ function printOS(os){
   const tipoLabel=OS_TIPO_LABELS[tipo]||'';
   const perfilInfo=getProfileInfo();
   const garantiaTexto=getGarantiaTexto(tipo);
+  if(tipo==='optica') { return printOSOptica(os); }
   function via(titulo,opts){
     const showContacts = opts.showContacts!==false;
     const logo = perfilInfo.logo ?
@@ -2953,7 +3041,7 @@ function printOS(os){
       dates.push(`<div>Data de Oficina: ${formatDateDDMMYYYY(oficinaDate)}</div>`);
     }
     if(opts.previsaoEntrega && prevDate) {
-      dates.push(`<div class="previsao">Previsão de entrega: ${formatDateDDMMYYYY(prevDate)}</div>`);
+      dates.push(`<div class="previsao">Previsão de Entrega: ${formatDateDDMMYYYY(prevDate)}</div>`);
     }
     let html=`<section class="os-print-via">`+
       `<div class="os-print-header">${logo}${contato}</div>`+
@@ -2996,12 +3084,15 @@ function printOS(os){
   .os-print-head{font-weight:bold;color:#fff;padding:4px 8px;}
   .os-print-head.reloj{background:#183C7A;}
   .os-print-head.joia{background:#C99700;}
-  .os-print-head.optica{background:#8B1E1E;}
+  .os-print-head.optica{background:#8B0000;}
   .os-print-dates{margin-top:8px;}
   .os-print-dates .previsao{margin-top:4px;font-weight:bold;}
   .assinatura{border-top:1px solid #000;height:40px;width:60mm;text-align:center;margin-top:8mm;}
   .assinatura:after{content:"Assinatura";position:relative;top:8px;display:block;font-size:10pt;}
   h2{margin:4px 0 8px;font-size:1rem;}
+  .grau-table{width:100%;border-collapse:collapse;margin:4px 0;}
+  .grau-table th,.grau-table td{border:1px solid #000;padding:2px;font-size:10pt;text-align:center;}
+  .grau-table th:first-child{text-align:left;}
   </style></head><body>${content}</body></html>`);
   w.document.close();
   w.addEventListener('load',()=>w.print());
@@ -3087,13 +3178,65 @@ function openOSForm(tipo, os){
   const campos=os?.campos||{};
   const dataAtual=campos.dataAtual||campos.dataHoje||formatDateDDMMYYYY(new Date());
   let reserved=null; let saved=false; let codigo=os?.codigo;
-  if(!os){ reserved=reserveOSCode(); codigo=reserved.code; }
+  if(!os){ reserved=reserveOSCode(currentProfile(), tipo); codigo=reserved.code; }
   const tipoLabel=OS_TIPO_LABELS[tipo]||'';
   title.textContent=os?`Editar OS ${codigo}`:`Nova OS ${tipoLabel}`;
   saveBtn.hidden=false;
-  body.innerHTML=`<form id="osForm"><div class="form-grid"><div class="os-code col-span-12">${codigo}</div><label class="col-span-6">Cliente*<input class="text-input" name="cliente" value="${campos.cliente||''}" required></label><label class="col-span-6">Telefone*<input class="text-input" name="telefone" value="${campos.telefone||''}" required></label><label class="col-span-6">Data atual<input class="text-input" name="dataAtual" value="${dataAtual}" readonly></label><label class="col-span-6">Marca<input class="text-input" name="marca" value="${campos.marca||''}"></label><label class="col-span-6">Pulseira<input class="text-input" name="pulseira" value="${campos.pulseira||''}"></label><label class="col-span-6">Mostrador<input class="text-input" name="mostrador" value="${campos.mostrador||''}"></label><label class="col-span-6">Marcas de uso<input type="checkbox" class="switch" name="marcasUso" ${campos.marcasUso?'checked':''}></label><label class="col-span-12">Serviço*<textarea class="textarea" name="servico" rows="2" required>${campos.servico||''}</textarea></label><label class="col-span-12">Observação<textarea class="textarea" name="observacao" rows="3">${campos.observacao||''}</textarea></label><label class="col-span-12">Valor a Pagar (R$)<input class="text-input" name="valor" value="${campos.valor?formatCurrency(campos.valor):''}" placeholder="0,00" inputmode="decimal"></label><label class="col-span-6">Data de Oficina<input type="date" class="date-input" name="dataOficina" value="${campos.dataOficina?formatDateYYYYMMDD(campos.dataOficina):''}"></label><label class="col-span-6">Previsão de entrega<input type="date" class="date-input" name="previsaoEntrega" value="${(campos.previsaoEntrega||campos.dataEntrega)?formatDateYYYYMMDD(campos.previsaoEntrega||campos.dataEntrega):''}"></label><label class="col-span-12">Nota para Oficina<textarea class="textarea" name="notaOficina" rows="2">${campos.notaOficina||''}</textarea></label><label class="col-span-12">Nota para Loja<textarea class="textarea" name="notaLoja" rows="2">${campos.notaLoja||''}</textarea></label><div class="os-error col-span-12" style="color:var(--red-600);"></div></div></form>`;
+  if(tipo==='optica'){
+    body.innerHTML=`<form id="osForm"><div class="form-grid">
+      <div class="os-code col-span-12">${codigo}</div>
+      <label class="col-span-6">Nome*<input class="text-input" name="nome" value="${campos.nome||''}" required></label>
+      <label class="col-span-6">Telefone*<input class="text-input" name="telefone" value="${campos.telefone||''}" required></label>
+      <label class="col-span-6">CPF<input class="text-input" name="cpf" value="${campos.cpf||''}"></label>
+      <label class="col-span-6">Data atual<input class="text-input" name="dataAtual" value="${dataAtual}" readonly></label>
+      <label class="col-span-6">Armação<input class="text-input" name="armacao" value="${campos.armacao||''}"></label>
+      <label class="col-span-6">Lente<input class="text-input" name="lente" value="${campos.lente||''}"></label>
+      <div class="col-span-12">
+        <table class="grau-table">
+          <thead><tr><th></th><th>ESF</th><th>CIL</th><th>EIXO</th><th>DNP</th><th>ADIÇÃO</th></tr></thead>
+          <tbody>
+            <tr><th>OE</th>
+              <td><input class="text-input" name="oe_esf" value="${campos.grau?.OE?.esf||''}"></td>
+              <td><input class="text-input" name="oe_cil" value="${campos.grau?.OE?.cil||''}"></td>
+              <td><input class="text-input" name="oe_eixo" value="${campos.grau?.OE?.eixo||''}"></td>
+              <td><input class="text-input" name="oe_dnp" value="${campos.grau?.OE?.dnp||''}"></td>
+              <td><input class="text-input" name="oe_adicao" value="${campos.grau?.OE?.adicao||''}"></td>
+            </tr>
+            <tr><th>OD</th>
+              <td><input class="text-input" name="od_esf" value="${campos.grau?.OD?.esf||''}"></td>
+              <td><input class="text-input" name="od_cil" value="${campos.grau?.OD?.cil||''}"></td>
+              <td><input class="text-input" name="od_eixo" value="${campos.grau?.OD?.eixo||''}"></td>
+              <td><input class="text-input" name="od_dnp" value="${campos.grau?.OD?.dnp||''}"></td>
+              <td><input class="text-input" name="od_adicao" value="${campos.grau?.OD?.adicao||''}"></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <label class="col-span-12">Observação<textarea class="textarea" name="observacao" rows="3">${campos.observacao||''}</textarea></label>
+      <label class="col-span-6">Previsão de Entrega<input type="date" class="date-input" name="previsaoEntrega" value="${campos.previsaoEntrega?formatDateYYYYMMDD(campos.previsaoEntrega):''}"></label>
+      <label class="col-span-6">Valor Armação (R$)<input class="text-input" name="valorArmacao" value="${campos.valores?formatCurrency(campos.valores.armacao):''}" placeholder="0,00" inputmode="decimal"></label>
+      <label class="col-span-6">Valor Lente (R$)<input class="text-input" name="valorLente" value="${campos.valores?formatCurrency(campos.valores.lente):''}" placeholder="0,00" inputmode="decimal"></label>
+      <label class="col-span-6">Valor Total (R$)<input class="text-input" name="valorTotal" value="${campos.valores?formatCurrency(campos.valores.total):''}" readonly></label>
+      <div class="os-error col-span-12" style="color:var(--red-600);"></div>
+    </div></form>`;
+  } else {
+    body.innerHTML=`<form id="osForm"><div class="form-grid"><div class="os-code col-span-12">${codigo}</div><label class="col-span-6">Cliente*<input class="text-input" name="cliente" value="${campos.cliente||''}" required></label><label class="col-span-6">Telefone*<input class="text-input" name="telefone" value="${campos.telefone||''}" required></label><label class="col-span-6">Data atual<input class="text-input" name="dataAtual" value="${dataAtual}" readonly></label><label class="col-span-6">Marca<input class="text-input" name="marca" value="${campos.marca||''}"></label><label class="col-span-6">Pulseira<input class="text-input" name="pulseira" value="${campos.pulseira||''}"></label><label class="col-span-6">Mostrador<input class="text-input" name="mostrador" value="${campos.mostrador||''}"></label><label class="col-span-6">Marcas de uso<input type="checkbox" class="switch" name="marcasUso" ${campos.marcasUso?'checked':''}></label><label class="col-span-12">Serviço*<textarea class="textarea" name="servico" rows="2" required>${campos.servico||''}</textarea></label><label class="col-span-12">Observação<textarea class="textarea" name="observacao" rows="3">${campos.observacao||''}</textarea></label><label class="col-span-12">Valor a Pagar (R$)<input class="text-input" name="valor" value="${campos.valor?formatCurrency(campos.valor):''}" placeholder="0,00" inputmode="decimal"></label><label class="col-span-6">Data de Oficina<input type="date" class="date-input" name="dataOficina" value="${campos.dataOficina?formatDateYYYYMMDD(campos.dataOficina):''}"></label><label class="col-span-6">Previsão de Entrega<input type="date" class="date-input" name="previsaoEntrega" value="${(campos.previsaoEntrega||campos.dataEntrega)?formatDateYYYYMMDD(campos.previsaoEntrega||campos.dataEntrega):''}"></label><label class="col-span-12">Nota para Oficina<textarea class="textarea" name="notaOficina" rows="2">${campos.notaOficina||''}</textarea></label><label class="col-span-12">Nota para Loja<textarea class="textarea" name="notaLoja" rows="2">${campos.notaLoja||''}</textarea></label><div class="os-error col-span-12" style="color:var(--red-600);"></div></div></form>`;
+  }
   const form=body.querySelector('#osForm');
-  if(form.valor){
+  if(tipo==='optica'){
+    function maskCurrency(inp){
+      let digits=inp.value.replace(/\D/g,'');
+      inp.value=(Number(digits)/100).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+    }
+    const updateTotal=()=>{
+      const va=parseCurrency(form.valorArmacao.value||'0');
+      const vl=parseCurrency(form.valorLente.value||'0');
+      form.valorTotal.value=(va+vl).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+    };
+    if(form.valorArmacao) form.valorArmacao.addEventListener('input',()=>{ maskCurrency(form.valorArmacao); updateTotal(); });
+    if(form.valorLente) form.valorLente.addEventListener('input',()=>{ maskCurrency(form.valorLente); updateTotal(); });
+    updateTotal();
+  } else if(form.valor){
     form.valor.addEventListener('input',()=>{
       let digits=form.valor.value.replace(/\D/g,'');
       form.valor.value=(Number(digits)/100).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
@@ -3103,16 +3246,35 @@ function openOSForm(tipo, os){
   saveBtn.onclick=e=>{
     e.preventDefault();
     const fd=new FormData(form);
-    const data=Object.fromEntries(fd.entries());
-    data.marcasUso=fd.get('marcasUso')==='on';
-    data.valor=parseCurrency(data.valor);
-    delete data.garantia;
     const err=form.querySelector('.os-error');
     err.textContent='';
-    ['dataAtual','dataOficina','previsaoEntrega'].forEach(k=>{ data[k]=formatDateDDMMYYYY(data[k]); });
-    if(!data.cliente.trim()||!data.telefone.trim()||!data.servico.trim()){
-      err.textContent='Preencha os campos obrigatórios.';
-      return;
+    let data={};
+    if(tipo==='optica'){
+      data.nome=fd.get('nome')||'';
+      data.telefone=fd.get('telefone')||'';
+      data.cpf=fd.get('cpf')||'';
+      data.armacao=fd.get('armacao')||'';
+      data.lente=fd.get('lente')||'';
+      data.grau={ OE:{esf:fd.get('oe_esf')||'', cil:fd.get('oe_cil')||'', eixo:fd.get('oe_eixo')||'', dnp:fd.get('oe_dnp')||'', adicao:fd.get('oe_adicao')||''}, OD:{esf:fd.get('od_esf')||'', cil:fd.get('od_cil')||'', eixo:fd.get('od_eixo')||'', dnp:fd.get('od_dnp')||'', adicao:fd.get('od_adicao')||''} };
+      data.observacao=fd.get('observacao')||'';
+      data.previsaoEntrega=formatDateDDMMYYYY(fd.get('previsaoEntrega'));
+      data.dataAtual=formatDateDDMMYYYY(fd.get('dataAtual'));
+      const va=parseCurrency(fd.get('valorArmacao')||'');
+      const vl=parseCurrency(fd.get('valorLente')||'');
+      data.valores={armacao:va,lente:vl,total:va+vl};
+      if(!data.nome.trim()||!data.telefone.trim()){
+        err.textContent='Preencha os campos obrigatórios.';
+        return;
+      }
+    } else {
+      data=Object.fromEntries(fd.entries());
+      data.marcasUso=fd.get('marcasUso')==='on';
+      data.valor=parseCurrency(data.valor);
+      ['dataAtual','dataOficina','previsaoEntrega'].forEach(k=>{ data[k]=formatDateDDMMYYYY(data[k]); });
+      if(!data.cliente.trim()||!data.telefone.trim()||!data.servico.trim()){
+        err.textContent='Preencha os campos obrigatórios.';
+        return;
+      }
     }
     const now=new Date().toISOString();
     if(os){
@@ -3131,7 +3293,7 @@ function openOSForm(tipo, os){
     renderOSKanban();
   };
   const originalClose=modal.close;
-  modal.close=()=>{ if(!saved && reserved) releaseOSCode(reserved.seq); modal.close=originalClose; originalClose(); };
+  modal.close=()=>{ if(!saved && reserved) releaseOSCode(reserved.seq, currentProfile(), tipo); modal.close=originalClose; originalClose(); };
   modal.open();
 }
 function initOSPage(){
