@@ -61,7 +61,14 @@ function getCalendar(profile=currentProfile()){ return getJSON(`${profile}:calen
 function setCalendar(arr, profile=currentProfile()){ setJSON(`${profile}:calendar`, arr); setJSON(`perfil:${profile}:calendar`, arr); }
 
 function getProfileInfo(profile=currentProfile()){
-  return getJSON(`perfil:${profile}:info`, { telefone:'', endereco:'', instagram:'', logo:'' });
+  return getJSON(`perfil:${profile}:info`, { nome:'', telefone:'', endereco:'', instagram:'', logo:'' });
+}
+
+function getUserPhoto(profile=currentProfile()){
+  return getJSON(`perfil:${profile}:userPhoto`, { src:'', x:50, y:50 });
+}
+function setUserPhoto(data, profile=currentProfile()){
+  setJSON(`perfil:${profile}:userPhoto`, data);
 }
 
 // remove eventos cujo meta.clientId não existe mais
@@ -321,13 +328,82 @@ function filterClientsBySearchAndTags(list, term){
   });
 }
 
+function disablePhotoEdit(badge){
+  if(!badge) return;
+  if(badge._onMouseMove){ badge.removeEventListener('mousemove', badge._onMouseMove); badge._onMouseMove=null; }
+  if(badge._onMouseDown){ badge.removeEventListener('mousedown', badge._onMouseDown); badge._onMouseDown=null; }
+  if(badge._onClick){ badge.removeEventListener('click', badge._onClick); badge._onClick=null; }
+  if(badge._onMouseUp){ document.removeEventListener('mouseup', badge._onMouseUp); badge._onMouseUp=null; }
+  if(badge._input){ badge._input.remove(); badge._input=null; }
+  badge.classList.remove('editable');
+}
+
+function enablePhotoEdit(badge, img){
+  const input=document.createElement('input');
+  input.type='file';
+  input.accept='image/*';
+  input.style.display='none';
+  badge.appendChild(input);
+  const onClick=()=>input.click();
+  badge.addEventListener('click', onClick);
+  badge._onClick=onClick;
+  input.addEventListener('change', e=>{
+    const file=e.target.files[0];
+    if(!file) return;
+    const reader=new FileReader();
+    reader.onload=()=>{ setUserPhoto({src:reader.result, x:50, y:50}); updateProfileUI(); };
+    reader.readAsDataURL(file);
+  });
+  let dragging=false,startX,startY,startPosX,startPosY;
+  const onMouseDown=e=>{
+    dragging=true; startX=e.clientX; startY=e.clientY;
+    startPosX=parseFloat(img.dataset.x)||50; startPosY=parseFloat(img.dataset.y)||50;
+    e.preventDefault();
+  };
+  const onMouseMove=e=>{
+    if(!dragging) return;
+    const rect=badge.getBoundingClientRect();
+    const dx=(e.clientX-startX)/rect.width*100;
+    const dy=(e.clientY-startY)/rect.height*100;
+    let x=Math.max(0,Math.min(100,startPosX+dx));
+    let y=Math.max(0,Math.min(100,startPosY+dy));
+    img.style.objectPosition=`${x}% ${y}%`;
+    img.dataset.x=x; img.dataset.y=y;
+  };
+  const onMouseUp=()=>{
+    if(!dragging) return; dragging=false;
+    const p=getUserPhoto();
+    p.x=parseFloat(img.dataset.x)||50;
+    p.y=parseFloat(img.dataset.y)||50;
+    setUserPhoto(p);
+  };
+  img.addEventListener('mousedown', onMouseDown);
+  badge.addEventListener('mousemove', onMouseMove);
+  document.addEventListener('mouseup', onMouseUp);
+  badge._onMouseDown=onMouseDown;
+  badge._onMouseMove=onMouseMove;
+  badge._onMouseUp=onMouseUp;
+  badge._input=input;
+  badge.classList.add('editable');
+}
+
 function updateProfileUI(){
   const badge=document.getElementById('profileBadge');
   if(!badge) return;
+  disablePhotoEdit(badge);
   const p=activeProfile();
-  badge.textContent=p;
+  const photo=getUserPhoto(p);
+  const imgHtml=photo.src ? `<img src="${photo.src}" class="profile-pic" style="object-position:${photo.x}% ${photo.y}%" data-x="${photo.x}" data-y="${photo.y}">` : `<div class="profile-placeholder">${p[0]}</div>`;
+  badge.innerHTML=imgHtml+`<div class="profile-name">${p}</div>`;
   badge.classList.remove('profile-admin','profile-other');
   badge.classList.add(p==='Administrador'?'profile-admin':'profile-other');
+  if(currentRoute==='gerencia' && photo.src){
+    const img=badge.querySelector('.profile-pic');
+    if(img) enablePhotoEdit(badge,img);
+  } else if(currentRoute==='gerencia'){
+    const img=badge.querySelector('.profile-placeholder');
+    if(img) enablePhotoEdit(badge,img);
+  }
 }
 
 let selectedPurchaseId = null;
@@ -745,6 +821,7 @@ function renderRoute(name){
   if(currentRoute === 'os') initOSPage();
   if(currentRoute === 'gerencia') initGerenciaPage();
   if(currentRoute === 'configuracoes') initConfiguracoesPage();
+  updateProfileUI();
 }
 
 function renderCardGrid(prefix) {
@@ -901,7 +978,43 @@ function renderContato() {
 }
 
 function renderGerencia() {
-  return renderCardGrid('Gerencia');
+  return `
+  <div class="card-grid">
+    <div class="card" data-card-id="loja" data-colspan="6" data-rowspan="2">
+      <div class="card-header"><div class="card-head">Loja</div></div>
+      <div class="card-body">
+        <form id="loja-form" class="form-grid">
+          <div class="form-field col-span-12">
+            <label>Logo da empresa</label>
+            <div class="loja-logo-field">
+              <img id="loja-logo-preview" class="loja-logo-preview" alt="Logo">
+              <button type="button" id="loja-logo-btn" class="btn">Selecionar</button>
+              <input type="file" id="loja-logo" accept="image/*" hidden>
+            </div>
+          </div>
+          <div class="form-field col-span-6"><label for="loja-nome">Nome da loja</label><input id="loja-nome" class="text-input"></div>
+          <div class="form-field col-span-6"><label for="loja-telefone">Telefone</label><input id="loja-telefone" class="text-input"></div>
+          <div class="form-field col-span-12"><label for="loja-endereco">Endereço</label><input id="loja-endereco" class="text-input"></div>
+          <div class="form-field col-span-12"><label for="loja-instagram">Instagram</label><input id="loja-instagram" class="text-input" placeholder="@usuario"></div>
+          <div class="form-field col-span-12"><button type="submit" class="btn btn-primary">Salvar</button></div>
+        </form>
+      </div>
+    </div>
+    <div class="card" data-card-id="usuarios" data-colspan="4" data-rowspan="2">
+      <div class="card-header">
+        <div class="card-head">Usuários</div>
+        <button class="btn-icon btn-plus add-usuario" aria-label="Adicionar" title="Adicionar">${iconPlus}</button>
+      </div>
+      <div class="card-body">
+        <table class="table table-usuarios">
+          <thead><tr><th>Nome</th><th>Email</th><th>Perfil</th><th>Ações</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="card empty-state" data-card-id="ph1"></div>
+    <div class="card empty-state" data-card-id="ph2"></div>
+  </div>`;
 }
 
 function renderConfig() {
@@ -2233,6 +2346,7 @@ function initGerenciaPage(){
           main.innerHTML=renderGerencia();
           cards.apply(main);
           cards.loading(main);
+          initLojaConfig();
           initConfiguracoesPage();
         }
       } else {
@@ -2284,6 +2398,41 @@ function initConfiguracoesPage(){
   }
   addBtn.addEventListener('click',()=>openUsuarioModal());
   render();
+}
+
+function initLojaConfig(){
+  const form=document.getElementById('loja-form');
+  if(!form) return;
+  const info=getProfileInfo();
+  const logoInput=form.querySelector('#loja-logo');
+  const logoBtn=form.querySelector('#loja-logo-btn');
+  const logoPreview=form.querySelector('#loja-logo-preview');
+  form['loja-nome'].value=info.nome||'';
+  form['loja-telefone'].value=info.telefone||'';
+  form['loja-endereco'].value=info.endereco||'';
+  form['loja-instagram'].value=info.instagram||'';
+  if(info.logo){ logoPreview.src=info.logo; }
+  else { logoPreview.style.display='none'; }
+  logoBtn.addEventListener('click',()=>logoInput.click());
+  logoInput.addEventListener('change',e=>{
+    const file=e.target.files[0];
+    if(!file) return;
+    const reader=new FileReader();
+    reader.onload=()=>{ logoPreview.src=reader.result; logoPreview.style.display='block'; };
+    reader.readAsDataURL(file);
+  });
+  form.addEventListener('submit',e=>{
+    e.preventDefault();
+    const payload={
+      nome:form['loja-nome'].value.trim(),
+      telefone:form['loja-telefone'].value.trim(),
+      endereco:form['loja-endereco'].value.trim(),
+      instagram:form['loja-instagram'].value.trim(),
+      logo:logoPreview.src||''
+    };
+    setJSON(`perfil:${currentProfile()}:info`,payload);
+    toast('Dados da loja salvos');
+  });
 }
 
 // ===== Limpeza de caches =====
@@ -2688,10 +2837,11 @@ function printOS(os){
     const logo = perfilInfo.logo ?
       `<img src="${perfilInfo.logo}" alt="Logo" class="logo-img">` :
       `<div class="logo-placeholder">Logo</div>`;
+    const nome = perfilInfo.nome ? `<div class="loja-nome">${perfilInfo.nome}</div>` : '';
     const contato = showContacts ?
-      `<div class="os-print-contact">${perfilInfo.telefone?`<div>${perfilInfo.telefone}</div>`:''}${perfilInfo.endereco?`<div>${perfilInfo.endereco}</div>`:''}${perfilInfo.instagram?`<div>${perfilInfo.instagram}</div>`:''}</div>` : '';
+      `<div class="os-print-contact">${perfilInfo.telefone?`<div>${perfilInfo.telefone}</div>`:''}${perfilInfo.endereco?`<div>${perfilInfo.endereco}</div>`:''}${perfilInfo.instagram?`<div><a href="https://instagram.com/${perfilInfo.instagram.replace(/^@/, '')}" target="_blank">${perfilInfo.instagram}</a></div>`:''}</div>` : '';
     let html=`<section class="os-print-via">`+
-      `<div class="os-print-header">${logo}${contato}</div>`+
+      `<div class="os-print-header">${logo}${nome}${contato}</div>`+
       `<div class="os-print-head ${tipo}"><span class="code">${os.codigo}</span> <span class="tipo">${tipoLabel}</span></div>`+
       `<h2>${titulo}</h2>`+
       `<div class="os-print-body">`+
