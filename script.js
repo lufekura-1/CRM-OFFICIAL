@@ -932,8 +932,25 @@ function formatTelefone(t) {
   return t.replace(/(\d{2})(\d{4,5})(\d{4})/, '($1) $2-$3');
 }
 
-function formatDateBr(str) {
-  return str ? new Date(str).toLocaleDateString('pt-BR') : '';
+function formatDateDDMMYYYY(dateLike) {
+  if(!dateLike) return '';
+  let d;
+  if(typeof dateLike === 'string'){
+    const parts=dateLike.split('/');
+    if(parts.length===3){
+      const [dd,mm,yy]=parts.map(Number);
+      d=new Date(yy,mm-1,dd);
+    } else {
+      d=new Date(dateLike);
+    }
+  } else {
+    d=new Date(dateLike);
+  }
+  if(isNaN(d.getTime())) return '';
+  const day=String(d.getDate()).padStart(2,'0');
+  const month=String(d.getMonth()+1).padStart(2,'0');
+  const year=d.getFullYear();
+  return `${day}/${month}/${year}`;
 }
 
 function formatCurrency(v) {
@@ -1627,7 +1644,7 @@ function initCalendarioPage() {
     pop.className='popover popover-event';
     if(ev.tipo==='desfalque'){
       const admin = getPerfil()==='Administrador';
-      pop.innerHTML=`<div class="pop-head"><span class="pop-date">${formatDateBr(ev.dataISO)}</span>${admin?`<div class="popover-actions"><button class="btn-icon delete" aria-label="Apagar" title="Apagar">${iconTrash}</button></div>`:''}</div><div class="pop-title">${ev.nome} <span class="tag">${ev.periodo==='dia_todo'?'Dia todo':'Manhã'}</span></div>`;
+      pop.innerHTML=`<div class="pop-head"><span class="pop-date">${formatDateDDMMYYYY(ev.dataISO)}</span>${admin?`<div class="popover-actions"><button class="btn-icon delete" aria-label="Apagar" title="Apagar">${iconTrash}</button></div>`:''}</div><div class="pop-title">${ev.nome} <span class="tag">${ev.periodo==='dia_todo'?'Dia todo':'Manhã'}</span></div>`;
       const layer=document.getElementById('calPopoverLayer');
       if(!layer) return;
       layer.appendChild(pop);
@@ -1637,7 +1654,7 @@ function initCalendarioPage() {
       return;
     }
     if(ev.meta?.type==='followup' || ev.color==='followup'){
-      pop.innerHTML=`<div class="pop-head"><span class="pop-date">${formatDateBr(ev.date)}</span></div><div class="pop-title">${ev.title || ''}</div><div class="pop-footer"><label>Contato efetuado <input type="checkbox" class="switch" ${ev.meta?.done?'checked':''}></label></div>`;
+      pop.innerHTML=`<div class="pop-head"><span class="pop-date">${formatDateDDMMYYYY(ev.date)}</span></div><div class="pop-title">${ev.title || ''}</div><div class="pop-footer"><label>Contato efetuado <input type="checkbox" class="switch" ${ev.meta?.done?'checked':''}></label></div>`;
       const layer=document.getElementById('calPopoverLayer');
       if(!layer) return;
       layer.appendChild(pop);
@@ -1651,7 +1668,7 @@ function initCalendarioPage() {
       setupPopoverDismiss(pop,target);
       return;
     }
-    pop.innerHTML=`<div class="pop-head"><span class="pop-date">${formatDateBr(ev.date||ev.dataISO)}</span><div class="popover-actions"><button class="btn-icon delete" aria-label="Apagar" title="Apagar">${iconTrash}</button><button class="btn-icon adjust" aria-label="Ajustar" title="Ajustar">${iconEdit}</button></div></div><div class="pop-title">${ev.title||ev.titulo}</div><div class="pop-divider"></div>${ev.observacao?`<div class="pop-obs">${ev.observacao}</div>`:''}<div class="pop-footer"><input type="checkbox" class="switch" aria-label="Concluído" ${(ev.meta?.done ?? ev.efetuado)?'checked':''}></div>`;
+    pop.innerHTML=`<div class="pop-head"><span class="pop-date">${formatDateDDMMYYYY(ev.date||ev.dataISO)}</span><div class="popover-actions"><button class="btn-icon delete" aria-label="Apagar" title="Apagar">${iconTrash}</button><button class="btn-icon adjust" aria-label="Ajustar" title="Ajustar">${iconEdit}</button></div></div><div class="pop-title">${ev.title||ev.titulo}</div><div class="pop-divider"></div>${ev.observacao?`<div class="pop-obs">${ev.observacao}</div>`:''}<div class="pop-footer"><input type="checkbox" class="switch" aria-label="Concluído" ${(ev.meta?.done ?? ev.efetuado)?'checked':''}></div>`;
     const layer=document.getElementById('calPopoverLayer');
     if(!layer) return;
     layer.appendChild(pop);
@@ -1667,7 +1684,7 @@ function initCalendarioPage() {
     const pop=document.createElement('div');
     pop.className='popover';
     pop.innerHTML=`<div class="popover-body">`
-      +`<div class="popover-row"><span class="label">Data</span><span class="value">${formatDateBr(cp.dataISO)}</span></div>`
+      +`<div class="popover-row"><span class="label">Data</span><span class="value">${formatDateDDMMYYYY(cp.dataISO)}</span></div>`
       +`<div class="popover-row"><span class="label">Cliente</span><span class="value">${cp.clienteNome}</span></div>`
       +`${cp.nfe?`<div class="popover-row"><span class="label">NFE/NFC-e</span><span class="value">${cp.nfe}</span></div>`:''}`
       +`${cp.armacao?`<div class="popover-row"><span class="label">Armação</span><span class="value">${cp.armacao}${cp.armacaoMaterial?` <span class='tag'>${cp.armacaoMaterial}</span>`:''}</span></div>`:''}`
@@ -1800,7 +1817,7 @@ function initClientesPage() {
         tr.innerHTML = `
             <td>${c.nome}</td>
             <td>${formatTelefone(c.telefone)}</td>
-            <td>${compra ? formatDateBr(compra.dataCompra) : '-'}</td>`;
+            <td>${compra ? formatDateDDMMYYYY(compra.dataCompra) : '-'}</td>`;
         if (selecionado === c.id) {
           tr.classList.add('row-selected');
           found = true;
@@ -1831,7 +1848,7 @@ function initClientesPage() {
       const compras = [...c.compras].sort((a, b) => b.dataCompra.localeCompare(a.dataCompra));
       currentClientId = c.id;
       currentClientPurchases = compras;
-      const pills = compras.map(cp => `<button class="pill-date" data-purchase-id="${cp.id}">${formatDateBr(cp.dataCompra)}</button>`).join('');
+      const pills = compras.map(cp => `<button class="pill-date" data-purchase-id="${cp.id}">${formatDateDDMMYYYY(cp.dataCompra)}</button>`).join('');
       detail.innerHTML = `
         <div class="mini-card client-overview">
           <div class="overview-header">
@@ -1843,7 +1860,7 @@ function initClientesPage() {
           </div>
           <div class="dados-pessoais info-grid">
           <div class="cli-field"><span class="phone-ico" aria-hidden="true"></span><span class="cli-label">Telefone:</span><strong class="cli-phone" id="cliPhoneValue">${formatTelefone(c.telefone)}</strong></div>
-          <div class="info-label">Nascimento</div><div class="info-value">${c.dataNascimento ? formatDateBr(c.dataNascimento) : '-'}</div>
+          <div class="info-label">Nascimento</div><div class="info-value">${c.dataNascimento ? formatDateDDMMYYYY(c.dataNascimento) : '-'}</div>
           <div class="info-label">CPF</div><div class="info-value">${c.cpf ? formatCpf(c.cpf) : '-'}</div>
           <div class="info-label">O cliente usa</div><div class="info-value">${(c.usos && c.usos.length)?c.usos.join(', '):'-'}</div>
         </div>
@@ -1865,7 +1882,7 @@ function initClientesPage() {
         purchaseDetail.innerHTML = `
           <div class="purchase-card">
             <div class="card-body">
-            <div class="purchase-date-badge">${formatDateBr(cp.dataCompra)}</div>
+            <div class="purchase-date-badge">${formatDateDDMMYYYY(cp.dataCompra)}</div>
             <div class="info-grid">
               <div class="info-label">Armação</div><div class="info-value">${cp.armacao || ''} ${cp.armacaoMaterial?`<span class='tag'>${cp.armacaoMaterial}</span>`:''}</div>
               <div class="info-label">Lente</div><div class="info-value">${cp.lente || ''}</div>
@@ -2611,12 +2628,15 @@ function renderOSKanban(){
       card.draggable=true;
       card.dataset.id=os.id;
       card.tabIndex=0;
+      const dates=[];
+      if(os.campos.dataOficina) dates.push(`<div><strong>Data de Oficina:</strong> ${formatDateDDMMYYYY(os.campos.dataOficina)}</div>`);
+      if(os.campos.dataEntrega) dates.push(`<div><strong>Data de Entrega:</strong> ${formatDateDDMMYYYY(os.campos.dataEntrega)}</div>`);
       card.innerHTML=`<div class="os-card-head">${os.codigo}</div>`+
         `<div class="os-card-body">`+
         `<div><strong>${os.campos.cliente}</strong> - ${os.campos.telefone}</div>`+
-        `<div>Marca: ${os.campos.marca}</div>`+
-        `<div class="os-card-dates">${os.campos.dataHoje||formatDateBr(os.createdAt)}${os.campos.dataOficina?` | ${os.campos.dataOficina}`:''}${os.campos.dataEntrega?` | ${os.campos.dataEntrega}`:''}</div>`+
+        `<div>Marca: ${os.campos.marca||''}</div>`+
         `${os.campos.marcasUso?'<div class="badge">Marcas de uso</div>':''}`+
+        `${dates.length?`<div class="os-card-dates">${dates.join('')}</div>`:''}`+
         `</div>`+
         `<div class="os-card-actions">`+
         `<button class="btn-os-imprimir" data-id="${os.id}">Imprimir</button>`+
@@ -2650,13 +2670,17 @@ function renderOSKanban(){
 
 function printOSReloj(os){
   const campos=os.campos;
-  const hoje=new Date().toLocaleDateString('pt-BR');
+  const hoje=formatDateDDMMYYYY(new Date());
   const header=`<header class="os-print-header">`+
     `<h1>Ordem de Serviço — Relojoaria</h1>`+
     `<div class="os-print-code">${os.codigo}</div>`+
     `<div>${os.perfil||currentProfile()} - ${hoje}</div>`+
     `</header>`;
   function via(titulo,opts){
+    const dateItems=[];
+    if(opts.dataOficina && campos.dataOficina) dateItems.push(`<div><strong>Data de Oficina:</strong> ${formatDateDDMMYYYY(campos.dataOficina)}</div>`);
+    if(opts.dataEntrega && campos.dataEntrega) dateItems.push(`<div><strong>Data de Entrega:</strong> ${formatDateDDMMYYYY(campos.dataEntrega)}</div>`);
+    const dates=dateItems.length?`<div class="os-print-dates">${dateItems.join('')}</div>`:'';
     let html=`<section class="os-print-via"><h2>${titulo}</h2>`+header+
       `<div class="os-print-body">`+
       `<div><strong>Cliente:</strong> ${campos.cliente}</div>`+
@@ -2664,32 +2688,33 @@ function printOSReloj(os){
       `<div><strong>Marca:</strong> ${campos.marca}</div>`+
       (campos.marcasUso?`<div><strong>Marcas de uso:</strong> Sim</div>`:'')+
       (campos.pulseira?`<div><strong>Pulseira:</strong> ${campos.pulseira}</div>`:'')+
-      (opts.dataOficina && campos.dataOficina?`<div><strong>Data oficina:</strong> ${campos.dataOficina}</div>`:'')+
-      (opts.dataEntrega && campos.dataEntrega?`<div><strong>Data entrega:</strong> ${campos.dataEntrega}</div>`:'')+
       `<div><strong>Serviço:</strong> ${campos.servico}</div>`+
-      (campos.garantia?`<div><strong>Garantia:</strong> ${campos.garantia}</div>`:'')+
+      (opts.garantia && campos.garantia?`<div><strong>Garantia:</strong> ${campos.garantia}</div>`:'')+
       (campos.observacao?`<div><strong>Observação:</strong> ${campos.observacao}</div>`:'')+
       (opts.notaOficina && campos.notaOficina?`<div><strong>Nota para Oficina:</strong> ${campos.notaOficina}</div>`:'')+
       (opts.notaLoja && campos.notaLoja?`<div><strong>Nota para Loja:</strong> ${campos.notaLoja}</div>`:'')+
+      dates+
       `</div>`+
-      `<footer class="os-print-footer"><div class="assinatura"></div></footer>`+
+      `<footer class="os-print-footer"><div class="assinatura"></div><div class="assinatura"></div></footer>`+
       `</section>`;
     return html;
   }
   const content=
-    via('Via do Cliente',{dataOficina:false,dataEntrega:true,notaOficina:false,notaLoja:false})+
+    via('Via do Cliente',{dataOficina:false,dataEntrega:true,notaOficina:false,notaLoja:false,garantia:true})+
     `<hr>`+
-    via('Via Loja',{dataOficina:true,dataEntrega:true,notaOficina:true,notaLoja:true})+
+    via('Via Loja',{dataOficina:true,dataEntrega:true,notaOficina:true,notaLoja:true,garantia:true})+
     `<hr>`+
-    via('Via Serviço',{dataOficina:true,dataEntrega:false,notaOficina:true,notaLoja:false});
+    via('Via Serviço',{dataOficina:true,dataEntrega:false,notaOficina:true,notaLoja:false,garantia:false});
   const w=window.open('','_blank');
   w.document.write(`<!DOCTYPE html><html><head><title>${os.codigo}</title><style>
   @page{size:A4;margin:12mm;}body{font-family:sans-serif;font-size:12pt;}
   hr{border:0;border-top:1px solid #000;margin:12mm 0;}
   .os-print-via{page-break-inside:avoid;}
   .os-print-code{font-size:1.2rem;font-weight:bold;}
-  .os-print-footer{margin-top:12mm;}
-  .os-print-footer .assinatura{border-top:1px solid #000;height:40px;}
+  .os-print-footer{margin-top:12mm;display:flex;gap:12mm;}
+  .os-print-footer .assinatura{border-top:1px solid #000;height:40px;flex:1;text-align:center;}
+  .os-print-footer .assinatura:after{content:"Assinatura";position:relative;top:8px;display:block;font-size:10pt;}
+  .os-print-dates{margin-top:12px;font-weight:bold;}
   </style></head><body>
   <div class="print-actions">
     <button onclick="window.print()">Imprimir</button>
@@ -2778,12 +2803,12 @@ function openRelojForm(os){
   const body=modal.querySelector('.modal-body');
   const saveBtn=modal.querySelector('#modal-save');
   const campos=os?.campos||{};
-  const hoje=campos.dataHoje||new Date().toLocaleDateString('pt-BR');
+  const hoje=campos.dataHoje||formatDateDDMMYYYY(new Date());
   let reserved=null; let saved=false; let codigo=os?.codigo;
   if(!os){ reserved=reserveOSCode(); codigo=reserved.code; }
   title.textContent=os?`Editar OS ${codigo}`:'Nova OS Relojoaria';
   saveBtn.hidden=false;
-  body.innerHTML=`<form id="osRelojForm" class="form-os"><div class="os-code">${codigo}</div><div class="modal-section"><label>Cliente*<input name="cliente" value="${campos.cliente||''}" required></label><label>Telefone*<input name="telefone" value="${campos.telefone||''}" required></label><label>Data de Hoje<input name="dataHoje" value="${hoje}"></label><label>Marca do relógio*<input name="marca" value="${campos.marca||''}" required></label><label><input type="checkbox" name="marcasUso" ${campos.marcasUso?'checked':''}> Marcas de uso</label><label>Pulseira<input name="pulseira" value="${campos.pulseira||''}"></label><label>Data oficina<input type="date" name="dataOficina" value="${campos.dataOficina||''}"></label><label>Data de entrega<input type="date" name="dataEntrega" value="${campos.dataEntrega||''}"></label><label>Observações de Garantia<textarea name="garantia">${campos.garantia||''}</textarea></label><label>Serviço*<textarea name="servico" required>${campos.servico||''}</textarea></label><label>Observação<textarea name="observacao">${campos.observacao||''}</textarea></label><label>Nota para Oficina<textarea name="notaOficina">${campos.notaOficina||''}</textarea></label><label>Nota para Loja<textarea name="notaLoja">${campos.notaLoja||''}</textarea></label></div><div class="os-error" style="color:var(--red-600);"></div></form>`;
+  body.innerHTML=`<form id="osRelojForm"><div class="form-grid"><div class="os-code col-span-12">${codigo}</div><label class="col-span-6">Cliente*<input name="cliente" value="${campos.cliente||''}" required></label><label class="col-span-6">Telefone*<input name="telefone" value="${campos.telefone||''}" required></label><label class="col-span-6">Data de Hoje<input name="dataHoje" value="${hoje}" readonly></label><label class="col-span-6">Marca do relógio<input name="marca" value="${campos.marca||''}"></label><label class="col-span-6">Pulseira<input name="pulseira" value="${campos.pulseira||''}"></label><label class="col-span-6">Marcas de uso<input type="checkbox" class="switch" name="marcasUso" ${campos.marcasUso?'checked':''}></label><label class="col-span-12">Serviço*<textarea name="servico" rows="2" required>${campos.servico||''}</textarea></label><label class="col-span-12">Observação<textarea name="observacao" rows="3">${campos.observacao||''}</textarea></label><label class="col-span-12">Garantia<textarea name="garantia" rows="2">${campos.garantia||''}</textarea></label><label class="col-span-6">Data de Oficina<input name="dataOficina" value="${campos.dataOficina?formatDateDDMMYYYY(campos.dataOficina):''}" placeholder="dd/mm/aaaa" pattern="\d{2}/\d{2}/\d{4}"></label><label class="col-span-6">Data de Entrega<input name="dataEntrega" value="${campos.dataEntrega?formatDateDDMMYYYY(campos.dataEntrega):''}" placeholder="dd/mm/aaaa" pattern="\d{2}/\d{2}/\d{4}"></label><label class="col-span-12">Nota para Oficina<textarea name="notaOficina" rows="2">${campos.notaOficina||''}</textarea></label><label class="col-span-12">Nota para Loja<textarea name="notaLoja" rows="2">${campos.notaLoja||''}</textarea></label><div class="os-error col-span-12" style="color:var(--red-600);"></div></div></form>`;
   const form=body.querySelector('#osRelojForm');
   form.addEventListener('keydown',e=>{ if(e.key==='Enter' && e.target.tagName!=='TEXTAREA'){ e.preventDefault(); saveBtn.click(); }});
   saveBtn.onclick=e=>{
@@ -2793,7 +2818,8 @@ function openRelojForm(os){
     data.marcasUso=fd.get('marcasUso')==='on';
     const err=form.querySelector('.os-error');
     err.textContent='';
-    if(!data.cliente.trim()||!data.telefone.trim()||!data.marca.trim()||!data.servico.trim()){
+    ['dataHoje','dataOficina','dataEntrega'].forEach(k=>{ data[k]=formatDateDDMMYYYY(data[k]); });
+    if(!data.cliente.trim()||!data.telefone.trim()||!data.servico.trim()){
       err.textContent='Preencha os campos obrigatórios.';
       return;
     }
