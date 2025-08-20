@@ -2702,6 +2702,7 @@ function closePurchaseModal(){
 
 function refreshUI(){
   window.renderClientsTable?.();
+  window.renderClientDetail?.();
   renderSelectedPurchaseDetails?.();
   renderCalendarMonth?.();
   renderDashboard?.();
