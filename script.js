@@ -317,13 +317,13 @@ function normalizeDigits(s){ return (s||'').toString().replace(/\D+/g,''); }
 function filterClientsBySearchAndTags(list, term){
   const t = term.trim().toLowerCase();
   const digits = normalizeDigits(term);
-  const tags = new Set(ui.clients.filters.usos||[]);
+  const tags = new Set(ui.clients.filters.interesses||[]);
   return list.filter(c=>{
     const byText = c.nome?.toLowerCase().includes(t)
       || (c.telefone||'').toLowerCase().includes(t)
       || (c.nfe||'').toLowerCase().includes(t);
     const byCPF  = digits && normalizeDigits(c.cpf).includes(digits);
-    const byTags = tags.size===0 || (Array.isArray(c.usos) && c.usos.some(tg=>tags.has(tg)));
+    const byTags = tags.size===0 || (Array.isArray(c.interesses||c.usos) && (c.interesses||c.usos).some(tg=>tags.has(tg)));
     return (byText || byCPF) && byTags;
   });
 }
@@ -432,8 +432,8 @@ function toggleTagMenu(anchor){ tagMenuOpen ? closeTagMenu() : openTagMenu(ancho
 function renderTagMenu(){
   const portal=document.getElementById('tagMenuPortal');
   if(!portal) return;
-  const map={vs:'Visão Simples', mf:'Multifocal', bf:'Bifocal', sl:'Solar'};
-  portal.innerHTML=`<div id="tagMenuContent" class="tag-menu">${Object.entries(map).map(([k,v])=>`<div class=\"tag-row\"><label class=\"tag-switch\"><input type=\"checkbox\" data-tag=\"${k}\" ${ui.clients.filters.usos.includes(v)?'checked':''}><span>${v}</span></label></div>`).join('')}</div>`;
+  const map={re:'Relógios', jo:'Jóias Ouro', jp:'Jóias Prata', op:'Óptica'};
+  portal.innerHTML=`<div id="tagMenuContent" class="tag-menu">${Object.entries(map).map(([k,v])=>`<div class=\"tag-row\"><label class=\"tag-switch\"><input type=\"checkbox\" data-tag=\"${k}\" ${ui.clients.filters.interesses.includes(v)?'checked':''}><span>${v}</span></label></div>`).join('')}</div>`;
   document.getElementById('tagMenuContent')?.addEventListener('change',e=>{
     const cb=e.target.closest('input[type="checkbox"][data-tag]'); if(!cb) return;
     toggleTagFilter(cb.dataset.tag, cb.checked);
@@ -471,12 +471,12 @@ function unbindTagMenuHandlers(){
 }
 
 function toggleTagFilter(code, on){
-  const map={vs:'Visão Simples', mf:'Multifocal', bf:'Bifocal', sl:'Solar'};
+  const map={re:'Relógios', jo:'Jóias Ouro', jp:'Jóias Prata', op:'Óptica'};
   const val=map[code]||code;
-  const set=new Set(ui.clients.filters.usos||[]);
+  const set=new Set(ui.clients.filters.interesses||[]);
   if(on) set.add(val); else set.delete(val);
-  ui.clients.filters.usos=Array.from(set);
-  setJSON(prefix()+'clients.filters.usos', ui.clients.filters.usos);
+  ui.clients.filters.interesses=Array.from(set);
+  setJSON(prefix()+'clients.filters.interesses', ui.clients.filters.interesses);
 }
 
 // ===== State =====
@@ -598,8 +598,9 @@ function removeFollowUpEvents(clienteId,compraId){
       telefone: payload.telefone,
       dataNascimento: payload.dataNascimento || '',
       cpf: payload.cpf || '',
+      genero: payload.genero || '',
       observacoes: payload.observacoes || '',
-      usos: payload.usos || [],
+      interesses: payload.interesses || [],
       compras: [],
       criadoEm: now,
       atualizadoEm: now
@@ -727,7 +728,7 @@ const cards = {
 
 // ===== UI =====
 const ui = {
-  clients: { filters: { usos: [] }, search: '' },
+  clients: { filters: { interesses: [] }, search: '' },
   dashboard: { layout: null },
   os: { filters: { text:'', types:['reloj','joia','optica'], status:'', from:'', to:'' }, pages:{loja:1,oficina:1,aguardando:1,completo:1}, counts:{loja:0,oficina:0,aguardando:0,completo:0} },
   initDropdowns() {
@@ -984,7 +985,7 @@ function renderOS() {
     <div class="os-kanban" id="osKanban">
       ${cols.map(([k,label])=>{
         const cls={loja:'col-kanban--loja',oficina:'col-kanban--oficina',aguardando:'col-kanban--aguardo',completo:'col-kanban--completo'}[k];
-        return `<div class="kanban-col ${cls}" data-status="${k}"><div class="kanban-header"><h3>${label} <span class="count">0</span></h3></div><div class="cards"></div><div class="kanban-footer"><button class="kanban-prev" disabled>Anterior</button><span class="sep">|</span><span class="page-info">1 / 1</span><span class="sep">|</span><button class="kanban-next" disabled>Próxima</button></div></div>`;
+        return `<div class="kanban-col ${cls}" data-status="${k}"><div class="kanban-header"><h3>${label}</h3><div class="count">0</div></div><div class="cards"></div><div class="kanban-footer"><button class="kanban-prev" disabled>Anterior</button><span class="sep">|</span><span class="page-info">1 / 1</span><span class="sep">|</span><button class="kanban-next" disabled>Próxima</button></div></div>`;
       }).join('')}
     </div>
   </section>`;
@@ -1156,12 +1157,18 @@ function openClienteModal(id, onSave) {
             <div class="form-field col-span-4"><label for="cliente-telefone">Telefone *</label><input id="cliente-telefone" name="telefone" class="text-input" required placeholder="(00) 00000-0000"></div>
             <div class="form-field col-span-4"><label for="cliente-dataNascimento">Data de Nascimento</label><input id="cliente-dataNascimento" type="date" name="dataNascimento" class="date-input"></div>
             <div class="form-field col-span-4"><label for="cliente-cpf">CPF</label><input id="cliente-cpf" name="cpf" class="text-input" placeholder="000.000.000-00"></div>
-              <div class="form-field col-span-12"><span class="field-label">O cliente usa:</span>
-              <div class="chips" id="cliente-usa" role="group">
-                <button type="button" class="chip" data-value="Visão Simples" aria-pressed="false">Visão Simples</button>
-                <button type="button" class="chip" data-value="Multifocal" aria-pressed="false">Multifocal</button>
-                <button type="button" class="chip" data-value="Bifocal" aria-pressed="false">Bifocal</button>
-                <button type="button" class="chip" data-value="Solar" aria-pressed="false">Solar</button>
+            <div class="form-field col-span-4"><span class="field-label">Gênero</span>
+              <div class="segmented" id="cliente-genero" role="group">
+                <button type="button" class="seg-btn" data-value="M" aria-pressed="false">M</button>
+                <button type="button" class="seg-btn" data-value="F" aria-pressed="false">F</button>
+              </div>
+            </div>
+            <div class="form-field col-span-12"><span class="field-label">Interesses:</span>
+              <div class="chips" id="cliente-interesses" role="group">
+                <button type="button" class="chip" data-value="Relógios" aria-pressed="false">Relógios</button>
+                <button type="button" class="chip" data-value="Jóias Ouro" aria-pressed="false">Jóias Ouro</button>
+                <button type="button" class="chip" data-value="Jóias Prata" aria-pressed="false">Jóias Prata</button>
+                <button type="button" class="chip" data-value="Óptica" aria-pressed="false">Óptica</button>
               </div>
             </div>
             ${id ? '<div class="form-field col-span-12"><label for="cliente-observacoes">Observações</label><textarea id="cliente-observacoes" name="observacoes" class="textarea" rows="4"></textarea></div>' : ''}
@@ -1233,11 +1240,18 @@ function openClienteModal(id, onSave) {
       form.valorLente.value = (Number(digits)/100).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
     });
   }
-  const usaDiv = form.querySelector('#cliente-usa');
-  usaDiv.querySelectorAll('button').forEach(btn=>{
+  const interessesDiv = form.querySelector('#cliente-interesses');
+  interessesDiv.querySelectorAll('button').forEach(btn=>{
     btn.addEventListener('click',()=>{
       const pressed = btn.getAttribute('aria-pressed')==='true';
       btn.setAttribute('aria-pressed',(!pressed).toString());
+    });
+  });
+  const generoDiv = form.querySelector('#cliente-genero');
+  generoDiv?.querySelectorAll('button').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      generoDiv.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed','false'));
+      btn.setAttribute('aria-pressed','true');
     });
   });
   let tiposDiv, materialDiv;
@@ -1263,9 +1277,12 @@ function openClienteModal(id, onSave) {
     form.dataNascimento.value = cliente.dataNascimento || '';
     form.cpf.value = cliente.cpf || '';
     if (form.observacoes) form.observacoes.value = cliente.observacoes || '';
-    (cliente.usos || []).forEach(u=>{
-      usaDiv.querySelector(`button[data-value="${u}"]`)?.setAttribute('aria-pressed','true');
+    (cliente.interesses || []).forEach(u=>{
+      interessesDiv.querySelector(`button[data-value="${u}"]`)?.setAttribute('aria-pressed','true');
     });
+    if(cliente.genero){
+      generoDiv?.querySelector(`button[data-value="${cliente.genero}"]`)?.setAttribute('aria-pressed','true');
+    }
   }
   modal.open();
 }
@@ -1936,7 +1953,7 @@ function initClientesPage() {
   const pageInfo = pag.querySelector('.page-info');
   const pageSizeSel = pag.querySelector('.page-size');
   let uiState = getJSON(prefix()+'clients.ui', { page:1, pageSize:10, sort:{key:'nome',dir:'asc'} });
-  ui.clients.filters.usos = getJSON(prefix()+'clients.filters.usos', []);
+  ui.clients.filters.interesses = getJSON(prefix()+'clients.filters.interesses', []);
   ui.clients.search = '';
   let sortBy = uiState.sort.key;
   let sortDir = uiState.sort.dir;
@@ -1945,7 +1962,7 @@ function initClientesPage() {
 
   pageSizeSel.value = String(pageSize);
 
-  function persist(){ setJSON(prefix()+'clients.ui',{ page, pageSize, sort:{key:sortBy,dir:sortDir} }); setJSON(prefix()+'clients.filters.usos', ui.clients.filters.usos); }
+  function persist(){ setJSON(prefix()+'clients.ui',{ page, pageSize, sort:{key:sortBy,dir:sortDir} }); setJSON(prefix()+'clients.filters.interesses', ui.clients.filters.interesses); }
 
   function updateTable() {
     purgeOrphanEvents();
@@ -2024,7 +2041,8 @@ function initClientesPage() {
           <div class="cli-field"><span class="phone-ico" aria-hidden="true"></span><span class="cli-label">Telefone:</span><strong class="cli-phone" id="cliPhoneValue">${formatTelefone(c.telefone)}</strong></div>
           <div class="info-label">Nascimento</div><div class="info-value">${c.dataNascimento ? formatDateDDMMYYYY(c.dataNascimento) : '-'}</div>
           <div class="info-label">CPF</div><div class="info-value">${c.cpf ? formatCpf(c.cpf) : '-'}</div>
-          <div class="info-label">O cliente usa</div><div class="info-value">${(c.usos && c.usos.length)?c.usos.join(', '):'-'}</div>
+          <div class="info-label">Gênero</div><div class="info-value">${c.genero || '-'}</div>
+          <div class="info-label">Interesses</div><div class="info-value">${((c.interesses||c.usos) && (c.interesses||c.usos).length)?(c.interesses||c.usos).join(', '):'-'}</div>
         </div>
       </div>
         <div class="mini-card">
@@ -2558,8 +2576,8 @@ function readPrescriptionTable(){
   };
 }
 
-function getSelectedTagUsosFromForm(){
-  return Array.from(document.querySelectorAll('#cliente-usa button[aria-pressed="true"]'))
+function getSelectedInteressesFromForm(){
+  return Array.from(document.querySelectorAll('#cliente-interesses button[aria-pressed="true"]'))
               .map(btn => btn.dataset.value);
 }
 
@@ -2570,7 +2588,8 @@ function readClientForm(){
     telefone: document.getElementById('cliente-telefone').value.trim(),
     dataNascimento: document.getElementById('cliente-dataNascimento').value.trim(),
     cpf: document.getElementById('cliente-cpf').value.trim(),
-    usos: getSelectedTagUsosFromForm(),
+    genero: document.querySelector('#cliente-genero .seg-btn[aria-pressed="true"]')?.dataset.value || '',
+    interesses: getSelectedInteressesFromForm(),
     compras: []
   };
 
@@ -2926,9 +2945,9 @@ function printOS(os){
     via('Via Serviço',{notaOficina:true,notaLoja:false,garantia:false,showContacts:true,valor:false});
   const w=window.open('','_blank');
   w.document.write(`<!DOCTYPE html><html><head><title>${os.codigo}</title><style>
-  @page{size:A4;margin:12mm;}body{font-family:sans-serif;font-size:12pt;background:#fff;}
-  hr{border:0;border-top:1px solid #000;margin:12mm 0;}
-  .os-print-via{page-break-inside:avoid;background:#fff;border:1px solid #ccc;box-shadow:0 1px 2px rgba(0,0,0,0.1);padding:8px;}
+  @page{size:A4 portrait;margin:6mm;}body{font-family:sans-serif;font-size:12pt;background:#fff;}
+  hr{border:0;border-top:1px solid #000;margin:6mm 0;}
+  .os-print-via{page-break-inside:avoid;background:#fff;border:1px solid #ccc;box-shadow:0 1px 2px rgba(0,0,0,0.1);padding:4mm;}
   .os-print-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
   .os-print-header .logo-img{max-height:40px;object-fit:contain;}
   .os-print-header .logo-placeholder{width:80px;height:40px;background:#eee;display:flex;align-items:center;justify-content:center;color:#666;font-size:10pt;}
@@ -2937,10 +2956,10 @@ function printOS(os){
   .os-print-head.reloj{background:#183C7A;}
   .os-print-head.joia{background:#C99700;}
   .os-print-head.optica{background:#8B1E1E;}
-  .os-print-dates{margin-top:12px;}
-  .os-print-dates .previsao{margin-top:8px;font-weight:bold;}
-  .os-print-footer{margin-top:24px;display:flex;gap:12mm;}
-  .os-print-footer .assinatura{border-top:1px solid #000;height:40px;flex:1;text-align:center;}
+  .os-print-dates{margin-top:8px;}
+  .os-print-dates .previsao{margin-top:4px;font-weight:bold;}
+  .os-print-footer{margin-top:8mm;display:flex;gap:8mm;justify-content:flex-end;}
+  .os-print-footer .assinatura{border-top:1px solid #000;height:40px;width:60mm;text-align:center;}
   .os-print-footer .assinatura:after{content:"Assinatura";position:relative;top:8px;display:block;font-size:10pt;}
   h2{margin:4px 0 8px;font-size:1rem;}
   </style></head><body>${content}</body></html>`);
@@ -3005,9 +3024,9 @@ function openOSTypeModal(){
   title.textContent='Nova OS';
   saveBtn.hidden=true;
   body.innerHTML=`<div class="os-type-choices"><button class="os-type os-type-reloj" data-type="reloj">Relojoaria</button><button class="os-type os-type-joia" data-type="joia">Joalheria</button><button class="os-type os-type-optica" data-type="optica">Óptica</button></div>`;
-  body.querySelector('[data-type="reloj"]').addEventListener('click',()=>{ modal.close(); openRelojForm(); });
+  body.querySelector('[data-type="reloj"]').addEventListener('click',()=>{ modal.close(); openOSForm('reloj'); });
   body.querySelector('[data-type="joia"]').addEventListener('click',()=>{ modal.close(); openComingSoon('Joalheria'); });
-  body.querySelector('[data-type="optica"]').addEventListener('click',()=>{ modal.close(); openComingSoon('Óptica'); });
+  body.querySelector('[data-type="optica"]').addEventListener('click',()=>{ modal.close(); openOSForm('optica'); });
   modal.open();
 }
 function openComingSoon(label){
@@ -3020,20 +3039,21 @@ function openComingSoon(label){
   body.innerHTML='<p>Em breve</p>';
   modal.open();
 }
-function openRelojForm(os){
+function openOSForm(tipo, os){
   const modal=document.getElementById('app-modal');
   const title=document.getElementById('modal-title');
   const body=modal.querySelector('.modal-body');
   const saveBtn=modal.querySelector('#modal-save');
   const campos=os?.campos||{};
-  const garantiaTexto=campos.garantia||getGarantiaTexto('reloj');
+  const garantiaTexto=campos.garantia||getGarantiaTexto(tipo);
   const hoje=campos.dataHoje||formatDateDDMMYYYY(new Date());
   let reserved=null; let saved=false; let codigo=os?.codigo;
   if(!os){ reserved=reserveOSCode(); codigo=reserved.code; }
-  title.textContent=os?`Editar OS ${codigo}`:'Nova OS Relojoaria';
+  const tipoLabel=OS_TIPO_LABELS[tipo]||'';
+  title.textContent=os?`Editar OS ${codigo}`:`Nova OS ${tipoLabel}`;
   saveBtn.hidden=false;
-  body.innerHTML=`<form id="osRelojForm"><div class="form-grid"><div class="os-code col-span-12">${codigo}</div><label class="col-span-6">Cliente*<input class="text-input" name="cliente" value="${campos.cliente||''}" required></label><label class="col-span-6">Telefone*<input class="text-input" name="telefone" value="${campos.telefone||''}" required></label><label class="col-span-6">Data de Hoje<input class="text-input" name="dataHoje" value="${hoje}" readonly></label><label class="col-span-6">Marca do relógio<input class="text-input" name="marca" value="${campos.marca||''}"></label><label class="col-span-6">Pulseira<input class="text-input" name="pulseira" value="${campos.pulseira||''}"></label><label class="col-span-6">Mostrador<input class="text-input" name="mostrador" value="${campos.mostrador||''}"></label><label class="col-span-6">Marcas de uso<input type="checkbox" class="switch" name="marcasUso" ${campos.marcasUso?'checked':''}></label><label class="col-span-12">Serviço*<textarea class="textarea" name="servico" rows="2" required>${campos.servico||''}</textarea></label><label class="col-span-12">Observação<textarea class="textarea" name="observacao" rows="3">${campos.observacao||''}</textarea></label><label class="col-span-12">Garantia<textarea class="textarea" name="garantia" rows="2" readonly>${garantiaTexto}</textarea></label><label class="col-span-12">Valor a Pagar (R$)<input class="text-input" name="valor" value="${campos.valor?formatCurrency(campos.valor):''}" placeholder="0,00" inputmode="decimal"></label><label class="col-span-6">Data de Oficina<input type="date" class="date-input" name="dataOficina" value="${campos.dataOficina?formatDateYYYYMMDD(campos.dataOficina):''}"></label><label class="col-span-6">Previsão de entrega<input type="date" class="date-input" name="dataEntrega" value="${campos.dataEntrega?formatDateYYYYMMDD(campos.dataEntrega):''}"></label><label class="col-span-12">Nota para Oficina<textarea class="textarea" name="notaOficina" rows="2">${campos.notaOficina||''}</textarea></label><label class="col-span-12">Nota para Loja<textarea class="textarea" name="notaLoja" rows="2">${campos.notaLoja||''}</textarea></label><div class="os-error col-span-12" style="color:var(--red-600);"></div></div></form>`;
-  const form=body.querySelector('#osRelojForm');
+  body.innerHTML=`<form id="osForm"><div class="form-grid"><div class="os-code col-span-12">${codigo}</div><label class="col-span-6">Cliente*<input class="text-input" name="cliente" value="${campos.cliente||''}" required></label><label class="col-span-6">Telefone*<input class="text-input" name="telefone" value="${campos.telefone||''}" required></label><label class="col-span-6">Data de Hoje<input class="text-input" name="dataHoje" value="${hoje}" readonly></label><label class="col-span-6">Marca<input class="text-input" name="marca" value="${campos.marca||''}"></label><label class="col-span-6">Pulseira<input class="text-input" name="pulseira" value="${campos.pulseira||''}"></label><label class="col-span-6">Mostrador<input class="text-input" name="mostrador" value="${campos.mostrador||''}"></label><label class="col-span-6">Marcas de uso<input type="checkbox" class="switch" name="marcasUso" ${campos.marcasUso?'checked':''}></label><label class="col-span-12">Serviço*<textarea class="textarea" name="servico" rows="2" required>${campos.servico||''}</textarea></label><label class="col-span-12">Observação<textarea class="textarea" name="observacao" rows="3">${campos.observacao||''}</textarea></label><label class="col-span-12">Garantia<textarea class="textarea" name="garantia" rows="2" readonly>${garantiaTexto}</textarea></label><label class="col-span-12">Valor a Pagar (R$)<input class="text-input" name="valor" value="${campos.valor?formatCurrency(campos.valor):''}" placeholder="0,00" inputmode="decimal"></label><label class="col-span-6">Data de Oficina<input type="date" class="date-input" name="dataOficina" value="${campos.dataOficina?formatDateYYYYMMDD(campos.dataOficina):''}"></label><label class="col-span-6">Previsão de entrega<input type="date" class="date-input" name="dataEntrega" value="${campos.dataEntrega?formatDateYYYYMMDD(campos.dataEntrega):''}"></label><label class="col-span-12">Nota para Oficina<textarea class="textarea" name="notaOficina" rows="2">${campos.notaOficina||''}</textarea></label><label class="col-span-12">Nota para Loja<textarea class="textarea" name="notaLoja" rows="2">${campos.notaLoja||''}</textarea></label><div class="os-error col-span-12" style="color:var(--red-600);"></div></div></form>`;
+  const form=body.querySelector('#osForm');
   if(form.valor){
     form.valor.addEventListener('input',()=>{
       let digits=form.valor.value.replace(/\D/g,'');
@@ -3057,10 +3077,11 @@ function openRelojForm(os){
     const now=new Date().toISOString();
     if(os){
       os.campos=data;
+      os.tipo=tipo;
       os.updatedAt=now;
       upsertOS(os);
     } else {
-      const novo={id:Date.now(),codigo,tipo:'reloj',perfil:currentProfile(),status:'loja',campos:data,createdAt:now,updatedAt:now};
+      const novo={id:Date.now(),codigo,tipo,perfil:currentProfile(),status:'loja',campos:data,createdAt:now,updatedAt:now};
       const list=loadOSList();
       list.push(novo);
       saveOSList(list);
@@ -3118,7 +3139,7 @@ function initOSPage(){
       if(!btn) return;
       const id=btn.dataset.id;
       if(btn.classList.contains('btn-os-imprimir')){ const os=loadOSList().find(o=>o.id==id); if(os) printOS(os); }
-      if(btn.classList.contains('btn-os-editar')){ const os=loadOSList().find(o=>o.id==id); if(os) openRelojForm(os); }
+      if(btn.classList.contains('btn-os-editar')){ const os=loadOSList().find(o=>o.id==id); if(os) openOSForm(os.tipo, os); }
       if(btn.classList.contains('btn-os-excluir')){ if(confirm('Excluir OS?')){ deleteOS(Number(id)); renderOSKanban(); } }
       if(btn.classList.contains('btn-os-mover')){ const sel=btn.nextElementSibling; if(sel) sel.hidden=!sel.hidden; }
       if(btn.classList.contains('kanban-prev')){ const st=btn.closest('.kanban-col').dataset.status; if(ui.os.pages[st]>1){ ui.os.pages[st]--; renderOSKanban(); } }
@@ -3141,7 +3162,7 @@ function initOSPage(){
     board.addEventListener('keydown',e=>{
       if(e.target.classList.contains('os-card') && e.key==='Enter'){
         const os=loadOSList().find(o=>o.id==e.target.dataset.id);
-        if(os) openRelojForm(os);
+        if(os) openOSForm(os.tipo, os);
       }
     });
     setupOSDragAndDrop();
