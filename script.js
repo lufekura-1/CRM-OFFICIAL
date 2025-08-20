@@ -2733,18 +2733,16 @@ function bindUI(){
 function handleClientSave(){
   const f = readClientForm();
   if(!f.nome?.trim()) return toast('Informe o Nome');
-  let list = getClients();
+  let id;
   if(f.id){
-    list = list.map(c=>c.id===f.id ? {...c, ...f} : c);
+    db.atualizarCliente(f.id, f);
+    id = f.id;
   }else{
-    f.id = `cli_${Date.now()}_${Math.random().toString(36).slice(2,7)}`;
-    list.push(f);
+    id = db.criarCliente(f);
   }
-    setClients(list);
-    (f.compras||[]).forEach(c=>scheduleFollowUpsForPurchase(f,c));
-    if(typeof clientModalOnSave === 'function') clientModalOnSave(f.id);
-    closeClientModal();
-  }
+  if(typeof clientModalOnSave === 'function') clientModalOnSave(id);
+  closeClientModal();
+}
 
 function handlePurchaseSave(){
   const {clienteId, compra} = readPurchaseForm();
