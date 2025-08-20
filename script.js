@@ -2895,8 +2895,10 @@ function printOS(os){
       `<div><strong>Marca do Relógio:</strong> ${campos.marca||''}</div>`+
       `${campos.marcasUso?'<div><strong>Marcas de uso:</strong> Sim</div>':''}`+
       `${campos.pulseira?`<div><strong>Pulseira:</strong> ${campos.pulseira}</div>`:''}`+
+      `${campos.mostrador?`<div><strong>Mostrador:</strong> ${campos.mostrador}</div>`:''}`+
       `<div><strong>Serviço:</strong> ${campos.servico}</div>`+
       `${opts.garantia&&campos.garantia?`<div><strong>Garantia:</strong> ${campos.garantia}</div>`:''}`+
+      `${opts.valor&&campos.valor?`<div><strong>Valor a Pagar:</strong> ${formatCurrency(campos.valor)}</div>`:''}`+
       `${campos.observacao?`<div><strong>Observação:</strong> ${campos.observacao}</div>`:''}`+
       `${opts.notaOficina&&campos.notaOficina?`<div><strong>Nota para Oficina:</strong> ${campos.notaOficina}</div>`:''}`+
       `${opts.notaLoja&&campos.notaLoja?`<div><strong>Nota para Loja:</strong> ${campos.notaLoja}</div>`:''}`+
@@ -2910,11 +2912,11 @@ function printOS(os){
     return html;
   }
   const content=
-    via('Via do Cliente',{notaOficina:false,notaLoja:false,garantia:true,showContacts:true})+
+    via('Via do Cliente',{notaOficina:false,notaLoja:false,garantia:true,showContacts:true,valor:true})+
     `<hr>`+
-    via('Via Loja',{notaOficina:true,notaLoja:true,garantia:true,showContacts:false})+
+    via('Via Loja',{notaOficina:true,notaLoja:true,garantia:true,showContacts:false,valor:true})+
     `<hr>`+
-    via('Via Serviço',{notaOficina:true,notaLoja:false,garantia:false,showContacts:true});
+    via('Via Serviço',{notaOficina:true,notaLoja:false,garantia:false,showContacts:true,valor:false});
   const w=window.open('','_blank');
   w.document.write(`<!DOCTYPE html><html><head><title>${os.codigo}</title><style>
   @page{size:A4;margin:12mm;}body{font-family:sans-serif;font-size:12pt;background:#fff;}
@@ -3022,14 +3024,21 @@ function openRelojForm(os){
   if(!os){ reserved=reserveOSCode(); codigo=reserved.code; }
   title.textContent=os?`Editar OS ${codigo}`:'Nova OS Relojoaria';
   saveBtn.hidden=false;
-  body.innerHTML=`<form id="osRelojForm"><div class="form-grid"><div class="os-code col-span-12">${codigo}</div><label class="col-span-6">Cliente*<input class="text-input" name="cliente" value="${campos.cliente||''}" required></label><label class="col-span-6">Telefone*<input class="text-input" name="telefone" value="${campos.telefone||''}" required></label><label class="col-span-6">Data de Hoje<input class="text-input" name="dataHoje" value="${hoje}" readonly></label><label class="col-span-6">Marca do relógio<input class="text-input" name="marca" value="${campos.marca||''}"></label><label class="col-span-6">Pulseira<input class="text-input" name="pulseira" value="${campos.pulseira||''}"></label><label class="col-span-6">Marcas de uso<input type="checkbox" class="switch" name="marcasUso" ${campos.marcasUso?'checked':''}></label><label class="col-span-12">Serviço*<textarea class="textarea" name="servico" rows="2" required>${campos.servico||''}</textarea></label><label class="col-span-12">Observação<textarea class="textarea" name="observacao" rows="3">${campos.observacao||''}</textarea></label><label class="col-span-12">Garantia<textarea class="textarea" name="garantia" rows="2" readonly>${garantiaTexto}</textarea></label><label class="col-span-6">Data de Oficina<input type="date" class="date-input" name="dataOficina" value="${campos.dataOficina?formatDateYYYYMMDD(campos.dataOficina):''}"></label><label class="col-span-6">Previsão de entrega<input type="date" class="date-input" name="dataEntrega" value="${campos.dataEntrega?formatDateYYYYMMDD(campos.dataEntrega):''}"></label><label class="col-span-12">Nota para Oficina<textarea class="textarea" name="notaOficina" rows="2">${campos.notaOficina||''}</textarea></label><label class="col-span-12">Nota para Loja<textarea class="textarea" name="notaLoja" rows="2">${campos.notaLoja||''}</textarea></label><div class="os-error col-span-12" style="color:var(--red-600);"></div></div></form>`;
+  body.innerHTML=`<form id="osRelojForm"><div class="form-grid"><div class="os-code col-span-12">${codigo}</div><label class="col-span-6">Cliente*<input class="text-input" name="cliente" value="${campos.cliente||''}" required></label><label class="col-span-6">Telefone*<input class="text-input" name="telefone" value="${campos.telefone||''}" required></label><label class="col-span-6">Data de Hoje<input class="text-input" name="dataHoje" value="${hoje}" readonly></label><label class="col-span-6">Marca do relógio<input class="text-input" name="marca" value="${campos.marca||''}"></label><label class="col-span-6">Pulseira<input class="text-input" name="pulseira" value="${campos.pulseira||''}"></label><label class="col-span-6">Mostrador<input class="text-input" name="mostrador" value="${campos.mostrador||''}"></label><label class="col-span-6">Marcas de uso<input type="checkbox" class="switch" name="marcasUso" ${campos.marcasUso?'checked':''}></label><label class="col-span-12">Serviço*<textarea class="textarea" name="servico" rows="2" required>${campos.servico||''}</textarea></label><label class="col-span-12">Observação<textarea class="textarea" name="observacao" rows="3">${campos.observacao||''}</textarea></label><label class="col-span-12">Garantia<textarea class="textarea" name="garantia" rows="2" readonly>${garantiaTexto}</textarea></label><label class="col-span-12">Valor a Pagar (R$)<input class="text-input" name="valor" value="${campos.valor?formatCurrency(campos.valor):''}" placeholder="0,00" inputmode="decimal"></label><label class="col-span-6">Data de Oficina<input type="date" class="date-input" name="dataOficina" value="${campos.dataOficina?formatDateYYYYMMDD(campos.dataOficina):''}"></label><label class="col-span-6">Previsão de entrega<input type="date" class="date-input" name="dataEntrega" value="${campos.dataEntrega?formatDateYYYYMMDD(campos.dataEntrega):''}"></label><label class="col-span-12">Nota para Oficina<textarea class="textarea" name="notaOficina" rows="2">${campos.notaOficina||''}</textarea></label><label class="col-span-12">Nota para Loja<textarea class="textarea" name="notaLoja" rows="2">${campos.notaLoja||''}</textarea></label><div class="os-error col-span-12" style="color:var(--red-600);"></div></div></form>`;
   const form=body.querySelector('#osRelojForm');
+  if(form.valor){
+    form.valor.addEventListener('input',()=>{
+      let digits=form.valor.value.replace(/\D/g,'');
+      form.valor.value=(Number(digits)/100).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+    });
+  }
   form.addEventListener('keydown',e=>{ if(e.key==='Enter' && e.target.tagName!=='TEXTAREA'){ e.preventDefault(); saveBtn.click(); }});
   saveBtn.onclick=e=>{
     e.preventDefault();
     const fd=new FormData(form);
     const data=Object.fromEntries(fd.entries());
     data.marcasUso=fd.get('marcasUso')==='on';
+    data.valor=parseCurrency(data.valor);
     const err=form.querySelector('.os-error');
     err.textContent='';
     ['dataHoje','dataOficina','dataEntrega'].forEach(k=>{ data[k]=formatDateDDMMYYYY(data[k]); });
