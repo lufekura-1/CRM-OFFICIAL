@@ -314,18 +314,19 @@ input[name="telefone"] { width:18ch; }
 .os-filters{display:flex; flex-wrap:wrap; gap:8px;}
 .os-filters input, .os-filters select{height:var(--control-height);}
 .os-kanban { display: flex; gap: 1rem; align-items: flex-start; }
-.os-kanban .kanban-col { flex: 1; border: 1px solid var(--color-border); border-radius: var(--radius-lg); min-height: 200px; padding: 0; display:flex; flex-direction:column; }
+.os-kanban .kanban-col { flex: 1; border: 1px solid var(--color-border); border-radius: var(--radius-lg); min-height: 200px; padding: 0; display:flex; flex-direction:column; background:#fff; box-shadow:0 1px 2px rgba(0,0,0,0.05); }
 .os-kanban .kanban-col .kanban-header { text-align:center; font-weight:bold; font-size:1.125rem; padding:0.5rem; border-bottom:1px solid var(--color-border); }
 .os-kanban .kanban-col .kanban-header h3 { margin:0; font-size:inherit; font-weight:inherit; }
+.os-kanban .kanban-col .kanban-header .count{margin-left:4px;font-weight:normal;}
 .os-kanban .kanban-col .cards { flex:1; padding:0.5rem; }
 .os-kanban .kanban-col .kanban-footer { border-top:1px solid var(--color-border); padding:0.5rem; display:flex; justify-content:center; align-items:center; gap:0.5rem; font-size:0.875rem; }
 .os-kanban .kanban-col .kanban-footer button { background:none; border:none; cursor:pointer; color:var(--color-text); }
 .os-kanban .kanban-col .kanban-footer button:disabled { opacity:0.5; cursor:default; }
 .os-kanban .kanban-col .kanban-footer .sep{opacity:0.6;}
-.col-kanban--loja{background-color:var(--kanban-loja);}
-.col-kanban--oficina{background-color:var(--kanban-oficina);}
-.col-kanban--aguardo{background-color:var(--kanban-aguardo);}
-.col-kanban--completo{background-color:var(--kanban-completo);}
+.col-kanban--loja{background-color:#fff;}
+.col-kanban--oficina{background-color:#fff;}
+.col-kanban--aguardo{background-color:#fff;}
+.col-kanban--completo{background-color:#fff;}
 .os-card { border: 1px solid var(--color-border); border-radius: var(--radius-md); margin-bottom: 0.5rem; overflow: hidden; background:#fff; box-shadow:0 1px 2px rgba(0,0,0,0.05); }
 .os-card-top { padding:4px 8px; font-weight:bold; color:#fff; display:flex; justify-content:space-between; align-items:center; }
 .os-card-title{flex:1;}
@@ -337,7 +338,8 @@ input[name="telefone"] { width:18ch; }
 .os-card.joia .os-card-top{ background: var(--os-joia-color); }
 .os-card.optica .os-card-top{ background: var(--os-optica-color); }
 .os-card-body { padding: 4px 8px; font-size: 0.875rem; }
-.os-card-dates{margin-top:8px;font-weight:bold;}
+.os-card-dates{margin-top:8px;}
+.os-card-dates .previsao{margin-top:4px;font-weight:bold;}
 .badge{display:inline-block;padding:2px 4px;border-radius:var(--radius-sm);font-size:0.75rem;}
 .os-card .badge{color:#fff;}
 

@@ -984,7 +984,7 @@ function renderOS() {
     <div class="os-kanban" id="osKanban">
       ${cols.map(([k,label])=>{
         const cls={loja:'col-kanban--loja',oficina:'col-kanban--oficina',aguardando:'col-kanban--aguardo',completo:'col-kanban--completo'}[k];
-        return `<div class="kanban-col ${cls}" data-status="${k}"><div class="kanban-header"><h3>${label} (<span class="count">0</span>)</h3></div><div class="cards"></div><div class="kanban-footer"><button class="kanban-prev" disabled>Anterior</button><span class="sep">|</span><span class="page-info">1 / 1</span><span class="sep">|</span><button class="kanban-next" disabled>Próxima</button></div></div>`;
+        return `<div class="kanban-col ${cls}" data-status="${k}"><div class="kanban-header"><h3>${label} <span class="count">0</span></h3></div><div class="cards"></div><div class="kanban-footer"><button class="kanban-prev" disabled>Anterior</button><span class="sep">|</span><span class="page-info">1 / 1</span><span class="sep">|</span><button class="kanban-next" disabled>Próxima</button></div></div>`;
       }).join('')}
     </div>
   </section>`;
@@ -2832,8 +2832,12 @@ function renderOSKanban(){
       card.dataset.id=os.id;
       card.tabIndex=0;
       const dates=[];
-      if(os.campos.dataOficina) dates.push(`<div><strong>Data de Oficina:</strong> ${formatDateDDMMYYYY(os.campos.dataOficina)}</div>`);
-      if(os.campos.dataEntrega) dates.push(`<div><strong>Previsão de entrega:</strong> ${formatDateDDMMYYYY(os.campos.dataEntrega)}</div>`);
+      if(os.campos.dataOficina) {
+        dates.push(`<div>Data de Oficina: ${formatDateDDMMYYYY(os.campos.dataOficina)}</div>`);
+      }
+      if(os.campos.dataEntrega) {
+        dates.push(`<div class="previsao">Previsão de entrega: ${formatDateDDMMYYYY(os.campos.dataEntrega)}</div>`);
+      }
       card.innerHTML=`<div class="os-card-top"><div class="os-card-title"><span class="os-code">${os.codigo}</span> <strong>${os.campos.cliente}</strong> - ${os.campos.telefone}</div>`+
         `<div class="os-card-actions">`+
         `<button class="os-action btn-os-imprimir" title="Imprimir" aria-label="Imprimir" data-id="${os.id}">${ICON_PRINTER}</button>`+
@@ -2881,11 +2885,17 @@ function printOS(os){
     const logo = perfilInfo.logo ?
       `<img src="${perfilInfo.logo}" alt="Logo" class="logo-img">` :
       `<div class="logo-placeholder">Logo</div>`;
-    const nome = perfilInfo.nome ? `<div class="loja-nome">${perfilInfo.nome}</div>` : '';
     const contato = showContacts ?
       `<div class="os-print-contact">${perfilInfo.telefone?`<div>${perfilInfo.telefone}</div>`:''}${perfilInfo.endereco?`<div>${perfilInfo.endereco}</div>`:''}${perfilInfo.instagram?`<div><a href="https://instagram.com/${perfilInfo.instagram.replace(/^@/, '')}" target="_blank">${perfilInfo.instagram}</a></div>`:''}</div>` : '';
+    const dates=[];
+    if(campos.dataOficina) {
+      dates.push(`<div>Data de Oficina: ${formatDateDDMMYYYY(campos.dataOficina)}</div>`);
+    }
+    if(campos.dataEntrega) {
+      dates.push(`<div class="previsao">Previsão de entrega: ${formatDateDDMMYYYY(campos.dataEntrega)}</div>`);
+    }
     let html=`<section class="os-print-via">`+
-      `<div class="os-print-header">${logo}${nome}${contato}</div>`+
+      `<div class="os-print-header">${logo}${contato}</div>`+
       `<div class="os-print-head ${tipo}"><span class="code">${os.codigo}</span> <span class="tipo">${tipoLabel}</span></div>`+
       `<h2>${titulo}</h2>`+
       `<div class="os-print-body">`+
@@ -2903,10 +2913,7 @@ function printOS(os){
       `${opts.notaOficina&&campos.notaOficina?`<div><strong>Nota para Oficina:</strong> ${campos.notaOficina}</div>`:''}`+
       `${opts.notaLoja&&campos.notaLoja?`<div><strong>Nota para Loja:</strong> ${campos.notaLoja}</div>`:''}`+
       `</div>`+
-      `<div class="os-print-dates">`+
-      `${campos.dataOficina?`<div><strong>Data de Oficina:</strong> ${formatDateDDMMYYYY(campos.dataOficina)}</div>`:''}`+
-      `${campos.dataEntrega?`<div><strong>Previsão de entrega:</strong> ${formatDateDDMMYYYY(campos.dataEntrega)}</div>`:''}`+
-      `</div>`+
+      `${dates.length?`<div class="os-print-dates">${dates.join('')}</div>`:''}`+
       `<footer class="os-print-footer"><div class="assinatura"></div><div class="assinatura"></div></footer>`+
       `</section>`;
     return html;
@@ -2930,7 +2937,8 @@ function printOS(os){
   .os-print-head.reloj{background:#183C7A;}
   .os-print-head.joia{background:#C99700;}
   .os-print-head.optica{background:#8B1E1E;}
-  .os-print-dates{margin-top:12px;font-weight:bold;}
+  .os-print-dates{margin-top:12px;}
+  .os-print-dates .previsao{margin-top:8px;font-weight:bold;}
   .os-print-footer{margin-top:24px;display:flex;gap:12mm;}
   .os-print-footer .assinatura{border-top:1px solid #000;height:40px;flex:1;text-align:center;}
   .os-print-footer .assinatura:after{content:"Assinatura";position:relative;top:8px;display:block;font-size:10pt;}
