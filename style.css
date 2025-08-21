@@ -37,7 +37,6 @@
   --kanban-loja: rgba(46, 160, 67, 0.06);
   --kanban-oficina: rgba(255, 159, 10, 0.08);
   --kanban-aguardo: rgba(56, 139, 253, 0.07);
-  --kanban-completo: rgba(46, 160, 67, 0.12);
   /* Spacing tokens */
   --space-xs: 4px;
   --space-sm: 8px;
@@ -70,7 +69,6 @@ html.theme-dark {
   --kanban-loja: rgba(46, 160, 67, 0.06);
   --kanban-oficina: rgba(255, 159, 10, 0.08);
   --kanban-aguardo: rgba(56, 139, 253, 0.07);
-  --kanban-completo: rgba(46, 160, 67, 0.12);
 }
 body {
   margin: 0;
@@ -383,9 +381,13 @@ input[name="telefone"] { width:18ch; }
 }
 
 /* ===== Ordem de Serviço ===== */
-.os-toolbar { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom: 1rem; }
-.os-filters{display:flex; flex-wrap:wrap; gap:8px;}
-.os-filters input, .os-filters select{height:var(--control-height);}
+/* OSMenuBar */
+.os-menu-bar{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:1rem;}
+.os-menu-bar input{flex:1;height:var(--control-height);}
+.os-menu-bar .os-type-filter{width:100%;display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:0.5rem;}
+
+/* OSKanbanHolder */
+.os-kanban-holder{margin-bottom:1rem;}
 .os-kanban { display: flex; gap: 1rem; align-items: flex-start; }
 .os-kanban .kanban-col { flex: 1; border: 1px solid var(--color-border); border-radius: var(--radius-lg); min-height: 200px; padding: 0; display:flex; flex-direction:column; background:#fff; box-shadow:0 1px 2px rgba(0,0,0,0.05); }
 .os-kanban .kanban-col .kanban-header { text-align:center; font-weight:bold; font-size:1.25rem; padding:0.5rem; border-bottom:1px solid var(--color-border); display:flex; flex-direction:column; align-items:center; }
@@ -399,7 +401,6 @@ input[name="telefone"] { width:18ch; }
 .os-kanban .kanban-col.col-kanban--loja{background-color:#e8f5e9;}
 .os-kanban .kanban-col.col-kanban--oficina{background-color:#fff3e0;}
 .os-kanban .kanban-col.col-kanban--aguardo{background-color:#e3f2fd;}
-.os-kanban .kanban-col.col-kanban--completo{background-color:#e8f5e9;}
 .os-card { border: 1px solid var(--color-border); border-radius: var(--radius-md); margin-bottom: 0.5rem; overflow: hidden; background:#fff; box-shadow:0 1px 2px rgba(0,0,0,0.05); }
 .os-card-top { padding:4px 8px; font-weight:bold; color:#fff; display:flex; justify-content:space-between; align-items:center; }
 .os-card-title{flex:1;}
@@ -413,6 +414,7 @@ input[name="telefone"] { width:18ch; }
 .os-card-body { padding: 4px 8px; font-size: 0.875rem; }
 .os-card-dates{margin-top:8px;}
 .os-card-dates .previsao{margin-top:4px;font-weight:bold;}
+.os-card-completo{margin-top:8px;display:flex;align-items:center;gap:4px;}
 .badge{display:inline-block;padding:2px 4px;border-radius:var(--radius-sm);font-size:0.75rem;}
 .os-card .badge{color:#fff;}
 
@@ -425,16 +427,22 @@ input[name="telefone"] { width:18ch; }
 .os-card.joia .badge{background: var(--os-joia-color);}
 .os-card.optica .badge{background: var(--os-optica-color);}
 .os-card-actions { display:flex; gap:4px; }
-.os-card-actions .os-action{width:36px;height:36px;display:flex;align-items:center;justify-content:center;border:none;background:none;cursor:pointer;border-radius:var(--radius-md);}
-.os-card-actions .os-action:focus{outline:2px solid var(--color-primary);}
-.os-card-actions .os-action:hover{background:var(--surface-muted);}
-.os-card-actions .btn-os-imprimir{color:#607d8b;}
+.os-card-actions .os-action,
+.os-completed .os-action{width:36px;height:36px;display:flex;align-items:center;justify-content:center;border:none;background:none;cursor:pointer;border-radius:var(--radius-md);}
+.os-card-actions .os-action:focus,
+.os-completed .os-action:focus{outline:2px solid var(--color-primary);}
+.os-card-actions .os-action:hover,
+.os-completed .os-action:hover{background:var(--surface-muted);}
+.os-card-actions .btn-os-imprimir,
+.os-completed .btn-os-imprimir{color:#607d8b;}
 .os-card-actions .btn-os-mover{color:#1e88e5;}
-.os-card-actions .btn-os-editar{color:#fb8c00;}
-.os-card-actions .btn-os-excluir{color:#e53935;}
+.os-card-actions .btn-os-editar,
+.os-completed .btn-os-editar{color:#fb8c00;}
+.os-card-actions .btn-os-excluir,
+.os-completed .btn-os-excluir{color:#e53935;}
 .os-move-select { margin-left: 4px; }
 .os-kanban .kanban-col.drag-over { outline:2px dashed var(--os-reloj-color); }
-.os-type-filter{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:1rem;}
+.os-type-filter{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
 .os-type-filter .filter-btn{padding:0.5rem 1rem;border:1px solid var(--color-border);border-radius:var(--radius-md);background:var(--surface);cursor:pointer;}
 .os-type-filter .filter-btn.active{background:var(--color-primary);color:#fff;}
 .os-type-filter .filter-btn:focus{outline:2px solid var(--color-primary);}
@@ -445,6 +453,14 @@ input[name="telefone"] { width:18ch; }
 .os-type-optica{background:var(--os-optica-color);}
 .os-empty{text-align:center;padding:2rem;}
 .os-code{font-weight:700;margin-bottom:8px;}
+/* OSCompletedTable */
+.os-completed{margin-top:1rem;}
+.os-completed-controls{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:0.5rem;}
+.os-completed-controls input, .os-completed-controls select{height:var(--control-height);}
+.os-completed table{width:100%;border-collapse:collapse;}
+.os-completed th{font-size:1rem;text-align:left;border-bottom:1px solid var(--color-border);padding:0.5rem;}
+.os-completed td{padding:0.5rem;border-bottom:1px solid var(--color-border);}
+.os-completed-pagination{display:flex;justify-content:center;align-items:center;gap:0.5rem;margin-top:0.5rem;}
 .toast-stack {
   position: fixed;
   bottom: 1rem;
