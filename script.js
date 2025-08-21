@@ -853,7 +853,7 @@ function renderCalendarMenuBar(){
         <button class="btn btn-cal-desfalques" style="display:none">Desfalques</button>
       </div>
       <div class="menu-widgets">
-        <div class="mini-widget">
+        <div class="mini-widget mini-blue">
           <div class="mini-title">Contatos</div>
           <div class="mini-split">
             <div class="mini-part">
@@ -866,7 +866,7 @@ function renderCalendarMenuBar(){
             </div>
           </div>
         </div>
-        <div class="mini-widget">
+        <div class="mini-widget mini-yellow">
           <div class="mini-title">O.S Aguardando</div>
           <div class="mini-triple">
             <div class="mini-part">
@@ -883,7 +883,7 @@ function renderCalendarMenuBar(){
             </div>
           </div>
         </div>
-        <div class="mini-widget">
+        <div class="mini-widget mini-yellow">
           <div class="mini-title">O.S para Hoje</div>
           <div class="mini-value" data-stat="os-hoje">0</div>
         </div>
@@ -919,8 +919,10 @@ function updateCalendarMenuBar(){
   let osHoje=0;
   list.forEach(os=>{
     const tipo=os.tipo||'reloj';
-    if(os.status==='aguardando') aguardando[tipo]=(aguardando[tipo]||0)+1;
-    if(os.campos?.dataOficina===todayISO) osHoje++;
+    if(os.status==='oficina'){
+      aguardando[tipo]=(aguardando[tipo]||0)+1;
+      if(os.campos?.dataOficina===todayISO) osHoje++;
+    }
   });
   bar.querySelector('[data-stat="os-aguardando-o"]').textContent=aguardando.optica||0;
   bar.querySelector('[data-stat="os-aguardando-r"]').textContent=aguardando.reloj||0;
@@ -967,23 +969,26 @@ function renderCalendario() {
 function renderClientes() {
   return `
   <div class="balloon balloon--menu-bar clientes-menu">
-    <div class="search-wrapper"><span class="icon">${iconSearch}</span><input id="clientSearch" type="search" placeholder="Pesquisar clientes…" aria-label="Pesquisar clientes" /></div>
-    <button id="tagMenuBtn" type="button" class="btn-dropdown">Etiquetas ▾</button>
-  </div>
-  <div class="clientes-reserved">
-    <div class="balloon"><small>Reservado</small></div>
-    <div class="balloon"><small>Reservado</small></div>
-    <div class="balloon"><small>Reservado</small></div>
-    <div class="balloon"><small>Reservado</small></div>
+    <div class="mini-card"><small>Reservado</small></div>
+    <div class="mini-card"><small>Reservado</small></div>
+    <div class="mini-card"><small>Reservado</small></div>
+    <div class="mini-card"><small>Reservado</small></div>
   </div>
   <div class="card-grid">
     <div class="card" data-card-id="lista-clientes" data-colspan="6">
       <div class="card-header">
         <div class="card-head">Lista de Clientes</div>
         <div class="list-toolbar clients-toolbar">
-            <button id="addClientBtn" class="btn-icon btn-plus add-cliente" data-action="client:new" aria-label="Adicionar" title="Adicionar">${iconPlus}</button>
+          <div class="search-wrap">
+            <span class="icon">${iconSearch}</span>
+            <input id="clientSearch" class="search-input" type="search" placeholder="Pesquisar clientes…" aria-label="Pesquisar clientes" />
           </div>
+          <div class="filters-wrap">
+            <button id="tagMenuBtn" type="button" class="btn-dropdown">Etiquetas ▾</button>
+          </div>
+          <button id="addClientBtn" class="btn-icon btn-plus add-cliente" data-action="client:new" aria-label="Adicionar" title="Adicionar">${iconPlus}</button>
         </div>
+      </div>
       <div class="card-body table-wrapper">
         <table class="table table-clients">
           <thead>
