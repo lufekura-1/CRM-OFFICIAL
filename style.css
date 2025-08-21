@@ -410,19 +410,35 @@ input[name="telefone"] { width:18ch; }
 
 /* ===== Ordem de Serviço ===== */
 /* OSMenuBar */
-.os-menu-bar{display:flex;align-items:center;gap:8px;margin-bottom:1rem;flex-wrap:wrap;}
-.os-menu-bar .os-search{position:relative;flex:0 0 160px;}
-.os-menu-bar .os-search input{width:100%;height:var(--control-height);padding-left:28px;}
-.os-menu-bar .os-search svg{position:absolute;left:8px;top:50%;transform:translateY(-50%);pointer-events:none;}
-.os-menu-bar .os-type-filter{display:flex;gap:8px;margin-left:auto;}
-.os-menu-bar .mini-card{flex:0 0 120px;height:64px;}
+.os-menu-bar{display:grid;gap:8px;margin-bottom:1rem;}
+.os-search{position:relative;width:100%;max-width:320px;}
+.os-search input{width:100%;height:var(--control-height);padding-left:28px;}
+.os-search svg{position:absolute;left:8px;top:50%;transform:translateY(-50%);pointer-events:none;}
+.os-menu-bar .os-right{display:flex;align-items:center;justify-content:flex-end;gap:8px;}
+.os-menu-bar .mini-card{height:56px;}
+@media(min-width:1200px){
+  .os-menu-bar{grid-template-columns:auto minmax(260px,320px) 1fr;align-items:center;}
+  .os-menu-bar .os-right{justify-content:flex-end;}
+}
+@media(min-width:768px) and (max-width:1199px){
+  .os-menu-bar{grid-template-columns:1fr 1fr;}
+  #btnNovaOS{grid-column:1;}
+  .os-search{grid-column:2;}
+  .os-menu-bar .os-right{grid-column:1/ span 2;display:grid;grid-template-columns:1fr 1fr;gap:8px;align-items:center;}
+  .os-menu-bar .os-right .os-type-filter{grid-column:1/ span 2;justify-self:start;}
+}
+@media(max-width:767px){
+  .os-menu-bar{grid-template-columns:1fr;}
+  .os-menu-bar > *{grid-column:1;}
+  .os-menu-bar .os-right{flex-direction:column;align-items:stretch;}
+}
 
 /* OSKanbanHolder */
 .os-kanban-holder{margin-bottom:1rem;}
 .os-kanban{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;align-items:flex-start;}
 @media (max-width:1024px){.os-kanban{grid-template-columns:repeat(2,1fr);}}
 @media (max-width:600px){.os-kanban{grid-template-columns:1fr;}}
-.os-kanban .kanban-col{border:1px solid var(--color-border);border-radius:var(--radius-lg);min-height:480px;padding:0;display:flex;flex-direction:column;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,0.05);}
+.os-kanban .kanban-col{border:1px solid var(--color-border);border-radius:var(--radius-lg);min-height:360px;padding:0;display:flex;flex-direction:column;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,0.05);}
 .os-kanban .kanban-col .kanban-header{text-align:center;font-weight:bold;font-size:1.25rem;padding:0.5rem;border-bottom:1px solid var(--color-border);}
 .os-kanban .kanban-col .kanban-header h3{margin:0;font-size:inherit;font-weight:inherit;}
 .os-kanban .kanban-col .kanban-header .count{font-weight:normal;}
@@ -477,10 +493,11 @@ input[name="telefone"] { width:18ch; }
 .os-completed .btn-os-excluir{color:#e53935;}
 .os-move-select { margin-left: 4px; }
 .os-kanban .kanban-col.drag-over { outline:2px dashed var(--os-reloj-color); }
-.os-type-filter{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
-.os-type-filter .filter-btn{padding:0.5rem 1rem;border:1px solid var(--color-border);border-radius:var(--radius-md);background:var(--surface);cursor:pointer;}
-.os-type-filter .filter-btn.active{background:var(--color-primary);color:#fff;}
-.os-type-filter .filter-btn:focus{outline:2px solid var(--color-primary);}
+.os-type-filter{display:inline-flex;border:1px solid var(--color-border);border-radius:var(--radius-md);overflow:hidden;}
+.os-type-filter .filter-btn{padding:0.5rem 1rem;border:none;background:var(--surface);cursor:pointer;}
+.os-type-filter .filter-btn + .filter-btn{border-left:1px solid var(--color-border);}
+.os-type-filter .filter-btn.active{background:rgba(46,125,50,0.15);color:var(--color-text);}
+.os-type-filter .filter-btn:focus{outline:2px solid var(--color-primary);outline-offset:-2px;}
 .os-type-choices{display:flex;gap:8px;flex-wrap:wrap;}
 .os-type{padding:12px;border:0;border-radius:var(--radius-md);color:#fff;cursor:pointer;}
 .os-type-reloj{background:var(--os-reloj-color);}
@@ -489,12 +506,12 @@ input[name="telefone"] { width:18ch; }
 .os-empty{text-align:center;padding:2rem;}
 .os-code{font-weight:700;margin-bottom:8px;}
 /* OSCompletedTable */
-.os-completed{margin-top:1rem;}
+.os-completed{margin-top:1rem;overflow:auto;}
 .os-completed-controls{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:0.5rem;}
 .os-completed-controls input, .os-completed-controls select{height:var(--control-height);}
 .os-completed table{width:100%;border-collapse:collapse;}
-.os-completed th{font-size:1rem;text-align:left;border-bottom:1px solid var(--color-border);padding:0.5rem;}
-.os-completed td{padding:0.5rem;border-bottom:1px solid var(--color-border);}
+.os-completed th{font-size:1rem;text-align:left;border-bottom:1px solid var(--color-border);padding:0.25rem 0.5rem;position:sticky;top:0;background:var(--balloon-bg);z-index:1;}
+.os-completed td{padding:0.25rem 0.5rem;border-bottom:1px solid var(--color-border);}
 .os-completed-pagination{display:flex;justify-content:center;align-items:center;gap:0.5rem;margin-top:0.5rem;}
 .toast-stack {
   position: fixed;
