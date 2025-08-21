@@ -2962,7 +2962,7 @@ function printOSOptica(os){
     const contato=showContacts?
       `<div class="os-print-contact">${perfilInfo.telefone?`<div>${perfilInfo.telefone}</div>`:''}${perfilInfo.endereco?`<div>${perfilInfo.endereco}</div>`:''}${perfilInfo.instagram?`<div><a href="https://instagram.com/${perfilInfo.instagram.replace(/^@/,'')}" target="_blank">${perfilInfo.instagram}</a></div>`:''}</div>`:'';
     const g=campos.grau||{};
-    const identificacao=`<div class="os-block grid2 identificacao"><div><strong>Cliente:</strong> ${campos.nome||''}</div><div><strong>Nº OS:</strong> ${os.codigo}</div></div>`;
+    const identificacao=`<div class="os-block os-identificacao"><div><strong>Cliente:</strong> ${campos.nome||''}</div><div><strong>Nº OS:</strong> ${os.codigo}</div></div>`;
     const contatoCliente=`<div class="os-block grid2 contato"><div><strong>Telefone:</strong> ${campos.telefone||''}</div>${campos.cpf?`<div><strong>CPF:</strong> ${campos.cpf}</div>`:''}</div>`;
     const valores=campos.valores||{};
     const va=valores.armacao||0;
@@ -3006,22 +3006,25 @@ function printOSOptica(os){
   .os-print-container{display:flex;flex-direction:column;height:100%;}
   hr{border:0;border-top:1px solid #000;margin:1mm 0;}
   .os-print-via{flex:1;background:#fff;border:1px solid #ccc;padding:2mm;display:flex;flex-direction:column;}
+  .os-print-body{flex:1;display:flex;flex-direction:column;justify-content:space-between;}
   .os-print-header{display:flex;justify-content:space-between;align-items:flex-start;min-height:15mm;}
   .os-print-header .logo-img{max-height:14mm;object-fit:contain;}
   .os-print-header .logo-placeholder{width:30mm;height:14mm;background:#eee;display:flex;align-items:center;justify-content:center;color:#666;font-size:9pt;}
   .os-print-contact{text-align:right;font-size:8pt;}
-  .os-print-title{text-align:center;font-weight:bold;font-size:14pt;margin-top:1mm;}
-  .os-block{margin-top:2mm;font-size:10pt;}
-  .grid2{display:grid;grid-template-columns:1fr 1fr;column-gap:4mm;row-gap:2mm;}
-  .identificacao div,.datas-line div{font-weight:bold;}
+  .os-print-title{text-align:center;font-weight:bold;font-size:15pt;margin-top:1mm;}
+  .os-block{margin-top:1.5mm;font-size:10pt;}
+  .os-block strong{font-size:10.5pt;}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;column-gap:4mm;row-gap:1mm;}
+  .os-identificacao{display:flex;justify-content:space-between;font-size:12pt;font-weight:bold;margin-top:1mm;}
+  .os-identificacao div:last-child{text-align:right;}
   .datas-line{display:flex;justify-content:space-between;}
-  .optica .total{grid-column:1/-1;margin-top:2mm;font-weight:bold;}
-  .grau-table{width:100%;border-collapse:collapse;margin-top:2mm;}
-  .grau-table th,.grau-table td{border:1px solid #000;padding:1px;font-size:8pt;text-align:center;}
+  .optica .total{grid-column:1/-1;margin-top:1mm;font-weight:bold;}
+  .grau-table{width:100%;border-collapse:collapse;margin-top:1mm;}
+  .grau-table th,.grau-table td{border:1px solid #000;padding:0.5mm;font-size:7pt;text-align:center;}
   .grau-table th:first-child{text-align:left;}
-  .assinatura{border-top:1px solid #000;width:90mm;text-align:center;margin-left:auto;margin-top:12mm;height:22mm;position:relative;}
+  .assinatura{border-top:1px solid #000;width:90mm;text-align:center;margin-left:auto;margin-top:8mm;height:25mm;position:relative;}
   .assinatura:after{content:"Assinatura";position:absolute;top:4px;left:0;right:0;font-size:10pt;}
-  .os-garantia{margin-top:2mm;font-size:8pt;}
+  .os-garantia{margin-top:1mm;font-size:8pt;}
   </style></head><body>${content}</body></html>`);
   w.document.close();
   w.addEventListener('load',()=>w.print());
@@ -3045,7 +3048,7 @@ function printOS(os){
       `<div class="os-print-contact">${perfilInfo.telefone?`<div>${perfilInfo.telefone}</div>`:''}${perfilInfo.endereco?`<div>${perfilInfo.endereco}</div>`:''}${perfilInfo.instagram?`<div><a href="https://instagram.com/${perfilInfo.instagram.replace(/^@/,'')}" target="_blank">${perfilInfo.instagram}</a></div>`:''}</div>` : '';
     const oficinaDate=campos.dataOficina;
     const prevDate=campos.previsaoEntrega||campos.dataEntrega;
-    const identificacao=`<div class="os-block grid2 identificacao"><div><strong>Cliente:</strong> ${campos.cliente}</div><div><strong>Nº OS:</strong> ${os.codigo}</div></div>`;
+    const identificacao=`<div class="os-block os-identificacao"><div><strong>Cliente:</strong> ${campos.cliente}</div><div><strong>Nº OS:</strong> ${os.codigo}</div></div>`;
     const telefone=`<div class="os-block"><strong>Telefone:</strong> ${campos.telefone}</div>`;
     const relogio=`<div class="os-block grid2 relogio">${campos.marca?`<div><strong>Marca:</strong> ${campos.marca}</div>`:''}${campos.pulseira?`<div><strong>Pulseira:</strong> ${campos.pulseira}</div>`:''}${campos.mostrador?`<div><strong>Mostrador:</strong> ${campos.mostrador}</div>`:''}</div>`;
     const servico=`<div class="os-block"><strong>Serviço:</strong> ${campos.servico}</div>`;
@@ -3074,18 +3077,22 @@ function printOS(os){
   .os-print-container{display:flex;flex-direction:column;height:100%;}
   hr{border:0;border-top:1px solid #000;margin:1mm 0;}
   .os-print-via{flex:1;background:#fff;border:1px solid #ccc;padding:2mm;display:flex;flex-direction:column;}
+  .os-print-body{flex:1;display:flex;flex-direction:column;justify-content:space-between;}
   .os-print-header{display:flex;justify-content:space-between;align-items:flex-start;min-height:15mm;}
   .os-print-header .logo-img{max-height:14mm;object-fit:contain;}
   .os-print-header .logo-placeholder{width:30mm;height:14mm;background:#eee;display:flex;align-items:center;justify-content:center;color:#666;font-size:9pt;}
   .os-print-contact{text-align:right;font-size:8pt;}
-  .os-print-title{text-align:center;font-weight:bold;font-size:14pt;margin-top:1mm;}
-  .os-block{margin-top:2mm;font-size:10pt;}
-  .grid2{display:grid;grid-template-columns:1fr 1fr;column-gap:4mm;row-gap:2mm;}
-  .identificacao div,.datas-line div{font-weight:bold;}
+  .os-print-title{text-align:center;font-weight:bold;font-size:15pt;margin-top:1mm;}
+  .os-block{margin-top:1.5mm;font-size:10pt;}
+  .os-block strong{font-size:10.5pt;}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;column-gap:4mm;row-gap:1mm;}
+  .os-identificacao{display:flex;justify-content:space-between;font-size:12pt;font-weight:bold;margin-top:1mm;}
+  .os-identificacao div:last-child{text-align:right;}
+  .datas-line div{font-weight:bold;}
   .datas-line{display:flex;justify-content:space-between;}
-  .assinatura{border-top:1px solid #000;width:90mm;text-align:center;margin-left:auto;margin-top:12mm;height:22mm;position:relative;}
+  .assinatura{border-top:1px solid #000;width:90mm;text-align:center;margin-left:auto;margin-top:8mm;height:25mm;position:relative;}
   .assinatura:after{content:"Assinatura";position:absolute;top:4px;left:0;right:0;font-size:10pt;}
-  .os-garantia{margin-top:2mm;font-size:8pt;}
+  .os-garantia{margin-top:1mm;font-size:8pt;}
   .data-oficina-highlight{font-weight:bold;font-size:11pt;}
   </style></head><body>${content}</body></html>`);
   w.document.close();
