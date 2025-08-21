@@ -387,21 +387,21 @@ function enablePhotoEdit(badge, img){
   badge.classList.add('editable');
 }
 
+const DEFAULT_PHOTO='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI3MiIgaGVpZ2h0PSI3MiI+PHJlY3Qgd2lkdGg9IjcyIiBoZWlnaHQ9IjcyIiBmaWxsPSIjY2NjIi8+PC9zdmc+';
+
 function updateProfileUI(){
   const badge=document.getElementById('profileBadge');
   if(!badge) return;
   disablePhotoEdit(badge);
   const p=activeProfile();
   const photo=getUserPhoto(p);
-  const imgHtml=photo.src ? `<img src="${photo.src}" class="profile-pic" style="object-position:${photo.x}% ${photo.y}%" data-x="${photo.x}" data-y="${photo.y}">` : `<div class="profile-placeholder">${p[0]}</div>`;
+  const src=photo.src||DEFAULT_PHOTO;
+  const imgHtml=`<img src="${src}" class="profile-pic" style="object-position:${photo.x}% ${photo.y}%" data-x="${photo.x}" data-y="${photo.y}">`;
   badge.innerHTML=imgHtml+`<div class="profile-name">${p}</div>`;
   badge.classList.remove('profile-admin','profile-other');
   badge.classList.add(p==='Administrador'?'profile-admin':'profile-other');
-  if(currentRoute==='gerencia' && photo.src){
+  if(currentRoute==='gerencia'){
     const img=badge.querySelector('.profile-pic');
-    if(img) enablePhotoEdit(badge,img);
-  } else if(currentRoute==='gerencia'){
-    const img=badge.querySelector('.profile-placeholder');
     if(img) enablePhotoEdit(badge,img);
   }
 }
@@ -967,10 +967,12 @@ function renderCalendario() {
   </div>`;
 }
 function renderClientes() {
+  const totalClientes=db.listarClientes().length;
+  const {doneMonth}=getFollowupsStats();
   return `
   <div class="balloon balloon--menu-bar clientes-menu">
-    <div class="mini-card"><small>Reservado</small></div>
-    <div class="mini-card"><small>Reservado</small></div>
+    <div class="mini-card stats-card clientes-cadastrados"><div class="stats-title">Clientes Cadastrados:</div><div class="stats-value">${totalClientes}</div></div>
+    <div class="mini-card stats-card"><div class="stats-title">Contatos esse Mês:</div><div class="stats-value">${doneMonth}</div></div>
     <div class="mini-card"><small>Reservado</small></div>
     <div class="mini-card"><small>Reservado</small></div>
   </div>
@@ -2894,6 +2896,7 @@ const ICON_MOVE = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20
 const ICON_EDIT = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"></path></svg>`;
 const ICON_TRASH = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-2 14H7L5 6"></path><path d="M10 11v6"></path><path d="M14 11v6"></path><path d="M9 6V4h6v2"></path></svg>`;
 const ICON_SEARCH = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>`;
+const ICON_EXPAND = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>`;
 const OS_PAGE_SIZE=20;
 
 function OSMenuBar(){
@@ -2960,11 +2963,16 @@ function renderOSCompleted(){
     const dHoje=os.campos.dataAtual||os.campos.dataHoje;
     const dOf=os.campos.dataOficina;
     const dPrev=os.campos.previsaoEntrega||os.campos.dataEntrega;
-    const datas=[dHoje?`Hoje: ${formatDateDDMMYYYY(dHoje)}`:'', dOf?`Oficina: ${formatDateDDMMYYYY(dOf)}`:'', dPrev?`Prevista: ${formatDateDDMMYYYY(dPrev)}`:''].filter(Boolean).join('<br>');
-    return `<tr><td>${os.codigo}</td><td>${tipoAbbr}</td><td>${nome}</td><td>${tel}</td><td>${datas}</td>`+
-      `<td class="actions"><button class="os-action btn-os-imprimir" data-id="${os.id}" title="Imprimir" aria-label="Imprimir">${ICON_PRINTER}</button>`+
+    const dComp=os.completedAt;
+    const datas=[dHoje?`Hoje: ${formatDateDDMMYYYY(dHoje)}`:'', dOf?`Oficina: ${formatDateDDMMYYYY(dOf)}`:'', dPrev?`Prevista: ${formatDateDDMMYYYY(dPrev)}`:'', dComp?`Finalizada: ${formatDateDDMMYYYY(dComp)}`:''].filter(Boolean).join('<br>');
+    const info=`Código: ${os.codigo} - Telefone: ${tel}`;
+    const row=`<tr data-id="${os.id}"><td>${os.codigo}</td><td>${tipoAbbr}</td><td class="os-complete-client" data-info="${info}">${nome}</td><td>${tel}</td><td>${datas}</td>`+
+      `<td class="actions"><button class="os-action btn-os-expand" data-id="${os.id}" title="Expandir" aria-label="Expandir">${ICON_EXPAND}</button>`+
+      `<button class="os-action btn-os-imprimir" data-id="${os.id}" title="Imprimir" aria-label="Imprimir">${ICON_PRINTER}</button>`+
       `<button class="os-action btn-os-editar" data-id="${os.id}" title="Editar" aria-label="Editar">${ICON_EDIT}</button>`+
       `<button class="os-action btn-os-excluir" data-id="${os.id}" title="Excluir" aria-label="Excluir">${ICON_TRASH}</button></td></tr>`;
+    const detail=`<tr class="os-details" data-id="${os.id}"><td colspan="6"><pre>${JSON.stringify(os.campos,null,2)}</pre></td></tr>`;
+    return row+detail;
   }).join('');
   const info=wrap.querySelector('.page-info');
   const prevBtn=wrap.querySelector('.completed-prev');
@@ -3483,16 +3491,45 @@ function initOSPage(){
   const cTypeBtns=document.getElementById('osCompletedTypeButtons');
   const comp=document.getElementById('osCompleted');
   if(cTypeBtns) cTypeBtns.addEventListener('click',e=>{ const btn=e.target.closest('button[data-type]'); if(!btn) return; cTypeBtns.querySelectorAll('button').forEach(b=>b.classList.toggle('active', b===btn)); ui.os.completed.type=btn.dataset.type; ui.os.completed.page=1; renderOSCompleted(); });
-  if(comp) comp.addEventListener('click',e=>{
-    const btn=e.target.closest('button');
-    if(!btn) return;
-    const id=btn.dataset.id;
-    if(btn.classList.contains('btn-os-imprimir')){ const os=loadOSList().find(o=>o.id==id); if(os) printOS(os); }
-    if(btn.classList.contains('btn-os-editar')){ const os=loadOSList().find(o=>o.id==id); if(os) openOSForm(os.tipo, os); }
-    if(btn.classList.contains('btn-os-excluir')){ if(confirm('Excluir OS?')){ deleteOS(Number(id)); renderOSKanban(); renderOSCompleted(); } }
-    if(btn.classList.contains('completed-prev')){ if(ui.os.completed.page>1){ ui.os.completed.page--; renderOSCompleted(); } }
-    if(btn.classList.contains('completed-next')){ const total=loadOSList().filter(o=>o.status==='completo').length; const max=Math.max(1,Math.ceil(total/OS_COMPLETED_PAGE_SIZE)); if(ui.os.completed.page<max){ ui.os.completed.page++; renderOSCompleted(); } }
-  });
+  if(comp){
+    comp.addEventListener('click',e=>{
+      const btn=e.target.closest('button');
+      if(!btn) return;
+      const id=btn.dataset.id;
+      if(btn.classList.contains('btn-os-expand')){
+        const detail=comp.querySelector(`.os-details[data-id="${id}"]`);
+        if(detail) detail.classList.toggle('show');
+        return;
+      }
+      if(btn.classList.contains('btn-os-imprimir')){ const os=loadOSList().find(o=>o.id==id); if(os) printOS(os); }
+      if(btn.classList.contains('btn-os-editar')){ const os=loadOSList().find(o=>o.id==id); if(os) openOSForm(os.tipo, os); }
+      if(btn.classList.contains('btn-os-excluir')){ if(confirm('Excluir OS?')){ deleteOS(Number(id)); renderOSKanban(); renderOSCompleted(); } }
+      if(btn.classList.contains('completed-prev')){ if(ui.os.completed.page>1){ ui.os.completed.page--; renderOSCompleted(); } }
+      if(btn.classList.contains('completed-next')){ const total=loadOSList().filter(o=>o.status==='completo').length; const max=Math.max(1,Math.ceil(total/OS_COMPLETED_PAGE_SIZE)); if(ui.os.completed.page<max){ ui.os.completed.page++; renderOSCompleted(); } }
+    });
+    const tooltip=document.createElement('div');
+    tooltip.className='os-tooltip';
+    tooltip.style.display='none';
+    document.body.appendChild(tooltip);
+    comp.addEventListener('mouseover',e=>{
+      const cell=e.target.closest('.os-complete-client');
+      if(!cell) return;
+      tooltip.textContent=cell.dataset.info;
+      tooltip.style.display='block';
+      const rect=cell.getBoundingClientRect();
+      tooltip.style.left=`${rect.left+window.scrollX}px`;
+      tooltip.style.top=`${rect.bottom+window.scrollY+4}px`;
+    });
+    comp.addEventListener('mousemove',e=>{
+      if(tooltip.style.display==='block'){
+        tooltip.style.left=`${e.pageX+8}px`;
+        tooltip.style.top=`${e.pageY+8}px`;
+      }
+    });
+    comp.addEventListener('mouseout',e=>{
+      if(e.target.closest('.os-complete-client')) tooltip.style.display='none';
+    });
+  }
   const board=document.getElementById('osKanban');
   if(board){
     board.addEventListener('click',e=>{
@@ -3515,6 +3552,7 @@ function initOSPage(){
         if(os&&status){
           os.status=status;
           os.updatedAt=new Date().toISOString();
+          if(status==='completo' && !os.completedAt) os.completedAt=new Date().toISOString();
           saveOSList(list);
           renderOSKanban();
           renderOSCompleted();
@@ -3525,14 +3563,15 @@ function initOSPage(){
         const id=Number(card.dataset.id);
         const list=loadOSList();
         const os=list.find(o=>o.id===id);
-        if(os){
-          os.status='completo';
-          os.updatedAt=new Date().toISOString();
-          saveOSList(list);
-          renderOSKanban();
-          renderOSCompleted();
-        }
+      if(os){
+        os.status='completo';
+        os.updatedAt=new Date().toISOString();
+        os.completedAt=os.completedAt||new Date().toISOString();
+        saveOSList(list);
+        renderOSKanban();
+        renderOSCompleted();
       }
+    }
     });
     board.addEventListener('keydown',e=>{
       if(e.target.classList.contains('os-card') && e.key==='Enter'){

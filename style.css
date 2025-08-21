@@ -389,6 +389,10 @@ input[name="telefone"] { width:18ch; }
   justify-content: center;
   color: var(--text-muted);
 }
+.clientes-menu .mini-card.stats-card{flex-direction:column;gap:4px;color:var(--color-text);}
+.clientes-menu .mini-card.clientes-cadastrados{background:rgba(46,125,50,0.15);}
+.clientes-menu .stats-title{font-size:0.875rem;}
+.clientes-menu .stats-value{font-size:1.5rem;font-weight:700;}
 
 @media (max-width:1199px) {
   .clientes-menu {
@@ -442,8 +446,7 @@ input[name="telefone"] { width:18ch; }
 .os-kanban .kanban-col .kanban-header{text-align:center;font-weight:bold;font-size:1.25rem;padding:0.5rem;border-bottom:1px solid var(--color-border);}
 .os-kanban .kanban-col .kanban-header h3{margin:0;font-size:inherit;font-weight:inherit;}
 .os-kanban .kanban-col .kanban-header .count{font-weight:normal;}
-.os-kanban .kanban-col .cards{flex:1;padding:0.5rem;display:grid;grid-template-columns:repeat(2,1fr);gap:0.5rem;align-content:flex-start;}
-@media (max-width:600px){.os-kanban .kanban-col .cards{grid-template-columns:1fr;}}
+.os-kanban .kanban-col .cards{flex:1;padding:0.5rem;display:grid;grid-template-columns:1fr;gap:0.5rem;align-content:flex-start;}
 .os-kanban .kanban-col .cards .os-card{margin:0;}
 .os-kanban .kanban-col .kanban-footer { border-top:1px solid var(--color-border); padding:0.5rem; display:flex; justify-content:center; align-items:center; gap:0.5rem; font-size:0.875rem; }
 .os-kanban .kanban-col .kanban-footer button { background:none; border:none; cursor:pointer; color:var(--color-text); }
@@ -493,10 +496,9 @@ input[name="telefone"] { width:18ch; }
 .os-completed .btn-os-excluir{color:#e53935;}
 .os-move-select { margin-left: 4px; }
 .os-kanban .kanban-col.drag-over { outline:2px dashed var(--os-reloj-color); }
-.os-type-filter{display:inline-flex;border:1px solid var(--color-border);border-radius:var(--radius-md);overflow:hidden;}
-.os-type-filter .filter-btn{padding:0.5rem 1rem;border:none;background:var(--surface);cursor:pointer;}
-.os-type-filter .filter-btn + .filter-btn{border-left:1px solid var(--color-border);}
-.os-type-filter .filter-btn.active{background:rgba(46,125,50,0.15);color:var(--color-text);}
+.os-type-filter{display:flex;gap:8px;border:none;}
+.os-type-filter .filter-btn{padding:0.5rem 1rem;border:1px solid var(--color-border);border-radius:var(--radius-sm);background:var(--surface);cursor:pointer;}
+.os-type-filter .filter-btn.active{background:var(--color-primary);color:#fff;}
 .os-type-filter .filter-btn:focus{outline:2px solid var(--color-primary);outline-offset:-2px;}
 .os-type-choices{display:flex;gap:8px;flex-wrap:wrap;}
 .os-type{padding:12px;border:0;border-radius:var(--radius-md);color:#fff;cursor:pointer;}
@@ -510,8 +512,12 @@ input[name="telefone"] { width:18ch; }
 .os-completed-controls{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:0.5rem;}
 .os-completed-controls input, .os-completed-controls select{height:var(--control-height);}
 .os-completed table{width:100%;border-collapse:collapse;}
-.os-completed th{font-size:1rem;text-align:left;border-bottom:1px solid var(--color-border);padding:0.25rem 0.5rem;position:sticky;top:0;background:var(--balloon-bg);z-index:1;}
-.os-completed td{padding:0.25rem 0.5rem;border-bottom:1px solid var(--color-border);}
+.os-completed th{font-size:1rem;text-align:left;border-bottom:1px solid var(--color-border);padding:0.125rem 0.25rem;position:sticky;top:0;background:var(--balloon-bg);z-index:1;}
+.os-completed td{padding:0.125rem 0.25rem;border-bottom:1px solid var(--color-border);}
+.os-completed td.actions{display:flex;gap:4px;}
+.os-completed .os-details{display:none;}
+.os-completed .os-details.show{display:table-row;}
+.os-tooltip{position:absolute;background:var(--balloon-bg);border:1px solid var(--color-border);border-radius:var(--radius-sm);padding:4px 8px;font-size:0.75rem;box-shadow:var(--balloon-shadow);pointer-events:none;z-index:1000;}
 .os-completed-pagination{display:flex;justify-content:center;align-items:center;gap:0.5rem;margin-top:0.5rem;}
 .toast-stack {
   position: fixed;
@@ -1006,7 +1012,7 @@ input[name="telefone"] { width:18ch; }
 #profileBadge .profile-pic{
   width:72px;
   height:72px;
-  border-radius:50%;
+  border-radius:var(--radius-md);
   object-fit:cover;
   object-position:50% 50%;
 }
@@ -1019,7 +1025,7 @@ input[name="telefone"] { width:18ch; }
 #profileBadge .profile-placeholder{
   width:72px;
   height:72px;
-  border-radius:50%;
+  border-radius:var(--radius-md);
   background:var(--neutral-200);
   display:flex;
   align-items:center;
