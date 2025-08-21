@@ -2898,16 +2898,18 @@ const OS_PAGE_SIZE=20;
 
 function OSMenuBar(){
   return `<div class="os-menu-bar balloon">`+
-    `<button id="btnNovaOS" class="btn btn-primary">Nova O.S</button>`+
-    `<div class="os-search"><input id="osSearch" type="search" placeholder="Buscar..." aria-label="Buscar O.S"><span class="icon">${ICON_SEARCH}</span></div>`+
-    `<div class="os-type-filter" id="osTypeButtons">`+
-      `<button class="filter-btn active" data-type="all">Todos</button>`+
-      `<button class="filter-btn" data-type="reloj">Relojoaria</button>`+
-      `<button class="filter-btn" data-type="joia">Joalheria</button>`+
-      `<button class="filter-btn" data-type="optica">Óptica</button>`+
+    `<button id=\"btnNovaOS\" class=\"btn btn-primary\">Nova O.S</button>`+
+    `<div class=\"os-search\"><input id=\"osSearch\" type=\"search\" placeholder=\"Buscar...\" aria-label=\"Buscar O.S\"><span class=\"icon\">${ICON_SEARCH}</span></div>`+
+    `<div class=\"os-right\">`+
+      `<div class=\"os-type-filter\" id=\"osTypeButtons\">`+
+        `<button class=\"filter-btn active\" data-type=\"all\">Todos</button>`+
+        `<button class=\"filter-btn\" data-type=\"reloj\">Relojoaria</button>`+
+        `<button class=\"filter-btn\" data-type=\"joia\">Joalheria</button>`+
+        `<button class=\"filter-btn\" data-type=\"optica\">Óptica</button>`+
+      `</div>`+
+      `<div class=\"mini-card\"></div>`+
+      `<div class=\"mini-card\"></div>`+
     `</div>`+
-    `<div class="mini-card"></div>`+
-    `<div class="mini-card"></div>`+
   `</div>`;
 }
 
@@ -2915,9 +2917,9 @@ function OSKanbanHolder(){
   const cols=KANBAN_STATUSES.map(k=>{
     const label=OS_STATUS_LABELS[k];
     const cls={loja:'col-kanban--loja',oficina:'col-kanban--oficina',aguardando:'col-kanban--aguardo'}[k];
-    return `<div class="kanban-col ${cls}" data-status="${k}"><div class="kanban-header"><h3>${label} <span class="count">(0)</span></h3></div><div class="cards"></div><div class="kanban-footer"><button class="kanban-prev" disabled>Anterior</button><span class="sep">|</span><span class="page-info">1 / 1</span><span class="sep">|</span><button class="kanban-next" disabled>Próxima</button></div></div>`;
+    return `<div class=\"kanban-col ${cls}\" data-status=\"${k}\"><div class=\"kanban-header\"><h3>${label} <span class=\"count\">(0)</span></h3></div><div class=\"cards\"></div><div class=\"kanban-footer\"><button class=\"kanban-prev\" disabled>Anterior</button><span class=\"sep\">|</span><span class=\"page-info\">1 / 1</span><span class=\"sep\">|</span><button class=\"kanban-next\" disabled>Próxima</button></div></div>`;
   }).join('');
-  return `<div class="os-kanban-holder balloon balloon--holder"><div class="os-kanban" id="osKanban">${cols}</div></div>`;
+  return `<div class=\"os-kanban-holder balloon\"><div class=\"os-kanban\" id=\"osKanban\">${cols}</div></div>`;
 }
 
 function OSCompletedTable(){
