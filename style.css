@@ -38,6 +38,18 @@
   --kanban-oficina: rgba(255, 159, 10, 0.08);
   --kanban-aguardo: rgba(56, 139, 253, 0.07);
   --kanban-completo: rgba(46, 160, 67, 0.12);
+  /* Spacing tokens */
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  /* White balloon tokens */
+  --balloon-bg: var(--surface);
+  --balloon-border: var(--color-border);
+  --balloon-radius: var(--radius-md);
+  --balloon-shadow: 0 1px 2px rgba(0,0,0,0.08);
+  --balloon-padding: var(--space-md);
+  --balloon-gap: var(--space-md);
 }
 html.theme-dark {
   --color-app-bg: #121212;
@@ -308,6 +320,67 @@ input[name="telefone"] { width:18ch; }
 .card-metric { font-size: 1.5rem; margin-bottom: 0.5rem; }
 .empty-state { text-align: center; color: var(--color-border); }
 .table-area, .kanban-area { margin-top: 2rem; padding: 2rem; border: 2px dashed var(--color-border); }
+
+/* ===== White Balloon Container ===== */
+/* Base balloon */
+.balloon {
+  background: var(--balloon-bg);
+  border: 1px solid var(--balloon-border);
+  border-radius: var(--balloon-radius);
+  box-shadow: var(--balloon-shadow);
+  padding: var(--balloon-padding);
+  display: flex;
+  flex-direction: column;
+  gap: var(--balloon-gap);
+  overflow-x: hidden;
+  height: auto;
+  transition: height 0.3s ease;
+}
+
+/* Clamp long headings */
+.balloon h1,
+.balloon h2,
+.balloon h3,
+.balloon h4,
+.balloon h5,
+.balloon h6 {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* menu-bar variant */
+.balloon--menu-bar {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-sm) var(--space-md);
+  gap: var(--space-sm);
+}
+
+/* holder variant */
+.balloon--holder {
+  flex-direction: row;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+}
+
+/* panel variant (default usage) */
+.balloon--panel {
+  /* currently same as base balloon */
+}
+
+/* Focus state for accessibility */
+.balloon:focus-within {
+  box-shadow: 0 0 0 2px var(--color-primary), var(--balloon-shadow);
+}
+
+@media (max-width:600px) {
+  .balloon {
+    padding: var(--space-sm);
+    gap: var(--space-sm);
+  }
+}
 
 /* ===== Ordem de Serviço ===== */
 .os-toolbar { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom: 1rem; }
