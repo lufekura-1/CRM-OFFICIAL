@@ -2919,7 +2919,7 @@ function OSKanbanHolder(){
   const cols=KANBAN_STATUSES.map(k=>{
     const label=OS_STATUS_LABELS[k];
     const cls={loja:'col-kanban--loja',oficina:'col-kanban--oficina',aguardando:'col-kanban--aguardo'}[k];
-    return `<div class=\"kanban-col ${cls}\" data-status=\"${k}\"><div class=\"kanban-header\"><h3>${label} <span class=\"count\">(0)</span></h3></div><div class=\"cards\"></div><div class=\"kanban-footer\"><button class=\"kanban-prev\" disabled>Anterior</button><span class=\"sep\">|</span><span class=\"page-info\">1 / 1</span><span class=\"sep\">|</span><button class=\"kanban-next\" disabled>Próxima</button></div></div>`;
+    return `<div class=\"kanban-col ${cls}\" data-status=\"${k}\"><div class=\"kanban-header\"><h3>${label} <span class=\"count\">0</span></h3></div><div class=\"cards\"></div><div class=\"kanban-footer\"><button class=\"kanban-prev\" disabled>Anterior</button><span class=\"sep\">|</span><span class=\"page-info\">1 / 1</span><span class=\"sep\">|</span><button class=\"kanban-next\" disabled>Próxima</button></div></div>`;
   }).join('');
   return `<div class=\"os-kanban-holder balloon\"><div class=\"os-kanban\" id=\"osKanban\">${cols}</div></div>`;
 }
@@ -3091,7 +3091,9 @@ function renderOSKanban(){
       }
       const nome=os.campos.nome||os.campos.cliente;
       const tel=os.campos.telefone||'';
-      const pinCls=os.status==='aguardando'?'pin-green':'pin-blue';
+      const pinCls=os.status==='aguardando'
+        ? 'pin-green'
+        : (os.pinnedAt ? 'pin-orange' : 'pin-blue');
       card.innerHTML=`<div class="os-card-top"><div class="os-card-title"><div class="os-code">${os.codigo}</div><div class="os-name">${nome}</div></div>`+
         `<div class="os-card-actions">`+
         `<button class="os-action btn-os-imprimir" title="Imprimir" aria-label="Imprimir" data-id="${os.id}">${ICON_PRINTER}</button>`+
@@ -3107,7 +3109,7 @@ function renderOSKanban(){
       container.appendChild(card);
     });
     const cnt=col.querySelector('.count');
-    if(cnt) cnt.textContent=`(${counts[st]})`;
+    if(cnt) cnt.textContent=`${counts[st]}`;
     const footer=col.querySelector('.kanban-footer');
     if(footer){
       const info=footer.querySelector('.page-info');
@@ -3130,7 +3132,7 @@ function printOSOptica(os){
   const tipo='optica';
   const perfilInfo=getProfileInfo();
   const garantiaTexto=getGarantiaTexto(tipo);
-  function via(titulo,opts){
+  function via(titulo,opts,banner){
     const showContacts=opts.showContacts!==false;
     const logo=perfilInfo.logo?
       `<img src="${perfilInfo.logo}" alt="Logo" class="logo-img">`:
@@ -3161,34 +3163,36 @@ function printOSOptica(os){
     const observacao=campos.observacao?`<div class="os-block"><strong>Observação:</strong> ${campos.observacao}</div>`:'';
     const datasLine=`<div class="os-block datas-line"><div><strong>Data Atual:</strong> ${formatDateDDMMYYYY(dataAtual)}</div>${opts.previsaoEntrega && campos.previsaoEntrega?`<div><strong>Previsão de Entrega:</strong> ${formatDateDDMMYYYY(campos.previsaoEntrega)}</div>`:''}</div>`;
     const garantia=opts.garantia&&garantiaTexto?`<div class="os-block garantia"><div class="os-garantia">${garantiaTexto}</div></div>`:'';
-    const header=`<div class="os-print-header">${logo}${contato}</div><div class="os-print-title">${titulo.toUpperCase()}</div><hr>`;
+    const header=`<div class="os-print-header">${logo}${contato}</div><div class="os-print-title"><span class="banner">${banner}</span><span class="title-text">${titulo.toUpperCase()}</span></div><hr>`;
     const assinatura=opts.assinatura?'<div class="assinatura"></div>':'';
     const body=`<div class="os-print-body">${identificacao}${contatoCliente}${opticaBlock}${grauBlock}${observacao}${datasLine}${garantia}${assinatura}</div>`;
     return `<section class="os-print-via">${header}${body}</section>`;
   }
   const content=
     `<div class="os-print-container">`+
-    via('Via do Cliente',{previsaoEntrega:true,garantia:true,valor:true,showContacts:true,assinatura:true})+
+    via('Via do Cliente',{previsaoEntrega:true,garantia:true,valor:true,showContacts:true,assinatura:true},'CLIENTE')+
     `<hr>`+
-    via('Via da Loja',{previsaoEntrega:true,garantia:true,valor:true,showContacts:false,assinatura:true})+
+    via('Via da Loja',{previsaoEntrega:true,garantia:true,valor:true,showContacts:false,assinatura:true},perfilInfo.nome.toUpperCase())+
     `<hr>`+
-    via('Via do Laboratório',{previsaoEntrega:true,garantia:false,valor:false,showContacts:true,assinatura:false})+
+    via('Via do Laboratório',{previsaoEntrega:true,garantia:false,valor:false,showContacts:true,assinatura:false},'SERVIÇO')+
     `</div>`;
   const w=window.open('','_blank');
   w.document.write(`<!DOCTYPE html><html><head><title>${os.codigo}</title><style>
-  @page{size:A4 portrait;margin:4mm;}
+  @page{size:A4 portrait;margin:3mm;}
   html,body{height:100%;background:#fff;font-family:sans-serif;font-size:11pt;margin:0;}
   button{display:none;}
   .os-print-container{display:flex;flex-direction:column;height:100%;}
-  hr{border:0;border-top:1px solid #000;margin:1mm 0;}
+  hr{border:0;border-top:1px solid #000;margin:0;}
   .os-print-via{flex:1;background:#fff;border:1px solid #ccc;padding:2mm;display:flex;flex-direction:column;}
   .os-print-body{flex:1;display:flex;flex-direction:column;justify-content:space-between;}
-  .os-print-header{display:flex;justify-content:space-between;align-items:flex-start;min-height:15mm;}
-  .os-print-header .logo-img{max-height:14mm;object-fit:contain;}
-  .os-print-header .logo-placeholder{width:30mm;height:14mm;background:#eee;display:flex;align-items:center;justify-content:center;color:#666;font-size:9pt;}
-  .os-print-contact{text-align:right;font-size:8pt;}
-  .os-print-title{text-align:center;font-weight:bold;font-size:15pt;margin-top:1mm;}
-  .os-block{margin-top:1.5mm;font-size:10pt;}
+  .os-print-header{display:flex;justify-content:space-between;align-items:flex-start;min-height:10mm;}
+  .os-print-header .logo-img{max-height:10mm;object-fit:contain;}
+  .os-print-header .logo-placeholder{width:30mm;height:10mm;background:#eee;display:flex;align-items:center;justify-content:center;color:#666;font-size:8pt;}
+  .os-print-contact{text-align:right;font-size:7pt;}
+  .os-print-title{background:#eee;position:relative;text-align:center;font-weight:bold;font-size:15pt;margin-top:0;}
+  .os-print-title .banner{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:20pt;color:#fff;opacity:0.4;}
+  .os-print-title .title-text{position:relative;z-index:1;}
+  .os-block{margin-top:1mm;font-size:10pt;}
   .os-block strong{font-size:10.5pt;}
   .grid2{display:grid;grid-template-columns:1fr 1fr;column-gap:4mm;row-gap:1mm;}
   .os-identificacao{display:flex;justify-content:space-between;font-size:13pt;font-weight:bold;margin-top:1mm;}
@@ -3198,8 +3202,8 @@ function printOSOptica(os){
   .grau-table{width:100%;border-collapse:collapse;margin-top:1mm;}
   .grau-table th,.grau-table td{border:1px solid #000;padding:0.5mm;font-size:7pt;text-align:center;}
   .grau-table th:first-child{text-align:left;}
-  .assinatura{border-top:1px solid #000;width:100mm;text-align:center;margin-left:auto;margin-top:8mm;height:25mm;position:relative;}
-  .assinatura:after{content:"Assinatura";position:absolute;top:4px;left:0;right:0;font-size:10pt;}
+  .assinatura{border-bottom:1px solid #000;width:100mm;text-align:center;margin-left:auto;margin-top:8mm;height:25mm;position:relative;}
+  .assinatura:after{content:"Assinatura";position:absolute;bottom:-4mm;left:0;right:0;font-size:10pt;}
   .os-garantia{margin-top:1mm;font-size:8pt;}
   </style></head><body>${content}</body></html>`);
   w.document.close();
@@ -3215,7 +3219,7 @@ function printOS(os){
   const perfilInfo=getProfileInfo();
   const garantiaTexto=getGarantiaTexto(tipo);
   if(tipo==='optica') { return printOSOptica(os); }
-  function via(titulo,opts){
+  function via(titulo,opts,banner){
     const showContacts = opts.showContacts!==false;
     const logo = perfilInfo.logo ?
       `<img src="${perfilInfo.logo}" alt="Logo" class="logo-img">` :
@@ -3232,41 +3236,43 @@ function printOS(os){
     const dataOficinaBlock=(opts.dataOficina && oficinaDate)?`<div class="os-block ${opts.oficina?'data-oficina-highlight':''}"><strong>Data da Oficina:</strong> ${formatDateDDMMYYYY(oficinaDate)}</div>`:'';
     const valorBlock=(opts.valor && campos.valor)?`<div class="os-block valor"><strong>Valor a Pagar:</strong> <strong>${formatCurrency(campos.valor)}</strong></div>`:'';
     const garantia=opts.garantia&&garantiaTexto?`<div class="os-block garantia"><div class="os-garantia">${garantiaTexto}</div></div>`:'';
-    const header=`<div class="os-print-header">${logo}${contato}</div><div class="os-print-title">${titulo.toUpperCase()}</div><hr>`;
+    const header=`<div class="os-print-header">${logo}${contato}</div><div class="os-print-title"><span class="banner">${banner}</span><span class="title-text">${titulo.toUpperCase()}</span></div><hr>`;
     const assinatura=opts.assinatura?'<div class="assinatura"></div>':'';
     const body=`<div class="os-print-body">${identificacao}${telefone}${relogio}${servico}${datasLine}${dataOficinaBlock}${valorBlock}${garantia}${assinatura}</div>`;
     return `<section class="os-print-via">${header}${body}</section>`;
   }
   const content=
     `<div class="os-print-container">`+
-    via('Via do Cliente',{dataOficina:false,previsaoEntrega:true,garantia:true,showContacts:true,valor:true,assinatura:true})+
+    via('Via do Cliente',{dataOficina:false,previsaoEntrega:true,garantia:true,showContacts:true,valor:true,assinatura:true},'CLIENTE')+
     `<hr>`+
-    via('Via da Loja',{dataOficina:true,previsaoEntrega:true,garantia:true,showContacts:false,valor:true,assinatura:true})+
+    via('Via da Loja',{dataOficina:true,previsaoEntrega:true,garantia:true,showContacts:false,valor:true,assinatura:true},perfilInfo.nome.toUpperCase())+
     `<hr>`+
-    via('Via da Oficina',{dataOficina:true,previsaoEntrega:false,garantia:false,showContacts:true,valor:false,assinatura:false,oficina:true})+
+    via('Via da Oficina',{dataOficina:true,previsaoEntrega:false,garantia:false,showContacts:true,valor:false,assinatura:false,oficina:true},'SERVIÇO')+
     `</div>`;
   const w=window.open('','_blank');
   w.document.write(`<!DOCTYPE html><html><head><title>${os.codigo}</title><style>
-  @page{size:A4 portrait;margin:4mm;}
+  @page{size:A4 portrait;margin:3mm;}
   html,body{height:100%;background:#fff;font-family:sans-serif;font-size:11pt;margin:0;}
   button{display:none;}
   .os-print-container{display:flex;flex-direction:column;height:100%;}
-  hr{border:0;border-top:1px solid #000;margin:1mm 0;}
+  hr{border:0;border-top:1px solid #000;margin:0;}
   .os-print-via{flex:1;background:#fff;border:1px solid #ccc;padding:2mm;display:flex;flex-direction:column;}
   .os-print-body{flex:1;display:flex;flex-direction:column;justify-content:space-between;}
-  .os-print-header{display:flex;justify-content:space-between;align-items:flex-start;min-height:15mm;}
-  .os-print-header .logo-img{max-height:14mm;object-fit:contain;}
-  .os-print-header .logo-placeholder{width:30mm;height:14mm;background:#eee;display:flex;align-items:center;justify-content:center;color:#666;font-size:9pt;}
-  .os-print-contact{text-align:right;font-size:8pt;}
-  .os-print-title{text-align:center;font-weight:bold;font-size:15pt;margin-top:1mm;}
-  .os-block{margin-top:1.5mm;font-size:10pt;}
+  .os-print-header{display:flex;justify-content:space-between;align-items:flex-start;min-height:10mm;}
+  .os-print-header .logo-img{max-height:10mm;object-fit:contain;}
+  .os-print-header .logo-placeholder{width:30mm;height:10mm;background:#eee;display:flex;align-items:center;justify-content:center;color:#666;font-size:8pt;}
+  .os-print-contact{text-align:right;font-size:7pt;}
+  .os-print-title{background:#eee;position:relative;text-align:center;font-weight:bold;font-size:15pt;margin-top:0;}
+  .os-print-title .banner{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:20pt;color:#fff;opacity:0.4;}
+  .os-print-title .title-text{position:relative;z-index:1;}
+  .os-block{margin-top:1mm;font-size:10pt;}
   .os-block strong{font-size:10.5pt;}
   .grid2{display:grid;grid-template-columns:1fr 1fr;column-gap:4mm;row-gap:1mm;}
   .os-identificacao{display:flex;justify-content:space-between;font-size:13pt;font-weight:bold;margin-top:1mm;}
   .os-identificacao div:last-child{text-align:right;}
   .datas-line{display:flex;justify-content:space-between;font-size:11pt;font-weight:bold;}
-  .assinatura{border-top:1px solid #000;width:100mm;text-align:center;margin-left:auto;margin-top:8mm;height:25mm;position:relative;}
-  .assinatura:after{content:"Assinatura";position:absolute;top:4px;left:0;right:0;font-size:10pt;}
+  .assinatura{border-bottom:1px solid #000;width:100mm;text-align:center;margin-left:auto;margin-top:8mm;height:25mm;position:relative;}
+  .assinatura:after{content:"Assinatura";position:absolute;bottom:-4mm;left:0;right:0;font-size:10pt;}
   .os-garantia{margin-top:1mm;font-size:8pt;}
   .data-oficina-highlight{font-weight:bold;font-size:11pt;}
   </style></head><body>${content}</body></html>`);
