@@ -961,13 +961,21 @@ function renderCalendario() {
 }
 function renderClientes() {
   return `
+  <div class="balloon balloon--menu-bar clientes-menu">
+    <div class="search-wrapper"><span class="icon">${iconSearch}</span><input id="clientSearch" type="search" placeholder="Pesquisar clientes…" aria-label="Pesquisar clientes" /></div>
+    <button id="tagMenuBtn" type="button" class="btn-dropdown">Etiquetas ▾</button>
+  </div>
+  <div class="clientes-reserved">
+    <div class="balloon"><small>Reservado</small></div>
+    <div class="balloon"><small>Reservado</small></div>
+    <div class="balloon"><small>Reservado</small></div>
+    <div class="balloon"><small>Reservado</small></div>
+  </div>
   <div class="card-grid">
     <div class="card" data-card-id="lista-clientes" data-colspan="6">
       <div class="card-header">
         <div class="card-head">Lista de Clientes</div>
         <div class="list-toolbar clients-toolbar">
-            <div class="search-wrap"><span class="icon">${iconSearch}</span><input id="clientSearch" class="search-input" placeholder="Pesquisar clientes…" aria-label="Pesquisar clientes" /></div>
-            <button id="tagMenuBtn" type="button" class="btn-dropdown">Etiquetas ▾</button>
             <button id="addClientBtn" class="btn-icon btn-plus add-cliente" data-action="client:new" aria-label="Adicionar" title="Adicionar">${iconPlus}</button>
           </div>
         </div>
