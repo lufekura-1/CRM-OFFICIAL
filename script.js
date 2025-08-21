@@ -867,19 +867,19 @@ function renderCalendarMenuBar(){
           </div>
         </div>
         <div class="mini-widget mini-yellow">
-          <div class="mini-title">O.S Aguardando</div>
+          <div class="mini-title">Aguardando Serviços</div>
           <div class="mini-triple">
             <div class="mini-part">
-              <div class="mini-label">O</div>
               <div class="mini-value" data-stat="os-aguardando-o">0</div>
+              <div class="mini-label">Óptica</div>
             </div>
             <div class="mini-part">
-              <div class="mini-label">R</div>
               <div class="mini-value" data-stat="os-aguardando-r">0</div>
+              <div class="mini-label">Relógio</div>
             </div>
             <div class="mini-part">
-              <div class="mini-label">J</div>
               <div class="mini-value" data-stat="os-aguardando-j">0</div>
+              <div class="mini-label">Jóias</div>
             </div>
           </div>
         </div>
@@ -2892,12 +2892,11 @@ const OS_STATUS_LABELS = { loja:'Em loja', oficina:'Oficina/Laboratório', aguar
 const KANBAN_STATUSES = ['loja','oficina','aguardando'];
 const OS_TIPO_LABELS = { reloj:'Relojoaria', joia:'Joalheria', optica:'Óptica' };
 const ICON_PRINTER = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>`;
-const ICON_MOVE = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="5 9 2 12 5 15"></polyline><polyline points="9 5 12 2 15 5"></polyline><polyline points="15 19 12 22 9 19"></polyline><polyline points="19 9 22 12 19 15"></polyline><line x1="2" y1="12" x2="22" y2="12"></line><line x1="12" y1="2" x2="12" y2="22"></line></svg>`;
 const ICON_EDIT = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"></path></svg>`;
 const ICON_TRASH = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-2 14H7L5 6"></path><path d="M10 11v6"></path><path d="M14 11v6"></path><path d="M9 6V4h6v2"></path></svg>`;
 const ICON_SEARCH = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>`;
 const ICON_EXPAND = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>`;
-const OS_PAGE_SIZE=20;
+const OS_PAGE_SIZE=12;
 
 function OSMenuBar(){
   return `<div class="os-menu-bar balloon">`+
@@ -2956,22 +2955,25 @@ function renderOSCompleted(){
   const page=Math.min(f.page,totalPages);
   f.page=page;
   const slice=list.slice((page-1)*perPage, page*perPage);
+  const formatDetail=campos=>{
+    return Object.entries(campos).map(([k,v])=>{
+      if(v&&typeof v==='object'){
+        return `<div><strong>${k}:</strong> ${Object.entries(v).map(([k2,v2])=>`${k2}: ${v2}`).join(', ')}</div>`;
+      }
+      return `<div><strong>${k}:</strong> ${v}</div>`;
+    }).join('');
+  };
   tbody.innerHTML=slice.map(os=>{
     const tipoAbbr={reloj:'R',joia:'J',optica:'O'}[os.tipo]||'';
     const nome=os.campos.nome||os.campos.cliente||'';
     const tel=os.campos.telefone||'';
-    const dHoje=os.campos.dataAtual||os.campos.dataHoje;
-    const dOf=os.campos.dataOficina;
-    const dPrev=os.campos.previsaoEntrega||os.campos.dataEntrega;
     const dComp=os.completedAt;
-    const datas=[dHoje?`Hoje: ${formatDateDDMMYYYY(dHoje)}`:'', dOf?`Oficina: ${formatDateDDMMYYYY(dOf)}`:'', dPrev?`Prevista: ${formatDateDDMMYYYY(dPrev)}`:'', dComp?`Finalizada: ${formatDateDDMMYYYY(dComp)}`:''].filter(Boolean).join('<br>');
+    const datas=dComp?`Finalizada: ${formatDateDDMMYYYY(dComp)}`:'';
     const info=`Código: ${os.codigo} - Telefone: ${tel}`;
     const row=`<tr data-id="${os.id}"><td>${os.codigo}</td><td>${tipoAbbr}</td><td class="os-complete-client" data-info="${info}">${nome}</td><td>${tel}</td><td>${datas}</td>`+
       `<td class="actions"><button class="os-action btn-os-expand" data-id="${os.id}" title="Expandir" aria-label="Expandir">${ICON_EXPAND}</button>`+
-      `<button class="os-action btn-os-imprimir" data-id="${os.id}" title="Imprimir" aria-label="Imprimir">${ICON_PRINTER}</button>`+
-      `<button class="os-action btn-os-editar" data-id="${os.id}" title="Editar" aria-label="Editar">${ICON_EDIT}</button>`+
-      `<button class="os-action btn-os-excluir" data-id="${os.id}" title="Excluir" aria-label="Excluir">${ICON_TRASH}</button></td></tr>`;
-    const detail=`<tr class="os-details" data-id="${os.id}"><td colspan="6"><pre>${JSON.stringify(os.campos,null,2)}</pre></td></tr>`;
+      `<button class="os-action btn-os-imprimir" data-id="${os.id}" title="Imprimir" aria-label="Imprimir">${ICON_PRINTER}</button></td></tr>`;
+    const detail=`<tr class="os-details" data-id="${os.id}"><td colspan="6"><div class="os-detail-grid">${formatDetail(os.campos)}</div></td></tr>`;
     return row+detail;
   }).join('');
   const info=wrap.querySelector('.page-info');
@@ -3044,6 +3046,24 @@ function renderOSKanban(){
   const counts={loja:0,oficina:0,aguardando:0,completo:0};
   KANBAN_STATUSES.forEach(st=>{
     const arr=grouped[st];
+    arr.sort((a,b)=>{
+      if(a.pinnedAt && b.pinnedAt) return b.pinnedAt - a.pinnedAt;
+      if(a.pinnedAt) return -1;
+      if(b.pinnedAt) return 1;
+      let da, db;
+      if(st==='loja'){
+        da=parseDDMMYYYY(a.campos.dataAtual||a.campos.dataHoje).getTime();
+        db=parseDDMMYYYY(b.campos.dataAtual||b.campos.dataHoje).getTime();
+      } else {
+        const fa=a.tipo==='optica'?a.campos.previsaoEntrega:a.campos.dataOficina;
+        const fb=b.tipo==='optica'?b.campos.previsaoEntrega:b.campos.dataOficina;
+        da=parseDDMMYYYY(fa).getTime();
+        db=parseDDMMYYYY(fb).getTime();
+      }
+      if(isNaN(da)) da=Infinity;
+      if(isNaN(db)) db=Infinity;
+      return da-db;
+    });
     counts[st]=arr.length;
     const col=colEls[st];
     if(!col) return;
@@ -3070,21 +3090,19 @@ function renderOSKanban(){
         dates.push(`<div class="previsao">Previsão de Entrega: ${formatDateDDMMYYYY(prevDate)}</div>`);
       }
       const nome=os.campos.nome||os.campos.cliente;
-      card.innerHTML=`<div class="os-card-top"><div class="os-card-title"><span class="os-code">${os.codigo}</span> <strong>${nome}</strong> - ${os.campos.telefone}</div>`+
+      const tel=os.campos.telefone||'';
+      const pinCls=os.status==='aguardando'?'pin-green':'pin-blue';
+      card.innerHTML=`<div class="os-card-top"><div class="os-card-title"><div class="os-code">${os.codigo}</div><div class="os-name">${nome}</div></div>`+
         `<div class="os-card-actions">`+
         `<button class="os-action btn-os-imprimir" title="Imprimir" aria-label="Imprimir" data-id="${os.id}">${ICON_PRINTER}</button>`+
-        `<button class="os-action btn-os-mover" title="Mover" aria-label="Mover" data-id="${os.id}">${ICON_MOVE}</button>`+
-        `<select class="os-move-select" data-id="${os.id}" hidden>`+
-        `<option value="">Mover para...</option>`+
-        `${Object.entries(OS_STATUS_LABELS).map(([k,v])=>`<option value="${k}">${v}</option>`).join('')}`+
-        `</select>`+
         `<button class="os-action btn-os-editar" title="Editar" aria-label="Editar" data-id="${os.id}">${ICON_EDIT}</button>`+
         `<button class="os-action btn-os-excluir" title="Excluir" aria-label="Excluir" data-id="${os.id}">${ICON_TRASH}</button>`+
+        `<button class="os-action btn-os-pin ${pinCls}" title="Pin" aria-label="Pin" data-id="${os.id}"></button>`+
         `</div></div>`+
         `<div class="os-card-body">`+
+        `<div class="os-card-phone">${tel}</div>`+
         `${tipo==='optica' ? `<div>Armação: ${os.campos.armacao||''}</div><div>Lente: ${os.campos.lente||''}</div>` : `<div>Marca: ${os.campos.marca||''}</div>${os.campos.marcasUso?'<div class=\"badge\">Marcas de uso</div>':''}`}`+
         `${dates.length?`<div class="os-card-dates">${dates.join('')}</div>`:''}`+
-        `<div class="os-card-completo"><label>Completo <input type="checkbox" class="switch os-completo-switch"></label></div>`+
         `</div>`;
       container.appendChild(card);
     });
@@ -3276,6 +3294,7 @@ function setupOSDragAndDrop(){
         const os=list.find(o=>o.id==id);
         if(os){
           os.status=col.dataset.status;
+          os.pinnedAt=null;
           os.updatedAt=new Date().toISOString();
           saveOSList(list);
           renderOSKanban();
@@ -3298,6 +3317,7 @@ function setupOSDragAndDrop(){
       const os=list.find(o=>o.id==touchId);
       if(os){
         os.status=col.dataset.status;
+        os.pinnedAt=null;
         os.updatedAt=new Date().toISOString();
         saveOSList(list);
         renderOSKanban();
@@ -3502,8 +3522,6 @@ function initOSPage(){
         return;
       }
       if(btn.classList.contains('btn-os-imprimir')){ const os=loadOSList().find(o=>o.id==id); if(os) printOS(os); }
-      if(btn.classList.contains('btn-os-editar')){ const os=loadOSList().find(o=>o.id==id); if(os) openOSForm(os.tipo, os); }
-      if(btn.classList.contains('btn-os-excluir')){ if(confirm('Excluir OS?')){ deleteOS(Number(id)); renderOSKanban(); renderOSCompleted(); } }
       if(btn.classList.contains('completed-prev')){ if(ui.os.completed.page>1){ ui.os.completed.page--; renderOSCompleted(); } }
       if(btn.classList.contains('completed-next')){ const total=loadOSList().filter(o=>o.status==='completo').length; const max=Math.max(1,Math.ceil(total/OS_COMPLETED_PAGE_SIZE)); if(ui.os.completed.page<max){ ui.os.completed.page++; renderOSCompleted(); } }
     });
@@ -3539,39 +3557,28 @@ function initOSPage(){
       if(btn.classList.contains('btn-os-imprimir')){ const os=loadOSList().find(o=>o.id==id); if(os) printOS(os); }
       if(btn.classList.contains('btn-os-editar')){ const os=loadOSList().find(o=>o.id==id); if(os) openOSForm(os.tipo, os); }
       if(btn.classList.contains('btn-os-excluir')){ if(confirm('Excluir OS?')){ deleteOS(Number(id)); renderOSKanban(); renderOSCompleted(); } }
-      if(btn.classList.contains('btn-os-mover')){ const sel=btn.nextElementSibling; if(sel) sel.hidden=!sel.hidden; }
-      if(btn.classList.contains('kanban-prev')){ const st=btn.closest('.kanban-col').dataset.status; if(ui.os.pages[st]>1){ ui.os.pages[st]--; renderOSKanban(); } }
-      if(btn.classList.contains('kanban-next')){ const st=btn.closest('.kanban-col').dataset.status; const total=ui.os.counts[st]||0; const max=Math.max(1,Math.ceil(total/OS_PAGE_SIZE)); if(ui.os.pages[st]<max){ ui.os.pages[st]++; renderOSKanban(); } }
-    });
-    board.addEventListener('change',e=>{
-      if(e.target.classList.contains('os-move-select')){
-        const id=Number(e.target.dataset.id);
-        const status=e.target.value;
+      if(btn.classList.contains('btn-os-pin')){
         const list=loadOSList();
-        const os=list.find(o=>o.id===id);
-        if(os&&status){
-          os.status=status;
-          os.updatedAt=new Date().toISOString();
-          if(status==='completo' && !os.completedAt) os.completedAt=new Date().toISOString();
-          saveOSList(list);
-          renderOSKanban();
-          renderOSCompleted();
+        const os=list.find(o=>o.id==id);
+        if(os){
+          if(os.status==='aguardando'){
+            os.status='completo';
+            os.pinnedAt=null;
+            os.updatedAt=new Date().toISOString();
+            os.completedAt=os.completedAt||new Date().toISOString();
+            saveOSList(list);
+            renderOSKanban();
+            renderOSCompleted();
+          } else if(os.status==='loja' || os.status==='oficina'){
+            os.pinnedAt=os.pinnedAt?null:Date.now();
+            os.updatedAt=new Date().toISOString();
+            saveOSList(list);
+            renderOSKanban();
+          }
         }
       }
-      if(e.target.classList.contains('os-completo-switch')){
-        const card=e.target.closest('.os-card');
-        const id=Number(card.dataset.id);
-        const list=loadOSList();
-        const os=list.find(o=>o.id===id);
-      if(os){
-        os.status='completo';
-        os.updatedAt=new Date().toISOString();
-        os.completedAt=os.completedAt||new Date().toISOString();
-        saveOSList(list);
-        renderOSKanban();
-        renderOSCompleted();
-      }
-    }
+      if(btn.classList.contains('kanban-prev')){ const st=btn.closest('.kanban-col').dataset.status; if(ui.os.pages[st]>1){ ui.os.pages[st]--; renderOSKanban(); } }
+      if(btn.classList.contains('kanban-next')){ const st=btn.closest('.kanban-col').dataset.status; const total=ui.os.counts[st]||0; const max=Math.max(1,Math.ceil(total/OS_PAGE_SIZE)); if(ui.os.pages[st]<max){ ui.os.pages[st]++; renderOSKanban(); } }
     });
     board.addEventListener('keydown',e=>{
       if(e.target.classList.contains('os-card') && e.key==='Enter'){

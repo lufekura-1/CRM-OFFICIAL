@@ -442,11 +442,11 @@ input[name="telefone"] { width:18ch; }
 .os-kanban{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;align-items:flex-start;}
 @media (max-width:1024px){.os-kanban{grid-template-columns:repeat(2,1fr);}}
 @media (max-width:600px){.os-kanban{grid-template-columns:1fr;}}
-.os-kanban .kanban-col{border:1px solid var(--color-border);border-radius:var(--radius-lg);min-height:360px;padding:0;display:flex;flex-direction:column;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,0.05);}
+.os-kanban .kanban-col{border:1px solid var(--color-border);border-radius:var(--radius-lg);min-height:420px;padding:0;display:flex;flex-direction:column;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,0.05);}
 .os-kanban .kanban-col .kanban-header{text-align:center;font-weight:bold;font-size:1.25rem;padding:0.5rem;border-bottom:1px solid var(--color-border);}
 .os-kanban .kanban-col .kanban-header h3{margin:0;font-size:inherit;font-weight:inherit;}
 .os-kanban .kanban-col .kanban-header .count{font-weight:normal;}
-.os-kanban .kanban-col .cards{flex:1;padding:0.5rem;display:grid;grid-template-columns:1fr;gap:0.5rem;align-content:flex-start;}
+.os-kanban .kanban-col .cards{flex:1;padding:0.5rem;display:grid;grid-template-columns:1fr;gap:0.5rem;align-content:flex-start;min-height:300px;}
 .os-kanban .kanban-col .cards .os-card{margin:0;}
 .os-kanban .kanban-col .kanban-footer { border-top:1px solid var(--color-border); padding:0.5rem; display:flex; justify-content:center; align-items:center; gap:0.5rem; font-size:0.875rem; }
 .os-kanban .kanban-col .kanban-footer button { background:none; border:none; cursor:pointer; color:var(--color-text); }
@@ -457,7 +457,7 @@ input[name="telefone"] { width:18ch; }
 .os-kanban .kanban-col.col-kanban--aguardo{background-color:#e3f2fd;}
 .os-card { border: 1px solid var(--color-border); border-radius: var(--radius-md); margin-bottom: 0.5rem; overflow: hidden; background:#fff; box-shadow:0 1px 2px rgba(0,0,0,0.05); }
 .os-card-top { padding:4px 8px; font-weight:bold; color:#fff; display:flex; justify-content:space-between; align-items:center; }
-.os-card-title{flex:1;}
+.os-card-title{flex:1; display:flex; flex-direction:column; line-height:1.2; gap:2px;}
 .os-card-top .os-code{margin-bottom:0;}
 .os-card.reloj { border-color: var(--os-reloj-color); }
 .os-card.joia { border-color: var(--os-joia-color); }
@@ -466,9 +466,9 @@ input[name="telefone"] { width:18ch; }
 .os-card.joia .os-card-top{ background: var(--os-joia-color); }
 .os-card.optica .os-card-top{ background: var(--os-optica-color); }
 .os-card-body { padding: 4px 8px; font-size: 0.875rem; }
+.os-card-phone{font-weight:bold;margin-bottom:4px;}
 .os-card-dates{margin-top:8px;}
 .os-card-dates .previsao{margin-top:4px;font-weight:bold;}
-.os-card-completo{margin-top:8px;display:flex;align-items:center;gap:4px;}
 .badge{display:inline-block;padding:2px 4px;border-radius:var(--radius-sm);font-size:0.75rem;}
 .os-card .badge{color:#fff;}
 
@@ -489,12 +489,11 @@ input[name="telefone"] { width:18ch; }
 .os-completed .os-action:hover{background:var(--surface-muted);}
 .os-card-actions .btn-os-imprimir,
 .os-completed .btn-os-imprimir{color:#607d8b;}
-.os-card-actions .btn-os-mover{color:#1e88e5;}
-.os-card-actions .btn-os-editar,
-.os-completed .btn-os-editar{color:#fb8c00;}
-.os-card-actions .btn-os-excluir,
-.os-completed .btn-os-excluir{color:#e53935;}
-.os-move-select { margin-left: 4px; }
+.os-card-actions .btn-os-editar{color:#fb8c00;}
+.os-card-actions .btn-os-excluir{color:#e53935;}
+.os-card-actions .btn-os-pin{width:16px;height:16px;border-radius:50%;padding:0;}
+.os-card-actions .btn-os-pin.pin-blue{background:#1e88e5;}
+.os-card-actions .btn-os-pin.pin-green{background:#43a047;}
 .os-kanban .kanban-col.drag-over { outline:2px dashed var(--os-reloj-color); }
 .os-type-filter{display:flex;gap:8px;border:none;}
 .os-type-filter .filter-btn{padding:0.5rem 1rem;border:1px solid var(--color-border);border-radius:var(--radius-sm);background:var(--surface);cursor:pointer;}
@@ -517,6 +516,9 @@ input[name="telefone"] { width:18ch; }
 .os-completed td.actions{display:flex;gap:4px;}
 .os-completed .os-details{display:none;}
 .os-completed .os-details.show{display:table-row;}
+.os-completed tbody tr:not(.os-details){height:40px;}
+.os-completed .os-details td{padding:0.5rem;background:var(--surface);}
+.os-detail-grid{display:flex;flex-direction:column;gap:4px;}
 .os-tooltip{position:absolute;background:var(--balloon-bg);border:1px solid var(--color-border);border-radius:var(--radius-sm);padding:4px 8px;font-size:0.75rem;box-shadow:var(--balloon-shadow);pointer-events:none;z-index:1000;}
 .os-completed-pagination{display:flex;justify-content:center;align-items:center;gap:0.5rem;margin-top:0.5rem;}
 .toast-stack {
@@ -808,12 +810,12 @@ input[name="telefone"] { width:18ch; }
 .calendar-menu-bar { background:var(--surface); border-radius:var(--radius-lg); padding:1rem; display:grid; grid-template-columns:max-content 1fr; gap:1rem; align-items:center; }
 .calendar-menu-bar .menu-actions { display:flex; gap:0.5rem; }
 .calendar-menu-bar .menu-widgets { display:grid; grid-template-columns:repeat(auto-fit,minmax(90px,1fr)); gap:0.5rem; }
-.calendar-menu-bar .mini-widget { background:var(--surface); border:1px solid var(--color-border); border-radius:var(--radius-md); padding:0.5rem; display:flex; flex-direction:column; align-items:center; justify-content:center; min-width:80px; box-shadow:var(--card-shadow); }
-.calendar-menu-bar .mini-title { font-weight:700; font-size:0.875rem; margin-bottom:4px; text-align:center; white-space:nowrap; }
-.calendar-menu-bar .mini-value { font-weight:700; text-align:center; font-size:1.25rem; }
+.calendar-menu-bar .mini-widget { background:var(--surface); border:1px solid var(--color-border); border-radius:var(--radius-md); padding:1rem; display:flex; flex-direction:column; align-items:center; justify-content:center; min-width:80px; min-height:100px; box-shadow:var(--card-shadow); }
+.calendar-menu-bar .mini-title { font-weight:700; font-size:1rem; margin-bottom:4px; text-align:center; white-space:nowrap; }
+.calendar-menu-bar .mini-value { font-weight:700; text-align:center; font-size:1.5rem; }
 .calendar-menu-bar .mini-split, .calendar-menu-bar .mini-triple { display:flex; gap:0.5rem; }
 .calendar-menu-bar .mini-part { display:flex; flex-direction:column; align-items:center; }
-.calendar-menu-bar .mini-label { font-size:0.75rem; }
+.calendar-menu-bar .mini-label { font-size:0.875rem; font-weight:400; }
 .calendar-menu-bar .mini-widget.mini-blue { background:#e3f2fd; }
 .calendar-menu-bar .mini-widget.mini-yellow { background:#fff8e1; }
 .calendar-menu-bar .mini-empty { border:1px dashed var(--color-border); box-shadow:none; }
