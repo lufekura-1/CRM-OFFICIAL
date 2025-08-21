@@ -373,6 +373,30 @@ input[name="telefone"] { width:18ch; }
   box-shadow: 0 0 0 2px var(--color-primary), var(--balloon-shadow);
 }
 
+/* Clients page layout */
+.clientes-menu,
+.clientes-reserved {
+  margin-bottom: 1rem;
+}
+
+.clientes-menu .search-wrapper {
+  flex: 1;
+}
+
+.clientes-menu .btn-dropdown {
+  height: var(--control-height);
+}
+
+.clientes-reserved {
+  display: flex;
+  gap: var(--balloon-gap);
+}
+
+.clientes-reserved > .balloon {
+  flex: 1;
+  min-height: 80px;
+}
+
 @media (max-width:600px) {
   .balloon {
     padding: var(--space-sm);
