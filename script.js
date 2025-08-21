@@ -2893,18 +2893,21 @@ const ICON_PRINTER = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height=
 const ICON_MOVE = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="5 9 2 12 5 15"></polyline><polyline points="9 5 12 2 15 5"></polyline><polyline points="15 19 12 22 9 19"></polyline><polyline points="19 9 22 12 19 15"></polyline><line x1="2" y1="12" x2="22" y2="12"></line><line x1="12" y1="2" x2="12" y2="22"></line></svg>`;
 const ICON_EDIT = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"></path></svg>`;
 const ICON_TRASH = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-2 14H7L5 6"></path><path d="M10 11v6"></path><path d="M14 11v6"></path><path d="M9 6V4h6v2"></path></svg>`;
+const ICON_SEARCH = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>`;
 const OS_PAGE_SIZE=20;
 
 function OSMenuBar(){
-  return `<div class="os-menu-bar balloon balloon--menu-bar">`+
-    `<input id="osSearch" type="search" placeholder="Buscar..." aria-label="Buscar OS">`+
-    `<button id="btnNovaOS" class="btn btn-primary">Adicionar O.S.</button>`+
+  return `<div class="os-menu-bar balloon">`+
+    `<button id="btnNovaOS" class="btn btn-primary">Nova O.S</button>`+
+    `<div class="os-search"><input id="osSearch" type="search" placeholder="Buscar..." aria-label="Buscar O.S"><span class="icon">${ICON_SEARCH}</span></div>`+
     `<div class="os-type-filter" id="osTypeButtons">`+
       `<button class="filter-btn active" data-type="all">Todos</button>`+
       `<button class="filter-btn" data-type="reloj">Relojoaria</button>`+
       `<button class="filter-btn" data-type="joia">Joalheria</button>`+
       `<button class="filter-btn" data-type="optica">Óptica</button>`+
     `</div>`+
+    `<div class="mini-card"></div>`+
+    `<div class="mini-card"></div>`+
   `</div>`;
 }
 
@@ -2912,7 +2915,7 @@ function OSKanbanHolder(){
   const cols=KANBAN_STATUSES.map(k=>{
     const label=OS_STATUS_LABELS[k];
     const cls={loja:'col-kanban--loja',oficina:'col-kanban--oficina',aguardando:'col-kanban--aguardo'}[k];
-    return `<div class="kanban-col ${cls}" data-status="${k}"><div class="kanban-header"><h3>${label}</h3><div class="count">0</div></div><div class="cards"></div><div class="kanban-footer"><button class="kanban-prev" disabled>Anterior</button><span class="sep">|</span><span class="page-info">1 / 1</span><span class="sep">|</span><button class="kanban-next" disabled>Próxima</button></div></div>`;
+    return `<div class="kanban-col ${cls}" data-status="${k}"><div class="kanban-header"><h3>${label} <span class="count">(0)</span></h3></div><div class="cards"></div><div class="kanban-footer"><button class="kanban-prev" disabled>Anterior</button><span class="sep">|</span><span class="page-info">1 / 1</span><span class="sep">|</span><button class="kanban-next" disabled>Próxima</button></div></div>`;
   }).join('');
   return `<div class="os-kanban-holder balloon balloon--holder"><div class="os-kanban" id="osKanban">${cols}</div></div>`;
 }
@@ -2920,15 +2923,14 @@ function OSKanbanHolder(){
 function OSCompletedTable(){
   return `<div class="os-completed balloon" id="osCompleted">`+
     `<div class="os-completed-controls">`+
-      `<input id="osCompletedSearch" type="search" placeholder="Buscar..." aria-label="Buscar O.S. completa">`+
-      `<select id="osCompletedType" aria-label="Tipo">`+
-        `<option value="">Todos</option>`+
-        `<option value="reloj">Relojoaria</option>`+
-        `<option value="joia">Joalheria</option>`+
-        `<option value="optica">Óptica</option>`+
-      `</select>`+
+      `<div class="os-type-filter" id="osCompletedTypeButtons">`+
+        `<button class="filter-btn active" data-type="">Todos</button>`+
+        `<button class="filter-btn" data-type="reloj">Relojoaria</button>`+
+        `<button class="filter-btn" data-type="joia">Joalheria</button>`+
+        `<button class="filter-btn" data-type="optica">Óptica</button>`+
+      `</div>`+
     `</div>`+
-    `<table><thead><tr><th>Número OS</th><th>Cliente</th><th>Tipo</th><th>Datas</th><th>Previsão</th><th>Status</th><th>Ações</th></tr></thead><tbody></tbody></table>`+
+    `<table><thead><tr><th>Código</th><th>Tipo</th><th>Cliente</th><th>Telefone</th><th>Datas</th><th>Ações</th></tr></thead><tbody></tbody></table>`+
     `<div class="os-completed-pagination"><button class="completed-prev" disabled>Anterior</button><span class="page-info">1 / 1</span><button class="completed-next" disabled>Próxima</button></div>`+
   `</div>`;
 }
@@ -2943,27 +2945,21 @@ function renderOSCompleted(){
   const f=ui.os.completed;
   let list=loadOSList().filter(o=>o.status==='completo');
   if(f.type) list=list.filter(o=>o.tipo===f.type);
-  if(f.text){
-    const t=f.text;
-    list=list.filter(o=>{
-      const nome=(o.campos.nome||o.campos.cliente||'').toLowerCase();
-      const codigo=(o.codigo||'').toLowerCase();
-      return nome.includes(t)||codigo.includes(t);
-    });
-  }
   const total=list.length;
   const perPage=OS_COMPLETED_PAGE_SIZE;
-  const totalPages=Math.max(1, Math.ceil(total/perPage));
-  const page=Math.min(f.page, totalPages);
+  const totalPages=Math.max(1,Math.ceil(total/perPage));
+  const page=Math.min(f.page,totalPages);
   f.page=page;
   const slice=list.slice((page-1)*perPage, page*perPage);
   tbody.innerHTML=slice.map(os=>{
-    const tipo=OS_TIPO_LABELS[os.tipo]||'';
+    const tipoAbbr={reloj:'R',joia:'J',optica:'O'}[os.tipo]||'';
     const nome=os.campos.nome||os.campos.cliente||'';
-    const dataOf= os.campos.dataOficina ? `Oficina: ${formatDateDDMMYYYY(os.campos.dataOficina)}<br>` : '';
-    const prev=os.campos.previsaoEntrega||os.campos.dataEntrega||'';
-    const prevFmt=prev?formatDateDDMMYYYY(prev):'';
-    return `<tr><td>${os.codigo}</td><td>${nome}</td><td>${tipo}</td><td>${dataOf}</td><td>${prevFmt}</td><td>${OS_STATUS_LABELS[os.status]||''}</td>`+
+    const tel=os.campos.telefone||'';
+    const dHoje=os.campos.dataAtual||os.campos.dataHoje;
+    const dOf=os.campos.dataOficina;
+    const dPrev=os.campos.previsaoEntrega||os.campos.dataEntrega;
+    const datas=[dHoje?`Hoje: ${formatDateDDMMYYYY(dHoje)}`:'', dOf?`Oficina: ${formatDateDDMMYYYY(dOf)}`:'', dPrev?`Prevista: ${formatDateDDMMYYYY(dPrev)}`:''].filter(Boolean).join('<br>');
+    return `<tr><td>${os.codigo}</td><td>${tipoAbbr}</td><td>${nome}</td><td>${tel}</td><td>${datas}</td>`+
       `<td class="actions"><button class="os-action btn-os-imprimir" data-id="${os.id}" title="Imprimir" aria-label="Imprimir">${ICON_PRINTER}</button>`+
       `<button class="os-action btn-os-editar" data-id="${os.id}" title="Editar" aria-label="Editar">${ICON_EDIT}</button>`+
       `<button class="os-action btn-os-excluir" data-id="${os.id}" title="Excluir" aria-label="Excluir">${ICON_TRASH}</button></td></tr>`;
@@ -3083,7 +3079,7 @@ function renderOSKanban(){
       container.appendChild(card);
     });
     const cnt=col.querySelector('.count');
-    if(cnt) cnt.textContent=counts[st];
+    if(cnt) cnt.textContent=`(${counts[st]})`;
     const footer=col.querySelector('.kanban-footer');
     if(footer){
       const info=footer.querySelector('.page-info');
@@ -3152,7 +3148,7 @@ function printOSOptica(os){
     `</div>`;
   const w=window.open('','_blank');
   w.document.write(`<!DOCTYPE html><html><head><title>${os.codigo}</title><style>
-  @page{size:A4 portrait;margin:6mm;}
+  @page{size:A4 portrait;margin:4mm;}
   html,body{height:100%;background:#fff;font-family:sans-serif;font-size:11pt;margin:0;}
   button{display:none;}
   .os-print-container{display:flex;flex-direction:column;height:100%;}
@@ -3167,14 +3163,14 @@ function printOSOptica(os){
   .os-block{margin-top:1.5mm;font-size:10pt;}
   .os-block strong{font-size:10.5pt;}
   .grid2{display:grid;grid-template-columns:1fr 1fr;column-gap:4mm;row-gap:1mm;}
-  .os-identificacao{display:flex;justify-content:space-between;font-size:12pt;font-weight:bold;margin-top:1mm;}
+  .os-identificacao{display:flex;justify-content:space-between;font-size:13pt;font-weight:bold;margin-top:1mm;}
   .os-identificacao div:last-child{text-align:right;}
-  .datas-line{display:flex;justify-content:space-between;}
+  .datas-line{display:flex;justify-content:space-between;font-size:11pt;font-weight:bold;}
   .optica .total{grid-column:1/-1;margin-top:1mm;font-weight:bold;}
   .grau-table{width:100%;border-collapse:collapse;margin-top:1mm;}
   .grau-table th,.grau-table td{border:1px solid #000;padding:0.5mm;font-size:7pt;text-align:center;}
   .grau-table th:first-child{text-align:left;}
-  .assinatura{border-top:1px solid #000;width:90mm;text-align:center;margin-left:auto;margin-top:8mm;height:25mm;position:relative;}
+  .assinatura{border-top:1px solid #000;width:100mm;text-align:center;margin-left:auto;margin-top:8mm;height:25mm;position:relative;}
   .assinatura:after{content:"Assinatura";position:absolute;top:4px;left:0;right:0;font-size:10pt;}
   .os-garantia{margin-top:1mm;font-size:8pt;}
   </style></head><body>${content}</body></html>`);
@@ -3223,7 +3219,7 @@ function printOS(os){
     `</div>`;
   const w=window.open('','_blank');
   w.document.write(`<!DOCTYPE html><html><head><title>${os.codigo}</title><style>
-  @page{size:A4 portrait;margin:6mm;}
+  @page{size:A4 portrait;margin:4mm;}
   html,body{height:100%;background:#fff;font-family:sans-serif;font-size:11pt;margin:0;}
   button{display:none;}
   .os-print-container{display:flex;flex-direction:column;height:100%;}
@@ -3238,11 +3234,10 @@ function printOS(os){
   .os-block{margin-top:1.5mm;font-size:10pt;}
   .os-block strong{font-size:10.5pt;}
   .grid2{display:grid;grid-template-columns:1fr 1fr;column-gap:4mm;row-gap:1mm;}
-  .os-identificacao{display:flex;justify-content:space-between;font-size:12pt;font-weight:bold;margin-top:1mm;}
+  .os-identificacao{display:flex;justify-content:space-between;font-size:13pt;font-weight:bold;margin-top:1mm;}
   .os-identificacao div:last-child{text-align:right;}
-  .datas-line div{font-weight:bold;}
-  .datas-line{display:flex;justify-content:space-between;}
-  .assinatura{border-top:1px solid #000;width:90mm;text-align:center;margin-left:auto;margin-top:8mm;height:25mm;position:relative;}
+  .datas-line{display:flex;justify-content:space-between;font-size:11pt;font-weight:bold;}
+  .assinatura{border-top:1px solid #000;width:100mm;text-align:center;margin-left:auto;margin-top:8mm;height:25mm;position:relative;}
   .assinatura:after{content:"Assinatura";position:absolute;top:4px;left:0;right:0;font-size:10pt;}
   .os-garantia{margin-top:1mm;font-size:8pt;}
   .data-oficina-highlight{font-weight:bold;font-size:11pt;}
@@ -3483,11 +3478,9 @@ function initOSPage(){
     resetPages();
     renderOSKanban();
   });
-  const cSearch=document.getElementById('osCompletedSearch');
-  const cType=document.getElementById('osCompletedType');
+  const cTypeBtns=document.getElementById('osCompletedTypeButtons');
   const comp=document.getElementById('osCompleted');
-  if(cSearch) cSearch.addEventListener('input',e=>{ ui.os.completed.text=e.target.value.toLowerCase(); ui.os.completed.page=1; renderOSCompleted(); });
-  if(cType) cType.addEventListener('change',e=>{ ui.os.completed.type=e.target.value; ui.os.completed.page=1; renderOSCompleted(); });
+  if(cTypeBtns) cTypeBtns.addEventListener('click',e=>{ const btn=e.target.closest('button[data-type]'); if(!btn) return; cTypeBtns.querySelectorAll('button').forEach(b=>b.classList.toggle('active', b===btn)); ui.os.completed.type=btn.dataset.type; ui.os.completed.page=1; renderOSCompleted(); });
   if(comp) comp.addEventListener('click',e=>{
     const btn=e.target.closest('button');
     if(!btn) return;
