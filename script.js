@@ -2989,31 +2989,31 @@ function printOSOptica(os){
     `<div class="os-print-container">`+
     via('Via do Cliente',{previsaoEntrega:true,garantia:true,valor:true,showContacts:true,assinatura:true})+
     `<hr>`+
-    via('Via da Loja',{previsaoEntrega:true,garantia:false,valor:true,showContacts:false,assinatura:true})+
+    via('Via da Loja',{previsaoEntrega:true,garantia:true,valor:true,showContacts:false,assinatura:true})+
     `<hr>`+
     via('Via do Laboratório',{previsaoEntrega:true,garantia:false,valor:false,showContacts:true,assinatura:false})+
     `</div>`;
   const w=window.open('','_blank');
   w.document.write(`<!DOCTYPE html><html><head><title>${os.codigo}</title><style>
   @page{size:A4 portrait;margin:6mm;}
-  html,body{height:100%;background:#fff;font-family:sans-serif;font-size:12pt;margin:0;}
+  html,body{height:100%;background:#fff;font-family:sans-serif;font-size:11pt;margin:0;}
   button{display:none;}
   .os-print-container{display:flex;flex-direction:column;height:100%;}
-  hr{border:0;border-top:1px solid #000;margin:2mm 0;}
-  .os-print-via{flex:1;background:#fff;border:1px solid #ccc;box-shadow:0 1px 2px rgba(0,0,0,0.1);padding:3mm;display:flex;flex-direction:column;}
-  .os-print-header{display:flex;justify-content:space-between;align-items:flex-start;min-height:20mm;}
-  .os-print-header .logo-img{max-height:18mm;object-fit:contain;}
-  .os-print-header .logo-placeholder{width:40mm;height:18mm;background:#eee;display:flex;align-items:center;justify-content:center;color:#666;font-size:10pt;}
-  .os-print-contact{text-align:right;font-size:9pt;}
+  hr{border:0;border-top:1px solid #000;margin:1mm 0;}
+  .os-print-via{flex:1;background:#fff;border:1px solid #ccc;padding:2mm;display:flex;flex-direction:column;}
+  .os-print-header{display:flex;justify-content:space-between;align-items:flex-start;min-height:15mm;}
+  .os-print-header .logo-img{max-height:14mm;object-fit:contain;}
+  .os-print-header .logo-placeholder{width:30mm;height:14mm;background:#eee;display:flex;align-items:center;justify-content:center;color:#666;font-size:9pt;}
+  .os-print-contact{text-align:right;font-size:8pt;}
   .os-print-title{text-align:center;font-weight:bold;font-size:14pt;margin-top:1mm;}
-  .os-block{margin-top:2mm;font-size:10pt;}
-  .grid2{display:grid;grid-template-columns:1fr 1fr;column-gap:4mm;row-gap:1mm;}
-  .grau-table{width:100%;border-collapse:collapse;margin-top:2mm;}
-  .grau-table th,.grau-table td{border:1px solid #000;padding:1px;font-size:9pt;text-align:center;}
+  .os-block{margin-top:1mm;font-size:9pt;}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;column-gap:3mm;row-gap:1mm;}
+  .grau-table{width:100%;border-collapse:collapse;margin-top:1mm;}
+  .grau-table th,.grau-table td{border:1px solid #000;padding:1px;font-size:8pt;text-align:center;}
   .grau-table th:first-child{text-align:left;}
-  .assinatura{border-top:1px solid #000;width:70mm;text-align:center;margin-left:auto;margin-top:auto;height:20mm;position:relative;}
-  .assinatura:after{content:"Assinatura";position:absolute;top:4px;left:0;right:0;font-size:10pt;}
-  .os-garantia{margin-top:2mm;font-size:9pt;}
+  .assinatura{border-top:1px solid #000;width:70mm;text-align:center;margin-left:auto;margin-top:auto;height:18mm;position:relative;}
+  .assinatura:after{content:"Assinatura";position:absolute;top:3px;left:0;right:0;font-size:9pt;}
+  .os-garantia{margin-top:1mm;font-size:8pt;}
   </style></head><body>${content}</body></html>`);
   w.document.close();
   w.addEventListener('load',()=>w.print());
@@ -3061,28 +3061,28 @@ function printOS(os){
     `<div class="os-print-container">`+
     via('Via do Cliente',{dataOficina:false,previsaoEntrega:true,garantia:true,showContacts:true,valor:true,assinatura:true})+
     `<hr>`+
-    via('Via da Loja',{dataOficina:true,previsaoEntrega:true,garantia:false,showContacts:false,valor:true,assinatura:true})+
+    via('Via da Loja',{dataOficina:true,previsaoEntrega:true,garantia:true,showContacts:false,valor:true,assinatura:true})+
     `<hr>`+
     via('Via da Oficina',{dataOficina:true,previsaoEntrega:false,garantia:false,showContacts:true,valor:false,assinatura:false})+
     `</div>`;
   const w=window.open('','_blank');
   w.document.write(`<!DOCTYPE html><html><head><title>${os.codigo}</title><style>
   @page{size:A4 portrait;margin:6mm;}
-  html,body{height:100%;background:#fff;font-family:sans-serif;font-size:12pt;margin:0;}
+  html,body{height:100%;background:#fff;font-family:sans-serif;font-size:11pt;margin:0;}
   button{display:none;}
   .os-print-container{display:flex;flex-direction:column;height:100%;}
-  hr{border:0;border-top:1px solid #000;margin:2mm 0;}
-  .os-print-via{flex:1;background:#fff;border:1px solid #ccc;box-shadow:0 1px 2px rgba(0,0,0,0.1);padding:3mm;display:flex;flex-direction:column;}
-  .os-print-header{display:flex;justify-content:space-between;align-items:flex-start;min-height:20mm;}
-  .os-print-header .logo-img{max-height:18mm;object-fit:contain;}
-  .os-print-header .logo-placeholder{width:40mm;height:18mm;background:#eee;display:flex;align-items:center;justify-content:center;color:#666;font-size:10pt;}
-  .os-print-contact{text-align:right;font-size:9pt;}
+  hr{border:0;border-top:1px solid #000;margin:1mm 0;}
+  .os-print-via{flex:1;background:#fff;border:1px solid #ccc;padding:2mm;display:flex;flex-direction:column;}
+  .os-print-header{display:flex;justify-content:space-between;align-items:flex-start;min-height:15mm;}
+  .os-print-header .logo-img{max-height:14mm;object-fit:contain;}
+  .os-print-header .logo-placeholder{width:30mm;height:14mm;background:#eee;display:flex;align-items:center;justify-content:center;color:#666;font-size:9pt;}
+  .os-print-contact{text-align:right;font-size:8pt;}
   .os-print-title{text-align:center;font-weight:bold;font-size:14pt;margin-top:1mm;}
-  .os-block{margin-top:2mm;font-size:10pt;}
-  .grid2{display:grid;grid-template-columns:1fr 1fr;column-gap:4mm;row-gap:1mm;}
-  .assinatura{border-top:1px solid #000;width:70mm;text-align:center;margin-left:auto;margin-top:auto;height:20mm;position:relative;}
-  .assinatura:after{content:"Assinatura";position:absolute;top:4px;left:0;right:0;font-size:10pt;}
-  .os-garantia{margin-top:2mm;font-size:9pt;}
+  .os-block{margin-top:1mm;font-size:9pt;}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;column-gap:3mm;row-gap:1mm;}
+  .assinatura{border-top:1px solid #000;width:70mm;text-align:center;margin-left:auto;margin-top:auto;height:18mm;position:relative;}
+  .assinatura:after{content:"Assinatura";position:absolute;top:3px;left:0;right:0;font-size:9pt;}
+  .os-garantia{margin-top:1mm;font-size:8pt;}
   </style></head><body>${content}</body></html>`);
   w.document.close();
   w.addEventListener('load',()=>w.print());
