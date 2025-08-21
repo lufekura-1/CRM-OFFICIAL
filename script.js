@@ -839,17 +839,98 @@ function renderCardGrid(prefix) {
   return html;
 }
 
+// ===== Calendar Menu Bar =====
+function renderCalendarMenuBar(){
+  return `
+    <div class="calendar-menu-bar">
+      <div class="menu-actions">
+        <button class="btn btn-cal-eventos">Eventos</button>
+        <button class="btn btn-cal-desfalques" style="display:none">Desfalques</button>
+      </div>
+      <div class="menu-widgets">
+        <div class="mini-widget">
+          <div class="mini-title">Contatos</div>
+          <div class="mini-split">
+            <div class="mini-part">
+              <div class="mini-value" data-stat="contatos-hoje">0</div>
+              <div class="mini-label">Hoje</div>
+            </div>
+            <div class="mini-part">
+              <div class="mini-value" data-stat="contatos-semana">0</div>
+              <div class="mini-label">Semana</div>
+            </div>
+          </div>
+        </div>
+        <div class="mini-widget">
+          <div class="mini-title">O.S Aguardando</div>
+          <div class="mini-triple">
+            <div class="mini-part">
+              <div class="mini-label">O</div>
+              <div class="mini-value" data-stat="os-aguardando-o">0</div>
+            </div>
+            <div class="mini-part">
+              <div class="mini-label">R</div>
+              <div class="mini-value" data-stat="os-aguardando-r">0</div>
+            </div>
+            <div class="mini-part">
+              <div class="mini-label">J</div>
+              <div class="mini-value" data-stat="os-aguardando-j">0</div>
+            </div>
+          </div>
+        </div>
+        <div class="mini-widget">
+          <div class="mini-title">O.S para Hoje</div>
+          <div class="mini-value" data-stat="os-hoje">0</div>
+        </div>
+        <div class="mini-widget mini-empty"></div>
+        <div class="mini-widget mini-empty"></div>
+      </div>
+    </div>`;
+}
+
+function updateCalendarMenuBar(){
+  const bar=document.querySelector('.calendar-menu-bar');
+  if(!bar) return;
+
+  // Contatos: hoje e semana
+  const events=getJSON(calKey(), []).filter(e=>e.meta?.type==='followup');
+  const today=new Date();
+  const startWeek=new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate() - ((today.getUTCDay()+6)%7)));
+  const endWeek=new Date(startWeek); endWeek.setUTCDate(startWeek.getUTCDate()+7);
+  const isSameDay=(a,b)=>a.getUTCFullYear()===b.getUTCFullYear()&&a.getUTCMonth()===b.getUTCMonth()&&a.getUTCDate()===b.getUTCDate();
+  let todayCount=0, weekCount=0;
+  events.forEach(ev=>{
+    const d=new Date(ev.date);
+    if(isSameDay(d,today)) todayCount++;
+    if(d>=startWeek && d<endWeek) weekCount++;
+  });
+  bar.querySelector('[data-stat="contatos-hoje"]').textContent=todayCount;
+  bar.querySelector('[data-stat="contatos-semana"]').textContent=weekCount;
+
+  // O.S Aguardando e O.S para Hoje
+  const list=loadOSList();
+  const todayISO=formatDateYYYYMMDD(new Date());
+  const aguardando={reloj:0, joia:0, optica:0};
+  let osHoje=0;
+  list.forEach(os=>{
+    const tipo=os.tipo||'reloj';
+    if(os.status==='aguardando') aguardando[tipo]=(aguardando[tipo]||0)+1;
+    if(os.campos?.dataOficina===todayISO) osHoje++;
+  });
+  bar.querySelector('[data-stat="os-aguardando-o"]').textContent=aguardando.optica||0;
+  bar.querySelector('[data-stat="os-aguardando-r"]').textContent=aguardando.reloj||0;
+  bar.querySelector('[data-stat="os-aguardando-j"]').textContent=aguardando.joia||0;
+  bar.querySelector('[data-stat="os-hoje"]').textContent=osHoje;
+}
+
 function renderCalendario() {
   return `
   <div class="card-grid">
     <div class="card" data-card-id="calendario" data-colspan="12">
       <div class="card-body calendario-wrapper">
+        ${renderCalendarMenuBar()}
         <div id="calendar" class="calendar">
         <div class="cal-toolbar">
-          <div class="cal-left">
-            <button class="btn btn-primary btn-criar-evento">Criar evento</button>
-            <button class="btn btn-desfalques" style="display:none">Desfalques</button>
-          </div>
           <div class="cal-nav">
             <button class="btn cal-prev" aria-label="Mês anterior">&#8249;</button>
             <h2 class="cal-mes monthTitle"></h2>
@@ -1420,8 +1501,8 @@ function initCalendarioPage() {
   const monthSelect = wrapper.querySelector('.cal-mes-select');
   const yearSelect = wrapper.querySelector('.cal-ano');
   const btnHoje = wrapper.querySelector('.cal-hoje');
-  const btnCriar = wrapper.querySelector('.btn-criar-evento');
-  const btnDesf = wrapper.querySelector('.btn-desfalques');
+  const btnEventos = wrapper.querySelector('.btn-cal-eventos');
+  const btnDesf = wrapper.querySelector('.btn-cal-desfalques');
   const btnPrev = wrapper.querySelector('.cal-prev');
   const btnNext = wrapper.querySelector('.cal-next');
   const segBtns = wrapper.querySelectorAll('.seg-btn');
@@ -1443,6 +1524,7 @@ function initCalendarioPage() {
     if(ev.meta?.type==='followup') return 1;
     return 2;
   }
+  btnEventos.addEventListener('click',()=>openEventoModal());
   if(getPerfil()==='Administrador'){
     btnDesf.style.display='inline-block';
     btnDesf.addEventListener('click',()=>openDesfalqueModal());
@@ -1741,7 +1823,6 @@ function initCalendarioPage() {
   yearSelect.addEventListener('change',()=>{ currentDate.setFullYear(parseInt(yearSelect.value,10)); render(); });
   monthSelect.addEventListener('change',()=>{ currentDate.setMonth(parseInt(monthSelect.value,10)); render(); });
   btnHoje.addEventListener('click',()=>{ currentDate=new Date(); window.currentDate=currentDate; modo='mes'; segBtns.forEach(b=>b.setAttribute('aria-pressed', b.dataset.modo===modo?'true':'false')); render(); });
-  btnCriar.addEventListener('click',()=>openEventoModal());
   btnPrev.addEventListener('click',()=>onChangeMonth(-1));
   btnNext.addEventListener('click',()=>onChangeMonth(1));
   btnPrevWeek.addEventListener('click',()=>onChangeWeek(-1));
@@ -1951,6 +2032,7 @@ function initCalendarioPage() {
     }
   }
   render();
+  updateCalendarMenuBar();
 }
 function initClientesPage() {
   db.initComSeeds();
@@ -2569,6 +2651,7 @@ function reloadCalendario(currentDate){
     }else{
       renderRoute('calendario');
     }
+    updateCalendarMenuBar();
   }
 }
 

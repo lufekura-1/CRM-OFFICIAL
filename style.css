@@ -712,23 +712,39 @@ input[name="telefone"] { width:18ch; }
 }
 /* ===== Calendar ===== */
 .calendario-wrapper { display:flex; flex-direction:column; gap:1rem; --neutral-100: var(--color-border); --green-600: var(--color-primary); --red-600: #c62828; --red-400: #e57373; --card-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-.cal-toolbar { display:grid; grid-template-columns:max-content 1fr max-content; align-items:center; column-gap:12px; }
-.cal-left, .cal-right { display:flex; align-items:center; gap:0.5rem; }
+.cal-toolbar { display:grid; grid-template-columns:1fr max-content; align-items:center; column-gap:12px; }
+.cal-right { display:flex; align-items:center; gap:0.5rem; }
 .cal-nav { display:grid; grid-template-columns:48px 200px 48px; align-items:center; width:100%; max-width:312px; margin:0 auto; column-gap:8px; }
 .cal-nav button { width:48px; height:48px; border-radius:var(--radius-md); display:grid; place-items:center; padding:0; }
 .cal-nav .cal-mes { text-align:center; font-size:1.5rem; }
 .cal-toolbar button, .cal-toolbar select, .cal-toolbar input { font:inherit; height:36px; }
 .cal-toolbar .btn { padding:0 0.75rem; }
-.btn-criar-evento { background:var(--accent-orange); color:#fff; }
-.btn-criar-evento:hover { filter:brightness(0.95); }
-.btn-desfalques { background:#555; color:#fff; }
-.btn-desfalques:hover { filter:brightness(0.95); }
+.btn-cal-eventos { background:var(--accent-orange); color:#fff; }
+.btn-cal-eventos:hover { filter:brightness(0.95); }
+.btn-cal-desfalques { background:#555; color:#fff; }
+.btn-cal-desfalques:hover { filter:brightness(0.95); }
 .monthTitle { text-transform:uppercase; font-weight:700; letter-spacing:.04em; white-space:nowrap; max-width:320px; overflow:hidden; text-overflow:ellipsis; margin:0; text-align:center; font-size:1.5rem; }
 .segmented { display:inline-flex; background:var(--neutral-100); border-radius:var(--radius-lg); padding:2px; gap:2px; }
 .segmented button { padding:6px 12px; border-radius:var(--radius-lg); font:inherit; border:none; }
 .segmented button:focus { outline:none; box-shadow:0 0 0 2px var(--color-primary); }
 .segmented [aria-pressed="true"] { background:var(--color-primary); color:#fff; }
 .segmented [aria-pressed="false"] { background:var(--neutral-200); color:var(--color-text); }
+
+/* ===== Calendar Menu Bar ===== */
+.calendar-menu-bar { background:var(--surface); border-radius:var(--radius-lg); padding:0.75rem; display:grid; grid-template-columns:max-content 1fr; gap:1rem; align-items:center; }
+.calendar-menu-bar .menu-actions { display:flex; gap:0.5rem; }
+.calendar-menu-bar .menu-widgets { display:grid; grid-template-columns:repeat(auto-fit,minmax(90px,1fr)); gap:0.5rem; }
+.calendar-menu-bar .mini-widget { background:var(--surface); border:1px solid var(--color-border); border-radius:var(--radius-md); padding:0.25rem; display:flex; flex-direction:column; align-items:center; justify-content:center; min-width:80px; box-shadow:var(--card-shadow); }
+.calendar-menu-bar .mini-title { font-weight:700; font-size:0.75rem; margin-bottom:4px; text-align:center; white-space:nowrap; }
+.calendar-menu-bar .mini-value { font-weight:700; text-align:center; }
+.calendar-menu-bar .mini-split, .calendar-menu-bar .mini-triple { display:flex; gap:0.5rem; }
+.calendar-menu-bar .mini-part { display:flex; flex-direction:column; align-items:center; }
+.calendar-menu-bar .mini-label { font-size:0.625rem; }
+.calendar-menu-bar .mini-empty { border:1px dashed var(--color-border); box-shadow:none; }
+@media (max-width:768px){
+  .calendar-menu-bar{ grid-template-columns:1fr; }
+  .calendar-menu-bar .menu-actions{ justify-content:flex-start; }
+}
 
 .chips { display:flex; flex-wrap:wrap; gap:0.5rem; }
 .chip { padding:6px 12px; border-radius:var(--radius-lg); border:none; background:var(--neutral-200); color:var(--color-text); cursor:pointer; }
@@ -802,10 +818,9 @@ input[name="telefone"] { width:18ch; }
 .switch:checked { background:var(--color-primary); }
 .switch:checked:before { transform:translateX(20px); }
 @media (max-width:768px){
-  .cal-toolbar { grid-template-columns:1fr 1fr; row-gap:8px; }
-  .cal-left { grid-column:1; }
-  .cal-right { grid-column:2; justify-self:end; }
-  .cal-nav { grid-column:1 / -1; justify-self:center; }
+  .cal-toolbar { grid-template-columns:1fr; row-gap:8px; }
+  .cal-right { justify-self:end; }
+  .cal-nav { justify-self:center; }
 }
 .table-usuarios td.acoes { display:flex; gap:4px; }
 .opcoes h4 { margin:0 0 0.5rem 0; font-size:0.875rem; color:var(--text-weak); }
