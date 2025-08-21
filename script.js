@@ -2962,27 +2962,32 @@ function printOSOptica(os){
     const contato=showContacts?
       `<div class="os-print-contact">${perfilInfo.telefone?`<div>${perfilInfo.telefone}</div>`:''}${perfilInfo.endereco?`<div>${perfilInfo.endereco}</div>`:''}${perfilInfo.instagram?`<div><a href="https://instagram.com/${perfilInfo.instagram.replace(/^@/,'')}" target="_blank">${perfilInfo.instagram}</a></div>`:''}</div>`:'';
     const g=campos.grau||{};
-    const cliente=`<div class="os-block grid2 cliente"><div><strong>Cliente:</strong> ${campos.nome||''}</div><div><strong>Telefone:</strong> ${campos.telefone||''}</div>${campos.cpf?`<div><strong>CPF:</strong> ${campos.cpf}</div>`:''}<div><strong>Código:</strong> ${os.codigo}</div></div>`;
-    const opticaBlock=`<div class="os-block grid2 optica">${campos.armacao?`<div><strong>Armação:</strong> ${campos.armacao}</div>`:''}${campos.lente?`<div><strong>Lente:</strong> ${campos.lente}</div>`:''}</div>`+
-      `<table class="grau-table"><thead><tr><th></th><th>ESF</th><th>CIL</th><th>EIXO</th><th>DNP</th><th>ADIÇÃO</th></tr></thead><tbody><tr><th>OE</th><td>${g.OE?.esf||''}</td><td>${g.OE?.cil||''}</td><td>${g.OE?.eixo||''}</td><td>${g.OE?.dnp||''}</td><td>${g.OE?.adicao||''}</td></tr><tr><th>OD</th><td>${g.OD?.esf||''}</td><td>${g.OD?.cil||''}</td><td>${g.OD?.eixo||''}</td><td>${g.OD?.dnp||''}</td><td>${g.OD?.adicao||''}</td></tr></tbody></table>`+
-      `${campos.observacao?`<div class="os-block"><strong>Observação:</strong> ${campos.observacao}</div>`:''}`;
-    const infos=[`<div><strong>Data Atual:</strong> ${formatDateDDMMYYYY(dataAtual)}</div>`];
-    if(opts.previsaoEntrega && campos.previsaoEntrega){
-      infos.push(`<div><strong>Previsão de Entrega:</strong> ${formatDateDDMMYYYY(campos.previsaoEntrega)}</div>`);
+    const identificacao=`<div class="os-block grid2 identificacao"><div><strong>Cliente:</strong> ${campos.nome||''}</div><div><strong>Nº OS:</strong> ${os.codigo}</div></div>`;
+    const contatoCliente=`<div class="os-block grid2 contato"><div><strong>Telefone:</strong> ${campos.telefone||''}</div>${campos.cpf?`<div><strong>CPF:</strong> ${campos.cpf}</div>`:''}</div>`;
+    const valores=campos.valores||{};
+    const va=valores.armacao||0;
+    const vl=valores.lente||0;
+    const vt=valores.total||va+vl;
+    let opticaFields='';
+    if(campos.armacao){
+      opticaFields+=`<div><strong>Armação:</strong> ${campos.armacao}</div>`;
+      opticaFields+=opts.valor?`<div><strong>Valor Armação:</strong> ${formatCurrency(va)}</div>`:'<div></div>';
+    }
+    if(campos.lente){
+      opticaFields+=`<div><strong>Lente:</strong> ${campos.lente}</div>`;
+      opticaFields+=opts.valor?`<div><strong>Valor Lente:</strong> ${formatCurrency(vl)}</div>`:'<div></div>';
     }
     if(opts.valor){
-      const va=campos.valores?.armacao||0;
-      const vl=campos.valores?.lente||0;
-      const vt=campos.valores?.total||va+vl;
-      infos.push(`<div><strong>Valor Armação:</strong> ${formatCurrency(va)}</div>`);
-      infos.push(`<div><strong>Valor Lente:</strong> ${formatCurrency(vl)}</div>`);
-      infos.push(`<div><strong>Valor Total:</strong> <strong>${formatCurrency(vt)}</strong></div>`);
+      opticaFields+=`<div class="total"><strong>Total:</strong> <strong>${formatCurrency(vt)}</strong></div>`;
     }
-    const datas=`<div class="os-block grid2 datas">${infos.join('')}</div>`;
+    const opticaBlock=`<div class="os-block grid2 optica">${opticaFields}</div>`;
+    const grauBlock=`<table class="grau-table"><thead><tr><th></th><th>ESF</th><th>CIL</th><th>EIXO</th><th>DNP</th><th>ADIÇÃO</th></tr></thead><tbody><tr><th>OE</th><td>${g.OE?.esf||''}</td><td>${g.OE?.cil||''}</td><td>${g.OE?.eixo||''}</td><td>${g.OE?.dnp||''}</td><td>${g.OE?.adicao||''}</td></tr><tr><th>OD</th><td>${g.OD?.esf||''}</td><td>${g.OD?.cil||''}</td><td>${g.OD?.eixo||''}</td><td>${g.OD?.dnp||''}</td><td>${g.OD?.adicao||''}</td></tr></tbody></table>`;
+    const observacao=campos.observacao?`<div class="os-block"><strong>Observação:</strong> ${campos.observacao}</div>`:'';
+    const datasLine=`<div class="os-block datas-line"><div><strong>Data Atual:</strong> ${formatDateDDMMYYYY(dataAtual)}</div>${opts.previsaoEntrega && campos.previsaoEntrega?`<div><strong>Previsão de Entrega:</strong> ${formatDateDDMMYYYY(campos.previsaoEntrega)}</div>`:''}</div>`;
     const garantia=opts.garantia&&garantiaTexto?`<div class="os-block garantia"><div class="os-garantia">${garantiaTexto}</div></div>`:'';
     const header=`<div class="os-print-header">${logo}${contato}</div><div class="os-print-title">${titulo.toUpperCase()}</div><hr>`;
     const assinatura=opts.assinatura?'<div class="assinatura"></div>':'';
-    const body=`<div class="os-print-body">${cliente}${opticaBlock}${datas}${garantia}${assinatura}</div>`;
+    const body=`<div class="os-print-body">${identificacao}${contatoCliente}${opticaBlock}${grauBlock}${observacao}${datasLine}${garantia}${assinatura}</div>`;
     return `<section class="os-print-via">${header}${body}</section>`;
   }
   const content=
@@ -3006,14 +3011,17 @@ function printOSOptica(os){
   .os-print-header .logo-placeholder{width:30mm;height:14mm;background:#eee;display:flex;align-items:center;justify-content:center;color:#666;font-size:9pt;}
   .os-print-contact{text-align:right;font-size:8pt;}
   .os-print-title{text-align:center;font-weight:bold;font-size:14pt;margin-top:1mm;}
-  .os-block{margin-top:1mm;font-size:9pt;}
-  .grid2{display:grid;grid-template-columns:1fr 1fr;column-gap:3mm;row-gap:1mm;}
-  .grau-table{width:100%;border-collapse:collapse;margin-top:1mm;}
+  .os-block{margin-top:2mm;font-size:10pt;}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;column-gap:4mm;row-gap:2mm;}
+  .identificacao div,.datas-line div{font-weight:bold;}
+  .datas-line{display:flex;justify-content:space-between;}
+  .optica .total{grid-column:1/-1;margin-top:2mm;font-weight:bold;}
+  .grau-table{width:100%;border-collapse:collapse;margin-top:2mm;}
   .grau-table th,.grau-table td{border:1px solid #000;padding:1px;font-size:8pt;text-align:center;}
   .grau-table th:first-child{text-align:left;}
-  .assinatura{border-top:1px solid #000;width:70mm;text-align:center;margin-left:auto;margin-top:auto;height:18mm;position:relative;}
-  .assinatura:after{content:"Assinatura";position:absolute;top:3px;left:0;right:0;font-size:9pt;}
-  .os-garantia{margin-top:1mm;font-size:8pt;}
+  .assinatura{border-top:1px solid #000;width:90mm;text-align:center;margin-left:auto;margin-top:12mm;height:22mm;position:relative;}
+  .assinatura:after{content:"Assinatura";position:absolute;top:4px;left:0;right:0;font-size:10pt;}
+  .os-garantia{margin-top:2mm;font-size:8pt;}
   </style></head><body>${content}</body></html>`);
   w.document.close();
   w.addEventListener('load',()=>w.print());
@@ -3037,24 +3045,17 @@ function printOS(os){
       `<div class="os-print-contact">${perfilInfo.telefone?`<div>${perfilInfo.telefone}</div>`:''}${perfilInfo.endereco?`<div>${perfilInfo.endereco}</div>`:''}${perfilInfo.instagram?`<div><a href="https://instagram.com/${perfilInfo.instagram.replace(/^@/,'')}" target="_blank">${perfilInfo.instagram}</a></div>`:''}</div>` : '';
     const oficinaDate=campos.dataOficina;
     const prevDate=campos.previsaoEntrega||campos.dataEntrega;
-    const infos=[`<div><strong>Código:</strong> ${os.codigo}</div>`, `<div><strong>Data Atual:</strong> ${formatDateDDMMYYYY(dataAtual)}</div>`];
-    if(opts.dataOficina && oficinaDate){
-      infos.push(`<div><strong>Data da Oficina:</strong> ${formatDateDDMMYYYY(oficinaDate)}</div>`);
-    }
-    if(opts.previsaoEntrega && prevDate){
-      infos.push(`<div><strong>Previsão de Entrega:</strong> ${formatDateDDMMYYYY(prevDate)}</div>`);
-    }
-    if(opts.valor && campos.valor){
-      infos.push(`<div><strong>Valor a Pagar:</strong> <strong>${formatCurrency(campos.valor)}</strong></div>`);
-    }
-    const datas=`<div class="os-block grid2 datas">${infos.join('')}</div>`;
-    const garantia=opts.garantia&&garantiaTexto?`<div class="os-block garantia"><div class="os-garantia">${garantiaTexto}</div></div>`:'';
-    const header=`<div class="os-print-header">${logo}${contato}</div><div class="os-print-title">${titulo.toUpperCase()}</div><hr>`;
-    const cliente=`<div class="os-block grid2 cliente"><div><strong>Cliente:</strong> ${campos.cliente}</div><div><strong>Telefone:</strong> ${campos.telefone}</div></div>`;
+    const identificacao=`<div class="os-block grid2 identificacao"><div><strong>Cliente:</strong> ${campos.cliente}</div><div><strong>Nº OS:</strong> ${os.codigo}</div></div>`;
+    const telefone=`<div class="os-block"><strong>Telefone:</strong> ${campos.telefone}</div>`;
     const relogio=`<div class="os-block grid2 relogio">${campos.marca?`<div><strong>Marca:</strong> ${campos.marca}</div>`:''}${campos.pulseira?`<div><strong>Pulseira:</strong> ${campos.pulseira}</div>`:''}${campos.mostrador?`<div><strong>Mostrador:</strong> ${campos.mostrador}</div>`:''}</div>`;
     const servico=`<div class="os-block"><strong>Serviço:</strong> ${campos.servico}</div>`;
+    const datasLine=`<div class="os-block datas-line"><div><strong>Data Atual:</strong> ${formatDateDDMMYYYY(dataAtual)}</div>${opts.previsaoEntrega && prevDate?`<div><strong>Previsão de Entrega:</strong> ${formatDateDDMMYYYY(prevDate)}</div>`:''}</div>`;
+    const dataOficinaBlock=(opts.dataOficina && oficinaDate)?`<div class="os-block ${opts.oficina?'data-oficina-highlight':''}"><strong>Data da Oficina:</strong> ${formatDateDDMMYYYY(oficinaDate)}</div>`:'';
+    const valorBlock=(opts.valor && campos.valor)?`<div class="os-block valor"><strong>Valor a Pagar:</strong> <strong>${formatCurrency(campos.valor)}</strong></div>`:'';
+    const garantia=opts.garantia&&garantiaTexto?`<div class="os-block garantia"><div class="os-garantia">${garantiaTexto}</div></div>`:'';
+    const header=`<div class="os-print-header">${logo}${contato}</div><div class="os-print-title">${titulo.toUpperCase()}</div><hr>`;
     const assinatura=opts.assinatura?'<div class="assinatura"></div>':'';
-    const body=`<div class="os-print-body">${cliente}${relogio}${datas}${servico}${garantia}${assinatura}</div>`;
+    const body=`<div class="os-print-body">${identificacao}${telefone}${relogio}${servico}${datasLine}${dataOficinaBlock}${valorBlock}${garantia}${assinatura}</div>`;
     return `<section class="os-print-via">${header}${body}</section>`;
   }
   const content=
@@ -3063,7 +3064,7 @@ function printOS(os){
     `<hr>`+
     via('Via da Loja',{dataOficina:true,previsaoEntrega:true,garantia:true,showContacts:false,valor:true,assinatura:true})+
     `<hr>`+
-    via('Via da Oficina',{dataOficina:true,previsaoEntrega:false,garantia:false,showContacts:true,valor:false,assinatura:false})+
+    via('Via da Oficina',{dataOficina:true,previsaoEntrega:false,garantia:false,showContacts:true,valor:false,assinatura:false,oficina:true})+
     `</div>`;
   const w=window.open('','_blank');
   w.document.write(`<!DOCTYPE html><html><head><title>${os.codigo}</title><style>
@@ -3078,11 +3079,14 @@ function printOS(os){
   .os-print-header .logo-placeholder{width:30mm;height:14mm;background:#eee;display:flex;align-items:center;justify-content:center;color:#666;font-size:9pt;}
   .os-print-contact{text-align:right;font-size:8pt;}
   .os-print-title{text-align:center;font-weight:bold;font-size:14pt;margin-top:1mm;}
-  .os-block{margin-top:1mm;font-size:9pt;}
-  .grid2{display:grid;grid-template-columns:1fr 1fr;column-gap:3mm;row-gap:1mm;}
-  .assinatura{border-top:1px solid #000;width:70mm;text-align:center;margin-left:auto;margin-top:auto;height:18mm;position:relative;}
-  .assinatura:after{content:"Assinatura";position:absolute;top:3px;left:0;right:0;font-size:9pt;}
-  .os-garantia{margin-top:1mm;font-size:8pt;}
+  .os-block{margin-top:2mm;font-size:10pt;}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;column-gap:4mm;row-gap:2mm;}
+  .identificacao div,.datas-line div{font-weight:bold;}
+  .datas-line{display:flex;justify-content:space-between;}
+  .assinatura{border-top:1px solid #000;width:90mm;text-align:center;margin-left:auto;margin-top:12mm;height:22mm;position:relative;}
+  .assinatura:after{content:"Assinatura";position:absolute;top:4px;left:0;right:0;font-size:10pt;}
+  .os-garantia{margin-top:2mm;font-size:8pt;}
+  .data-oficina-highlight{font-weight:bold;font-size:11pt;}
   </style></head><body>${content}</body></html>`);
   w.document.close();
   w.addEventListener('load',()=>w.print());
