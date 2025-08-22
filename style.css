@@ -993,6 +993,7 @@ input[name="telefone"] { width:18ch; }
 .cal-weekdays, .calendar-weeknames { margin: 6px 0 8px; }
 .cal-grid, .calendar-grid { margin-top: 6px; }
 .event.followup, .event-color-followup, .calendar-chip.followup, .calendar-card.followup { background:#bfe0ff; color:#0c2a4a; }
+.event-color-os, .calendar-chip.event-color-os, .calendar-card.event-color-os { background:#ffeb3b; color:#000; }
 
 /* paletas padrão (usar quando houver widgets de status) */
 .card-info{background:var(--card-info-soft)}

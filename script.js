@@ -1604,6 +1604,23 @@ function initCalendarioPage() {
     }
     renderDashboard();
   }
+  function onToggleOSEvent(ev,value){
+    const idx=eventos.findIndex(e=>e.id===ev.id);
+    if(idx>-1){
+      eventos[idx].meta={...eventos[idx].meta, done:value};
+      saveEventos();
+    }
+    const list=loadOSList();
+    const os=list.find(o=>o.id==ev.meta?.osId);
+    if(os){
+      os.status=value?'aguardando':'oficina';
+      os.updatedAt=new Date().toISOString();
+      saveOSList(list);
+      renderOSKanban();
+      renderOSCompleted();
+    }
+    render();
+  }
   function onChangeMonth(step){ currentDate.setMonth(currentDate.getMonth()+step); render(); }
   function onChangeWeek(step){ currentDate.setDate(currentDate.getDate()+step*7); render(); }
   function setupCalendarChipEvents(chip, open){
@@ -1633,6 +1650,8 @@ function initCalendarioPage() {
       cell.addEventListener('keydown',e=>{ if(e.key==='Enter') showBtn(); });
     }
   function render(){
+    eventos = getJSON(calKey(), []).filter(e=>!isNomeBloqueado(e.titulo));
+    setJSON(calKey(), eventos);
     const mes=currentDate.getMonth();
     const ano=currentDate.getFullYear();
     monthEl.textContent=currentDate.toLocaleString('pt-BR',{month:'long'});
@@ -1721,7 +1740,7 @@ function initCalendarioPage() {
             if(ev.meta?.type==='followup' || color==='followup') chip.classList.add('followup');
             chip.textContent=ev.title || ev.titulo;
             const done = ev.meta?.done ?? ev.efetuado ?? false;
-            const hasToggle = ev.meta?.type==='followup' || ev.efetuado!==undefined;
+            const hasToggle = ev.meta?.type==='followup' || ev.efetuado!==undefined || ev.meta?.kind==='os';
             if(hasToggle) chip.setAttribute('data-efetuado', done);
             chip.tabIndex=0;
             setupCalendarChipEvents(chip,()=>showEventoPopover(chip,ev));
@@ -1796,14 +1815,19 @@ function initCalendarioPage() {
           if(ev.meta?.type==='followup' || color==='followup') card.classList.add('followup');
           card.innerHTML=`<strong>${ev.title || ev.titulo}</strong>${ev.observacao?`<p>${ev.observacao}</p>`:''}`;
           const done = ev.meta?.done ?? ev.efetuado ?? false;
-          const hasToggle = ev.meta?.type==='followup' || ev.efetuado!==undefined;
+          const hasToggle = ev.meta?.type==='followup' || ev.efetuado!==undefined || ev.meta?.kind==='os';
           if(hasToggle){
             card.setAttribute('data-efetuado', done);
-            card.innerHTML += `<label>Efetuado <input type="checkbox" class="switch" ${done?'checked':''}></label>`;
+            if(ev.meta?.kind==='os'){
+              card.innerHTML += `<label>Em loja <input type="checkbox" class="switch" ${done?'checked':''}></label>`;
+            } else {
+              card.innerHTML += `<label>Efetuado <input type="checkbox" class="switch" ${done?'checked':''}></label>`;
+            }
             const sw=card.querySelector('.switch');
             if(sw){
               sw.addEventListener('click',e=>e.stopPropagation());
-              if(ev.meta?.type==='followup' || color==='followup') sw.addEventListener('change',()=>onToggleFollowUp(ev, sw.checked));
+              if(ev.meta?.kind==='os') sw.addEventListener('change',()=>onToggleOSEvent(ev, sw.checked));
+              else if(ev.meta?.type==='followup' || color==='followup') sw.addEventListener('change',()=>onToggleFollowUp(ev, sw.checked));
               else sw.addEventListener('change',()=>onToggleEfetuado(ev.id, sw.checked));
             }
           }
@@ -1933,6 +1957,17 @@ function initCalendarioPage() {
         const chk=lbl.querySelector('.switch');
         if(chk) chk.addEventListener('change',()=>onToggleFollowUp(ev,chk.checked));
       }
+      setupPopoverDismiss(pop,target);
+      return;
+    }
+    if(ev.meta?.kind==='os'){
+      pop.innerHTML=`<div class="pop-head"><span class="pop-date">${formatDateDDMMYYYY(ev.date||ev.dataISO)}</span></div><div class="pop-title">${ev.title||ev.titulo}</div><div class="pop-footer"><label>Em loja <input type="checkbox" class="switch" ${ev.meta?.done?'checked':''}></label></div>`;
+      const layer=document.getElementById('calPopoverLayer');
+      if(!layer) return;
+      layer.appendChild(pop);
+      positionPopover(target,pop);
+      const lbl=pop.querySelector('.pop-footer label');
+      if(lbl){ lbl.addEventListener('click',e=>e.stopPropagation()); const chk=lbl.querySelector('.switch'); if(chk) chk.addEventListener('change',()=>onToggleOSEvent(ev,chk.checked)); }
       setupPopoverDismiss(pop,target);
       return;
     }
@@ -3017,6 +3052,49 @@ function deleteOS(id, profile=currentProfile()){
   const list=loadOSList(profile).filter(o=>o.id!==id);
   saveOSList(list, profile);
 }
+function osEventDate(os){
+  const str=os.tipo==='optica'?os.campos.previsaoEntrega:os.campos.dataOficina;
+  if(!str) return null;
+  const d=parseDDMMYYYY(str);
+  if(isNaN(d)) return null;
+  return d.toISOString().slice(0,10);
+}
+function ensureOSEvent(os){
+  const cal=getCalendar();
+  const idx=cal.findIndex(e=>e.meta?.kind==='os' && e.meta.osId===os.id);
+  const dateISO=osEventDate(os);
+  if(!dateISO){
+    if(idx>=0){ cal.splice(idx,1); setCalendar(cal); }
+    if(typeof renderCalendarMonth==='function') renderCalendarMonth();
+    return;
+  }
+  if(idx>=0){
+    cal[idx].dataISO=dateISO;
+    cal[idx].title=os.codigo;
+    cal[idx].meta.done=os.status==='aguardando';
+  } else {
+    cal.push({id:uuid(),dataISO:dateISO,title:os.codigo,color:'os',meta:{kind:'os',osId:os.id,done:os.status==='aguardando'}});
+  }
+  setCalendar(cal);
+  if(typeof renderCalendarMonth==='function') renderCalendarMonth();
+}
+function updateOSEventStatus(os){
+  const cal=getCalendar();
+  const ev=cal.find(e=>e.meta?.kind==='os' && e.meta.osId===os.id);
+  if(ev){
+    ev.meta.done=os.status==='aguardando';
+    setCalendar(cal);
+    if(typeof renderCalendarMonth==='function') renderCalendarMonth();
+  }
+}
+function removeOSEvent(osId){
+  const cal=getCalendar();
+  const filtered=cal.filter(e=>!(e.meta?.kind==='os' && e.meta.osId===osId));
+  if(filtered.length!==cal.length){
+    setCalendar(filtered);
+    if(typeof renderCalendarMonth==='function') renderCalendarMonth();
+  }
+}
 function renderOSKanban(){
   const board=document.getElementById('osKanban');
   if(!board) return;
@@ -3099,6 +3177,7 @@ function renderOSKanban(){
       const pinCls=os.status==='aguardando'
         ? 'pin-green'
         : (os.pinnedAt ? 'pin-orange' : 'pin-blue');
+      const emLoja=os.status==='oficina' ? `<label class="os-em-loja-label">Em loja <input type="checkbox" class="switch os-em-loja" data-id="${os.id}"></label>` : '';
       card.innerHTML=`<div class="os-card-top"><div class="os-card-title"><div class="os-code">${os.codigo}</div><div class="os-name">${nome}</div></div>`+
         `<div class="os-card-actions">`+
         `<button class="os-action btn-os-imprimir" title="Imprimir" aria-label="Imprimir" data-id="${os.id}">${ICON_PRINTER}</button>`+
@@ -3110,6 +3189,7 @@ function renderOSKanban(){
         `<div class="os-card-phone">${tel}</div>`+
         `${tipo==='optica' ? `<div>Armação: ${os.campos.armacao||''}</div><div>Lente: ${os.campos.lente||''}</div>` : `<div>Marca: ${os.campos.marca||''}</div>${os.campos.marcasUso?'<div class=\"badge\">Marcas de uso</div>':''}`}`+
         `${dates.length?`<div class="os-card-dates">${dates.join('')}</div>`:''}`+
+        `${emLoja}`+
         `</div>`;
       container.appendChild(card);
     });
@@ -3306,6 +3386,7 @@ function setupOSDragAndDrop(){
           os.pinnedAt=null;
           os.updatedAt=new Date().toISOString();
           saveOSList(list);
+          updateOSEventStatus(os);
           renderOSKanban();
         }
       }
@@ -3329,6 +3410,7 @@ function setupOSDragAndDrop(){
         os.pinnedAt=null;
         os.updatedAt=new Date().toISOString();
         saveOSList(list);
+        updateOSEventStatus(os);
         renderOSKanban();
       }
     }
@@ -3494,11 +3576,13 @@ function openOSForm(tipo, os){
       os.tipo=tipo;
       os.updatedAt=now;
       upsertOS(os);
+      ensureOSEvent(os);
     } else {
       const novo={id:Date.now(),codigo,tipo,perfil:currentProfile(),status:'loja',campos:data,createdAt:now,updatedAt:now};
       const list=loadOSList();
       list.push(novo);
       saveOSList(list);
+      ensureOSEvent(novo);
     }
     saved=true;
     modal.close();
@@ -3589,7 +3673,7 @@ function initOSPage(){
         const id=btn.dataset.id;
         if(btn.classList.contains('btn-os-imprimir')){ const os=loadOSList().find(o=>o.id==id); if(os) printOS(os); }
         if(btn.classList.contains('btn-os-editar')){ const os=loadOSList().find(o=>o.id==id); if(os) openOSForm(os.tipo, os); }
-        if(btn.classList.contains('btn-os-excluir')){ if(confirm('Excluir OS?')){ deleteOS(Number(id)); renderOSKanban(); renderOSCompleted(); } }
+        if(btn.classList.contains('btn-os-excluir')){ if(confirm('Excluir OS?')){ deleteOS(Number(id)); removeOSEvent(Number(id)); renderOSKanban(); renderOSCompleted(); } }
         if(btn.classList.contains('btn-os-pin')){
           const list=loadOSList();
           const os=list.find(o=>o.id==id);
@@ -3600,6 +3684,7 @@ function initOSPage(){
               os.updatedAt=new Date().toISOString();
               os.completedAt=os.completedAt||new Date().toISOString();
               saveOSList(list);
+              removeOSEvent(os.id);
               renderOSKanban();
               renderOSCompleted();
             } else if(os.status==='loja' || os.status==='oficina'){
@@ -3646,6 +3731,22 @@ function initOSPage(){
             tbtn.title=os.expanded?'Minimizar':'Expandir';
             tbtn.setAttribute('aria-label', os.expanded?'Minimizar':'Expandir');
           }
+        }
+      }
+    });
+    board.addEventListener('change',e=>{
+      const sw=e.target.closest('.os-em-loja');
+      if(sw){
+        const id=sw.dataset.id;
+        const list=loadOSList();
+        const os=list.find(o=>o.id==id);
+        if(os){
+          os.status=sw.checked?'aguardando':'oficina';
+          os.updatedAt=new Date().toISOString();
+          saveOSList(list);
+          renderOSKanban();
+          renderOSCompleted();
+          updateOSEventStatus(os);
         }
       }
     });
