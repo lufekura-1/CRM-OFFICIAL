@@ -432,7 +432,7 @@ function toggleTagMenu(anchor){ tagMenuOpen ? closeTagMenu() : openTagMenu(ancho
 function renderTagMenu(){
   const portal=document.getElementById('tagMenuPortal');
   if(!portal) return;
-  const map={re:'Relógios', jo:'Jóias Ouro', jp:'Jóias Prata', op:'Óptica'};
+  const map={re:'Relógios', jo:'Jóias Ouro', jp:'Jóias Prata', op:'Óptica', vs:'V.S', mf:'M.F', bi:'BIFOCAL', so:'SOLAR'};
   portal.innerHTML=`<div id="tagMenuContent" class="tag-menu">${Object.entries(map).map(([k,v])=>`<div class=\"tag-row\"><label class=\"tag-switch\"><input type=\"checkbox\" data-tag=\"${k}\" ${ui.clients.filters.interesses.includes(v)?'checked':''}><span>${v}</span></label></div>`).join('')}</div>`;
   document.getElementById('tagMenuContent')?.addEventListener('change',e=>{
     const cb=e.target.closest('input[type="checkbox"][data-tag]'); if(!cb) return;
@@ -471,7 +471,7 @@ function unbindTagMenuHandlers(){
 }
 
 function toggleTagFilter(code, on){
-  const map={re:'Relógios', jo:'Jóias Ouro', jp:'Jóias Prata', op:'Óptica'};
+  const map={re:'Relógios', jo:'Jóias Ouro', jp:'Jóias Prata', op:'Óptica', vs:'V.S', mf:'M.F', bi:'BIFOCAL', so:'SOLAR'};
   const val=map[code]||code;
   const set=new Set(ui.clients.filters.interesses||[]);
   if(on) set.add(val); else set.delete(val);
@@ -1254,6 +1254,10 @@ function openClienteModal(id, onSave) {
                 <button type="button" class="chip" data-value="Jóias Ouro" aria-pressed="false">Jóias Ouro</button>
                 <button type="button" class="chip" data-value="Jóias Prata" aria-pressed="false">Jóias Prata</button>
                 <button type="button" class="chip" data-value="Óptica" aria-pressed="false">Óptica</button>
+                <button type="button" class="chip" data-value="V.S" aria-pressed="false">V.S</button>
+                <button type="button" class="chip" data-value="M.F" aria-pressed="false">M.F</button>
+                <button type="button" class="chip" data-value="BIFOCAL" aria-pressed="false">BIFOCAL</button>
+                <button type="button" class="chip" data-value="SOLAR" aria-pressed="false">SOLAR</button>
               </div>
             </div>
             ${id ? '<div class="form-field col-span-12"><label for="cliente-observacoes">Observações</label><textarea id="cliente-observacoes" name="observacoes" class="textarea" rows="4"></textarea></div>' : ''}
@@ -2919,7 +2923,7 @@ function OSKanbanHolder(){
   const cols=KANBAN_STATUSES.map(k=>{
     const label=OS_STATUS_LABELS[k];
     const cls={loja:'col-kanban--loja',oficina:'col-kanban--oficina',aguardando:'col-kanban--aguardo'}[k];
-    return `<div class=\"kanban-col ${cls}\" data-status=\"${k}\"><div class=\"kanban-header\"><h3>${label} <span class=\"count\">0</span></h3></div><div class=\"cards\"></div><div class=\"kanban-footer\"><button class=\"kanban-prev\" disabled>Anterior</button><span class=\"sep\">|</span><span class=\"page-info\">1 / 1</span><span class=\"sep\">|</span><button class=\"kanban-next\" disabled>Próxima</button></div></div>`;
+    return `<div class=\"kanban-col ${cls}\" data-status=\"${k}\"><div class=\"kanban-header\"><h3>${label}</h3><span class=\"count\">0</span></div><div class=\"cards\"></div><div class=\"kanban-footer\"><button class=\"kanban-prev\" disabled>Anterior</button><span class=\"sep\">|</span><span class=\"page-info\">1 / 1</span><span class=\"sep\">|</span><button class=\"kanban-next\" disabled>Próxima</button></div></div>`;
   }).join('');
   return `<div class=\"os-kanban-holder balloon\"><div class=\"os-kanban\" id=\"osKanban\">${cols}</div></div>`;
 }
@@ -3077,6 +3081,7 @@ function renderOSKanban(){
       const card=document.createElement('div');
       const tipo=os.tipo||'reloj';
       card.className=`os-card ${tipo}`;
+      if(!os.expanded) card.classList.add('collapsed');
       card.draggable=true;
       card.dataset.id=os.id;
       card.tabIndex=0;
@@ -3099,7 +3104,7 @@ function renderOSKanban(){
         `<button class="os-action btn-os-imprimir" title="Imprimir" aria-label="Imprimir" data-id="${os.id}">${ICON_PRINTER}</button>`+
         `<button class="os-action btn-os-editar" title="Editar" aria-label="Editar" data-id="${os.id}">${ICON_EDIT}</button>`+
         `<button class="os-action btn-os-excluir" title="Excluir" aria-label="Excluir" data-id="${os.id}">${ICON_TRASH}</button>`+
-        `<button class="os-action btn-os-pin ${pinCls}" title="Pin" aria-label="Pin" data-id="${os.id}"></button>`+
+        `<div class="pin-group"><button class="os-action btn-os-pin ${pinCls}" title="Pin" aria-label="Pin" data-id="${os.id}"></button><button class="os-action btn-os-toggle" title="${os.expanded?'Minimizar':'Expandir'}" aria-label="${os.expanded?'Minimizar':'Expandir'}" data-id="${os.id}">${os.expanded?'-':'+'}</button></div>`+
         `</div></div>`+
         `<div class="os-card-body">`+
         `<div class="os-card-phone">${tel}</div>`+
@@ -3132,7 +3137,7 @@ function printOSOptica(os){
   const tipo='optica';
   const perfilInfo=getProfileInfo();
   const garantiaTexto=getGarantiaTexto(tipo);
-  function via(titulo,opts,banner){
+  function via(titulo,opts,watermark){
     const showContacts=opts.showContacts!==false;
     const logo=perfilInfo.logo?
       `<img src="${perfilInfo.logo}" alt="Logo" class="logo-img">`:
@@ -3163,16 +3168,16 @@ function printOSOptica(os){
     const observacao=campos.observacao?`<div class="os-block"><strong>Observação:</strong> ${campos.observacao}</div>`:'';
     const datasLine=`<div class="os-block datas-line"><div><strong>Data Atual:</strong> ${formatDateDDMMYYYY(dataAtual)}</div>${opts.previsaoEntrega && campos.previsaoEntrega?`<div><strong>Previsão de Entrega:</strong> ${formatDateDDMMYYYY(campos.previsaoEntrega)}</div>`:''}</div>`;
     const garantia=opts.garantia&&garantiaTexto?`<div class="os-block garantia"><div class="os-garantia">${garantiaTexto}</div></div>`:'';
-    const header=`<div class="os-print-header">${logo}${contato}</div><div class="os-print-title"><span class="banner">${banner}</span><span class="title-text">${titulo.toUpperCase()}</span></div><hr>`;
+    const header=`<div class="os-print-header">${logo}${contato}</div><h2 class="os-print-title">${titulo.toUpperCase()}</h2><hr>`;
     const assinatura=opts.assinatura?'<div class="assinatura"></div>':'';
     const body=`<div class="os-print-body">${identificacao}${contatoCliente}${opticaBlock}${grauBlock}${observacao}${datasLine}${garantia}${assinatura}</div>`;
-    return `<section class="os-print-via">${header}${body}</section>`;
+    return `<section class="os-print-via"><div class="os-print-watermark">${watermark}</div>${header}${body}</section>`;
   }
   const content=
     `<div class="os-print-container">`+
-    via('Via do Cliente',{previsaoEntrega:true,garantia:true,valor:true,showContacts:true,assinatura:true},'CLIENTE')+
+    via('Via do Cliente',{previsaoEntrega:true,garantia:true,valor:true,showContacts:true,assinatura:true},(campos.nome||'').toUpperCase())+
     `<hr>`+
-    via('Via da Loja',{previsaoEntrega:true,garantia:true,valor:true,showContacts:false,assinatura:true},perfilInfo.nome.toUpperCase())+
+    via('Via da Loja',{previsaoEntrega:true,garantia:true,valor:true,showContacts:false,assinatura:true},'LOJA')+
     `<hr>`+
     via('Via do Laboratório',{previsaoEntrega:true,garantia:false,valor:false,showContacts:true,assinatura:false},'SERVIÇO')+
     `</div>`;
@@ -3183,15 +3188,14 @@ function printOSOptica(os){
   button{display:none;}
   .os-print-container{display:flex;flex-direction:column;height:100%;}
   hr{border:0;border-top:1px solid #000;margin:0;}
-  .os-print-via{flex:1;background:#fff;border:1px solid #ccc;padding:2mm;display:flex;flex-direction:column;}
+  .os-print-via{flex:1;background:#fff;border:1px solid #ccc;padding:2mm;display:flex;flex-direction:column;position:relative;overflow:hidden;}
+  .os-print-watermark{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:80pt;font-weight:bold;color:#000;opacity:0.05;pointer-events:none;white-space:nowrap;}
   .os-print-body{flex:1;display:flex;flex-direction:column;justify-content:space-between;}
   .os-print-header{display:flex;justify-content:space-between;align-items:flex-start;min-height:10mm;}
   .os-print-header .logo-img{max-height:10mm;object-fit:contain;}
   .os-print-header .logo-placeholder{width:30mm;height:10mm;background:#eee;display:flex;align-items:center;justify-content:center;color:#666;font-size:8pt;}
   .os-print-contact{text-align:right;font-size:7pt;}
-  .os-print-title{background:#eee;position:relative;text-align:center;font-weight:bold;font-size:15pt;margin-top:0;}
-  .os-print-title .banner{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:20pt;color:#fff;opacity:0.4;}
-  .os-print-title .title-text{position:relative;z-index:1;}
+  .os-print-title{text-align:center;font-weight:bold;font-size:15pt;margin-top:0;}
   .os-block{margin-top:1mm;font-size:10pt;}
   .os-block strong{font-size:10.5pt;}
   .grid2{display:grid;grid-template-columns:1fr 1fr;column-gap:4mm;row-gap:1mm;}
@@ -3219,7 +3223,7 @@ function printOS(os){
   const perfilInfo=getProfileInfo();
   const garantiaTexto=getGarantiaTexto(tipo);
   if(tipo==='optica') { return printOSOptica(os); }
-  function via(titulo,opts,banner){
+  function via(titulo,opts,watermark){
     const showContacts = opts.showContacts!==false;
     const logo = perfilInfo.logo ?
       `<img src="${perfilInfo.logo}" alt="Logo" class="logo-img">` :
@@ -3229,23 +3233,23 @@ function printOS(os){
     const oficinaDate=campos.dataOficina;
     const prevDate=campos.previsaoEntrega||campos.dataEntrega;
     const identificacao=`<div class="os-block os-identificacao"><div><strong>Cliente:</strong> ${campos.cliente}</div><div><strong>Nº OS:</strong> ${os.codigo}</div></div>`;
-    const telefone=`<div class="os-block"><strong>Telefone:</strong> ${campos.telefone}</div>`;
+    const contatoCliente=`<div class="os-block grid2 contato"><div><strong>Telefone:</strong> ${campos.telefone}</div>${campos.cpf?`<div><strong>CPF:</strong> ${campos.cpf}</div>`:''}</div>`;
     const relogio=`<div class="os-block grid2 relogio">${campos.marca?`<div><strong>Marca:</strong> ${campos.marca}</div>`:''}${campos.pulseira?`<div><strong>Pulseira:</strong> ${campos.pulseira}</div>`:''}${campos.mostrador?`<div><strong>Mostrador:</strong> ${campos.mostrador}</div>`:''}</div>`;
     const servico=`<div class="os-block"><strong>Serviço:</strong> ${campos.servico}</div>`;
     const datasLine=`<div class="os-block datas-line"><div><strong>Data Atual:</strong> ${formatDateDDMMYYYY(dataAtual)}</div>${opts.previsaoEntrega && prevDate?`<div><strong>Previsão de Entrega:</strong> ${formatDateDDMMYYYY(prevDate)}</div>`:''}</div>`;
     const dataOficinaBlock=(opts.dataOficina && oficinaDate)?`<div class="os-block ${opts.oficina?'data-oficina-highlight':''}"><strong>Data da Oficina:</strong> ${formatDateDDMMYYYY(oficinaDate)}</div>`:'';
     const valorBlock=(opts.valor && campos.valor)?`<div class="os-block valor"><strong>Valor a Pagar:</strong> <strong>${formatCurrency(campos.valor)}</strong></div>`:'';
     const garantia=opts.garantia&&garantiaTexto?`<div class="os-block garantia"><div class="os-garantia">${garantiaTexto}</div></div>`:'';
-    const header=`<div class="os-print-header">${logo}${contato}</div><div class="os-print-title"><span class="banner">${banner}</span><span class="title-text">${titulo.toUpperCase()}</span></div><hr>`;
+    const header=`<div class="os-print-header">${logo}${contato}</div><h2 class="os-print-title">${titulo.toUpperCase()}</h2><hr>`;
     const assinatura=opts.assinatura?'<div class="assinatura"></div>':'';
-    const body=`<div class="os-print-body">${identificacao}${telefone}${relogio}${servico}${datasLine}${dataOficinaBlock}${valorBlock}${garantia}${assinatura}</div>`;
-    return `<section class="os-print-via">${header}${body}</section>`;
+    const body=`<div class="os-print-body">${identificacao}${contatoCliente}${relogio}${servico}${datasLine}${dataOficinaBlock}${valorBlock}${garantia}${assinatura}</div>`;
+    return `<section class="os-print-via"><div class="os-print-watermark">${watermark}</div>${header}${body}</section>`;
   }
   const content=
     `<div class="os-print-container">`+
-    via('Via do Cliente',{dataOficina:false,previsaoEntrega:true,garantia:true,showContacts:true,valor:true,assinatura:true},'CLIENTE')+
+    via('Via do Cliente',{dataOficina:false,previsaoEntrega:true,garantia:true,showContacts:true,valor:true,assinatura:true},(campos.cliente||'').toUpperCase())+
     `<hr>`+
-    via('Via da Loja',{dataOficina:true,previsaoEntrega:true,garantia:true,showContacts:false,valor:true,assinatura:true},perfilInfo.nome.toUpperCase())+
+    via('Via da Loja',{dataOficina:true,previsaoEntrega:true,garantia:true,showContacts:false,valor:true,assinatura:true},'LOJA')+
     `<hr>`+
     via('Via da Oficina',{dataOficina:true,previsaoEntrega:false,garantia:false,showContacts:true,valor:false,assinatura:false,oficina:true},'SERVIÇO')+
     `</div>`;
@@ -3256,15 +3260,14 @@ function printOS(os){
   button{display:none;}
   .os-print-container{display:flex;flex-direction:column;height:100%;}
   hr{border:0;border-top:1px solid #000;margin:0;}
-  .os-print-via{flex:1;background:#fff;border:1px solid #ccc;padding:2mm;display:flex;flex-direction:column;}
+  .os-print-via{flex:1;background:#fff;border:1px solid #ccc;padding:2mm;display:flex;flex-direction:column;position:relative;overflow:hidden;}
+  .os-print-watermark{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:80pt;font-weight:bold;color:#000;opacity:0.05;pointer-events:none;white-space:nowrap;}
   .os-print-body{flex:1;display:flex;flex-direction:column;justify-content:space-between;}
   .os-print-header{display:flex;justify-content:space-between;align-items:flex-start;min-height:10mm;}
   .os-print-header .logo-img{max-height:10mm;object-fit:contain;}
   .os-print-header .logo-placeholder{width:30mm;height:10mm;background:#eee;display:flex;align-items:center;justify-content:center;color:#666;font-size:8pt;}
   .os-print-contact{text-align:right;font-size:7pt;}
-  .os-print-title{background:#eee;position:relative;text-align:center;font-weight:bold;font-size:15pt;margin-top:0;}
-  .os-print-title .banner{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:20pt;color:#fff;opacity:0.4;}
-  .os-print-title .title-text{position:relative;z-index:1;}
+  .os-print-title{text-align:center;font-weight:bold;font-size:15pt;margin-top:0;}
   .os-block{margin-top:1mm;font-size:10pt;}
   .os-block strong{font-size:10.5pt;}
   .grid2{display:grid;grid-template-columns:1fr 1fr;column-gap:4mm;row-gap:1mm;}
@@ -3371,8 +3374,8 @@ function openOSForm(tipo, os){
     body.innerHTML=`<form id="osForm"><div class="form-grid">
       <div class="os-code col-span-12">${codigo}</div>
       <label class="col-span-6">Nome*<input class="text-input" name="nome" value="${campos.nome||''}" required></label>
+      <label class="col-span-6">CPF<input class="text-input" name="cpf" value="${campos.cpf||''}" placeholder="000.000.000-00"></label>
       <label class="col-span-6">Telefone*<input class="text-input" name="telefone" value="${campos.telefone||''}" required></label>
-      <label class="col-span-6">CPF<input class="text-input" name="cpf" value="${campos.cpf||''}"></label>
       <label class="col-span-6">Data atual<input class="text-input" name="dataAtual" value="${dataAtual}" readonly></label>
       <label class="col-span-6">Armação<input class="text-input" name="armacao" value="${campos.armacao||''}"></label>
       <label class="col-span-6">Lente<input class="text-input" name="lente" value="${campos.lente||''}"></label>
@@ -3405,7 +3408,7 @@ function openOSForm(tipo, os){
       <div class="os-error col-span-12" style="color:var(--red-600);"></div>
     </div></form>`;
   } else {
-    body.innerHTML=`<form id="osForm"><div class="form-grid"><div class="os-code col-span-12">${codigo}</div><label class="col-span-6">Cliente*<input class="text-input" name="cliente" value="${campos.cliente||''}" required></label><label class="col-span-6">Telefone*<input class="text-input" name="telefone" value="${campos.telefone||''}" required></label><label class="col-span-6">Data atual<input class="text-input" name="dataAtual" value="${dataAtual}" readonly></label><label class="col-span-6">Marca<input class="text-input" name="marca" value="${campos.marca||''}"></label><label class="col-span-6">Pulseira<input class="text-input" name="pulseira" value="${campos.pulseira||''}"></label><label class="col-span-6">Mostrador<input class="text-input" name="mostrador" value="${campos.mostrador||''}"></label><label class="col-span-6">Marcas de uso<input type="checkbox" class="switch" name="marcasUso" ${campos.marcasUso?'checked':''}></label><label class="col-span-12">Serviço*<textarea class="textarea" name="servico" rows="2" required>${campos.servico||''}</textarea></label><label class="col-span-12">Observação<textarea class="textarea" name="observacao" rows="3">${campos.observacao||''}</textarea></label><label class="col-span-12">Valor a Pagar (R$)<input class="text-input" name="valor" value="${campos.valor?formatCurrency(campos.valor):''}" placeholder="0,00" inputmode="decimal"></label><label class="col-span-6">Data de Oficina<input type="date" class="date-input" name="dataOficina" value="${campos.dataOficina?formatDateYYYYMMDD(campos.dataOficina):''}"></label><label class="col-span-6">Previsão de Entrega<input type="date" class="date-input" name="previsaoEntrega" value="${(campos.previsaoEntrega||campos.dataEntrega)?formatDateYYYYMMDD(campos.previsaoEntrega||campos.dataEntrega):''}"></label><label class="col-span-12">Nota para Oficina<textarea class="textarea" name="notaOficina" rows="2">${campos.notaOficina||''}</textarea></label><label class="col-span-12">Nota para Loja<textarea class="textarea" name="notaLoja" rows="2">${campos.notaLoja||''}</textarea></label><div class="os-error col-span-12" style="color:var(--red-600);"></div></div></form>`;
+    body.innerHTML=`<form id="osForm"><div class="form-grid"><div class="os-code col-span-12">${codigo}</div><label class="col-span-6">Cliente*<input class="text-input" name="cliente" value="${campos.cliente||''}" required></label><label class="col-span-6">CPF<input class="text-input" name="cpf" value="${campos.cpf||''}" placeholder="000.000.000-00"></label><label class="col-span-6">Telefone*<input class="text-input" name="telefone" value="${campos.telefone||''}" required></label><label class="col-span-6">Data atual<input class="text-input" name="dataAtual" value="${dataAtual}" readonly></label><label class="col-span-6">Marca<input class="text-input" name="marca" value="${campos.marca||''}"></label><label class="col-span-6">Pulseira<input class="text-input" name="pulseira" value="${campos.pulseira||''}"></label><label class="col-span-6">Mostrador<input class="text-input" name="mostrador" value="${campos.mostrador||''}"></label><label class="col-span-6">Marcas de uso<input type="checkbox" class="switch" name="marcasUso" ${campos.marcasUso?'checked':''}></label><label class="col-span-12">Serviço*<textarea class="textarea" name="servico" rows="2" required>${campos.servico||''}</textarea></label><label class="col-span-12">Observação<textarea class="textarea" name="observacao" rows="3">${campos.observacao||''}</textarea></label><label class="col-span-12">Valor a Pagar (R$)<input class="text-input" name="valor" value="${campos.valor?formatCurrency(campos.valor):''}" placeholder="0,00" inputmode="decimal"></label><label class="col-span-6">Data de Oficina<input type="date" class="date-input" name="dataOficina" value="${campos.dataOficina?formatDateYYYYMMDD(campos.dataOficina):''}"></label><label class="col-span-6">Previsão de Entrega<input type="date" class="date-input" name="previsaoEntrega" value="${(campos.previsaoEntrega||campos.dataEntrega)?formatDateYYYYMMDD(campos.previsaoEntrega||campos.dataEntrega):''}"></label><label class="col-span-12">Nota para Oficina<textarea class="textarea" name="notaOficina" rows="2">${campos.notaOficina||''}</textarea></label><label class="col-span-12">Nota para Loja<textarea class="textarea" name="notaLoja" rows="2">${campos.notaLoja||''}</textarea></label><div class="os-error col-span-12" style="color:var(--red-600);"></div></div></form>`;
   }
   const form=body.querySelector('#osForm');
   if(tipo==='optica'){
@@ -3425,6 +3428,30 @@ function openOSForm(tipo, os){
     form.valor.addEventListener('input',()=>{
       let digits=form.valor.value.replace(/\D/g,'');
       form.valor.value=(Number(digits)/100).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+    });
+  }
+  const cpfInput=form.querySelector('input[name="cpf"]');
+  if(cpfInput){
+    const nomeInput=form.querySelector('input[name="nome"],input[name="cliente"]');
+    const telInput=form.querySelector('input[name="telefone"]');
+    const fillByCpf=(digits)=>{
+      const cliente=getClients().find(c=>normalizeDigits(c.cpf)===digits);
+      if(cliente){
+        if(nomeInput){ nomeInput.value=cliente.nome; nomeInput.readOnly=true; nomeInput.classList.add('readonly-green'); }
+        if(telInput){ telInput.value=formatTelefone(cliente.telefone); telInput.readOnly=true; telInput.classList.add('readonly-green'); }
+      } else {
+        if(nomeInput){ nomeInput.readOnly=false; nomeInput.classList.remove('readonly-green'); }
+        if(telInput){ telInput.readOnly=false; telInput.classList.remove('readonly-green'); }
+      }
+    };
+    cpfInput.addEventListener('input',()=>{
+      let digits=cpfInput.value.replace(/\D/g,'').slice(0,11);
+      if(digits.length>0){
+        cpfInput.value=digits.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+      } else {
+        cpfInput.value='';
+      }
+      if(digits.length===11) fillByCpf(digits); else fillByCpf('');
     });
   }
   form.addEventListener('keydown',e=>{ if(e.key==='Enter' && e.target.tagName!=='TEXTAREA'){ e.preventDefault(); saveBtn.click(); }});
@@ -3558,33 +3585,69 @@ function initOSPage(){
   if(board){
     board.addEventListener('click',e=>{
       const btn=e.target.closest('button');
-      if(!btn) return;
-      const id=btn.dataset.id;
-      if(btn.classList.contains('btn-os-imprimir')){ const os=loadOSList().find(o=>o.id==id); if(os) printOS(os); }
-      if(btn.classList.contains('btn-os-editar')){ const os=loadOSList().find(o=>o.id==id); if(os) openOSForm(os.tipo, os); }
-      if(btn.classList.contains('btn-os-excluir')){ if(confirm('Excluir OS?')){ deleteOS(Number(id)); renderOSKanban(); renderOSCompleted(); } }
-      if(btn.classList.contains('btn-os-pin')){
+      if(btn){
+        const id=btn.dataset.id;
+        if(btn.classList.contains('btn-os-imprimir')){ const os=loadOSList().find(o=>o.id==id); if(os) printOS(os); }
+        if(btn.classList.contains('btn-os-editar')){ const os=loadOSList().find(o=>o.id==id); if(os) openOSForm(os.tipo, os); }
+        if(btn.classList.contains('btn-os-excluir')){ if(confirm('Excluir OS?')){ deleteOS(Number(id)); renderOSKanban(); renderOSCompleted(); } }
+        if(btn.classList.contains('btn-os-pin')){
+          const list=loadOSList();
+          const os=list.find(o=>o.id==id);
+          if(os){
+            if(os.status==='aguardando'){
+              os.status='completo';
+              os.pinnedAt=null;
+              os.updatedAt=new Date().toISOString();
+              os.completedAt=os.completedAt||new Date().toISOString();
+              saveOSList(list);
+              renderOSKanban();
+              renderOSCompleted();
+            } else if(os.status==='loja' || os.status==='oficina'){
+              os.pinnedAt=os.pinnedAt?null:Date.now();
+              os.updatedAt=new Date().toISOString();
+              saveOSList(list);
+              renderOSKanban();
+            }
+          }
+        }
+        if(btn.classList.contains('btn-os-toggle')){
+          const list=loadOSList();
+          const os=list.find(o=>o.id==id);
+          if(os){
+            os.expanded=!os.expanded;
+            os.updatedAt=new Date().toISOString();
+            saveOSList(list);
+            const card=btn.closest('.os-card');
+            card.classList.toggle('collapsed',!os.expanded);
+            btn.textContent=os.expanded?'-':'+';
+            btn.title=os.expanded?'Minimizar':'Expandir';
+            btn.setAttribute('aria-label', os.expanded?'Minimizar':'Expandir');
+          }
+          return;
+        }
+        if(btn.classList.contains('kanban-prev')){ const st=btn.closest('.kanban-col').dataset.status; if(ui.os.pages[st]>1){ ui.os.pages[st]--; renderOSKanban(); } }
+        if(btn.classList.contains('kanban-next')){ const st=btn.closest('.kanban-col').dataset.status; const total=ui.os.counts[st]||0; const max=Math.max(1,Math.ceil(total/OS_PAGE_SIZE)); if(ui.os.pages[st]<max){ ui.os.pages[st]++; renderOSKanban(); } }
+        return;
+      }
+      const top=e.target.closest('.os-card-top');
+      if(top){
+        const card=top.closest('.os-card');
+        const id=card.dataset.id;
         const list=loadOSList();
         const os=list.find(o=>o.id==id);
         if(os){
-          if(os.status==='aguardando'){
-            os.status='completo';
-            os.pinnedAt=null;
-            os.updatedAt=new Date().toISOString();
-            os.completedAt=os.completedAt||new Date().toISOString();
-            saveOSList(list);
-            renderOSKanban();
-            renderOSCompleted();
-          } else if(os.status==='loja' || os.status==='oficina'){
-            os.pinnedAt=os.pinnedAt?null:Date.now();
-            os.updatedAt=new Date().toISOString();
-            saveOSList(list);
-            renderOSKanban();
+          os.expanded=!os.expanded;
+          os.updatedAt=new Date().toISOString();
+          saveOSList(list);
+          card.classList.toggle('collapsed',!os.expanded);
+          const tbtn=card.querySelector('.btn-os-toggle');
+          if(tbtn){
+            tbtn.textContent=os.expanded?'-':'+';
+            tbtn.title=os.expanded?'Minimizar':'Expandir';
+            tbtn.setAttribute('aria-label', os.expanded?'Minimizar':'Expandir');
           }
         }
       }
-      if(btn.classList.contains('kanban-prev')){ const st=btn.closest('.kanban-col').dataset.status; if(ui.os.pages[st]>1){ ui.os.pages[st]--; renderOSKanban(); } }
-      if(btn.classList.contains('kanban-next')){ const st=btn.closest('.kanban-col').dataset.status; const total=ui.os.counts[st]||0; const max=Math.max(1,Math.ceil(total/OS_PAGE_SIZE)); if(ui.os.pages[st]<max){ ui.os.pages[st]++; renderOSKanban(); } }
     });
     board.addEventListener('keydown',e=>{
       if(e.target.classList.contains('os-card') && e.key==='Enter'){

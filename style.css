@@ -278,6 +278,7 @@ select option { color: var(--color-text); background: var(--color-bg); }
 .date-input { width:12ch; min-width:12ch; }
 input[name="cpf"] { width:14ch; }
 input[name="telefone"] { width:18ch; }
+.readonly-green{border:2px solid #2e7d32 !important;}
 .ui-dropdown { position: relative; }
 .ui-dropdown .dropdown-toggle {
   background: var(--color-bg);
@@ -442,9 +443,9 @@ input[name="telefone"] { width:18ch; }
 @media (max-width:1024px){.os-kanban{grid-template-columns:repeat(2,1fr);}}
 @media (max-width:600px){.os-kanban{grid-template-columns:1fr;}}
 .os-kanban .kanban-col{border:1px solid var(--color-border);border-radius:var(--radius-lg);min-height:420px;padding:0;display:flex;flex-direction:column;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,0.05);}
-.os-kanban .kanban-col .kanban-header{text-align:center;font-weight:bold;font-size:1.25rem;padding:0.5rem;border-bottom:1px solid var(--color-border);}
-.os-kanban .kanban-col .kanban-header h3{margin:0;font-size:inherit;font-weight:inherit;}
-.os-kanban .kanban-col .kanban-header .count{display:inline-flex;align-items:center;justify-content:center;background:#fff;color:#000;font-weight:bold;border-radius:50%;width:28px;height:28px;margin-left:4px;}
+.os-kanban .kanban-col .kanban-header{display:flex;align-items:center;font-weight:bold;font-size:1.25rem;padding:0.5rem;border-bottom:1px solid var(--color-border);}
+.os-kanban .kanban-col .kanban-header h3{margin:0;font-size:inherit;font-weight:inherit;flex:1;text-align:center;}
+.os-kanban .kanban-col .kanban-header .count{display:inline-flex;align-items:center;justify-content:center;background:#fff;color:#000;font-weight:bold;border-radius:50%;width:28px;height:28px;margin-left:auto;}
 .os-kanban .kanban-col .cards{flex:1;padding:0.5rem;display:grid;grid-template-columns:1fr;gap:0.5rem;align-content:flex-start;min-height:300px;}
 .os-kanban .kanban-col .cards .os-card{margin:0;}
 .os-kanban .kanban-col .kanban-footer { border-top:1px solid var(--color-border); padding:0.5rem; display:flex; justify-content:center; align-items:center; gap:0.5rem; font-size:0.875rem; }
@@ -465,6 +466,7 @@ input[name="telefone"] { width:18ch; }
 .os-card.joia .os-card-top{ background: var(--os-joia-color); }
 .os-card.optica .os-card-top{ background: var(--os-optica-color); }
 .os-card-body { padding: 4px 8px; font-size: 0.875rem; }
+.os-card.collapsed .os-card-body{display:none;}
 .os-card-phone{font-weight:bold;margin-bottom:4px;}
 .os-card-dates{margin-top:8px;}
 .os-card-dates .previsao{margin-top:4px;font-weight:bold;}
@@ -480,6 +482,8 @@ input[name="telefone"] { width:18ch; }
 .os-card.joia .badge{background: var(--os-joia-color);}
 .os-card.optica .badge{background: var(--os-optica-color);}
 .os-card-actions { display:flex; gap:4px; }
+.os-card-actions .pin-group{display:flex;flex-direction:column;align-items:center;gap:2px;}
+.os-card-actions .btn-os-toggle{padding:0 2px;font-size:12px;line-height:12px;}
 .os-card-actions .os-action,
 .os-completed .os-action{width:36px;height:36px;display:flex;align-items:center;justify-content:center;border:none;background:none;cursor:pointer;border-radius:var(--radius-md);}
 .os-card-actions .os-action:focus,
