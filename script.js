@@ -796,15 +796,26 @@ const ui = {
 const routes = {
   dashboard: dashboardPage,
   calendario: renderCalendario,
-  clientes: renderClientes,
+  clientes: renderClientesVisaoGeral,
+  'clientes-visao-geral': renderClientesVisaoGeral,
+  'clientes-cadastro': renderClientesCadastro,
+  'clientes-tabela': renderClientesTabela,
   os: renderOS,
   contato: renderContato,
   gerencia: renderGerencia,
   configuracoes: renderConfig
 };
+const CLIENTES_SUBROUTES = new Set(['clientes-visao-geral','clientes-cadastro','clientes-tabela']);
+const routeAliases = { clientes: 'clientes-visao-geral' };
 let currentRoute = 'dashboard';
+
+function resolveRoute(name){
+  const target = routeAliases[name] || name;
+  return target in routes ? target : 'dashboard';
+}
+
 function renderRoute(name){
-  currentRoute = name in routes ? name : 'dashboard';
+  currentRoute = resolveRoute(name);
   const main = document.querySelector('#app-main');
   if(currentRoute==='gerencia') main.innerHTML='';
   else main.innerHTML = routes[currentRoute]() || '';
@@ -812,17 +823,38 @@ function renderRoute(name){
   cards.loading(main);
   const titles = {
     dashboard: 'Dashboard',
-    calendario: 'Calendario',
-    clientes: 'Clientes',
+    calendario: 'Calendário',
+    'clientes-visao-geral': 'Clientes · Visão Geral',
+    'clientes-cadastro': 'Clientes · Cadastro',
+    'clientes-tabela': 'Clientes · Tabela de Clientes',
     os: 'Ordem de Serviço',
     contato: 'Contato a ser executado',
     gerencia: 'Gerencia',
     configuracoes: 'Configurações'
   };
-  document.getElementById('page-title').textContent = titles[currentRoute] || currentRoute;
-  document.querySelectorAll('.nav-item').forEach(i => i.classList.toggle('is-active', i.dataset.route === currentRoute));
+  const pageTitle = titles[currentRoute] || titles[routeAliases[currentRoute]] || currentRoute;
+  document.getElementById('page-title').textContent = pageTitle;
+  const isClientesRoute = CLIENTES_SUBROUTES.has(currentRoute);
+  document.querySelectorAll('.nav-item').forEach(item => {
+    const root=item.dataset.root;
+    if(item.classList.contains('has-submenu')){
+      const manual=item.dataset.expanded==='true';
+      const shouldExpand=(root==='clientes' && isClientesRoute) || manual;
+      item.classList.toggle('is-active', root==='clientes' && isClientesRoute);
+      item.classList.toggle('is-expanded', shouldExpand);
+      item.setAttribute('aria-expanded', shouldExpand);
+      if(root==='clientes' && isClientesRoute) item.dataset.expanded='true';
+    }else{
+      item.classList.toggle('is-active', item.dataset.route === currentRoute);
+    }
+  });
+  document.querySelectorAll('.nav-subitem').forEach(sub => {
+    sub.classList.toggle('is-active', sub.dataset.route === currentRoute);
+  });
   if(currentRoute === 'dashboard') initDashboardPage();
-  if(currentRoute === 'clientes') initClientesPage();
+  if(currentRoute === 'clientes-visao-geral') initClientesVisaoGeral();
+  if(currentRoute === 'clientes-cadastro') initClientesCadastro();
+  if(currentRoute === 'clientes-tabela') initClientesTabela();
   if(currentRoute === 'calendario') initCalendarioPage();
   if(currentRoute === 'os') initOSPage();
   if(currentRoute === 'gerencia') initGerenciaPage();
@@ -932,12 +964,13 @@ function updateCalendarMenuBar(){
 
 function renderCalendario() {
   return `
-  <div class="card-grid">
-    <div class="card" data-card-id="calendario" data-colspan="12">
-      <div class="card-body calendario-wrapper">
-        ${renderCalendarMenuBar()}
-        <div id="calendar" class="calendar">
-        <div class="cal-toolbar">
+  <div class="calendar-page">
+    ${renderCalendarMenuBar()}
+    <div class="card-grid">
+      <div class="card" data-card-id="calendario" data-colspan="12">
+        <div class="card-body calendario-wrapper">
+          <div id="calendar" class="calendar">
+          <div class="cal-toolbar">
           <div class="cal-nav">
             <button class="btn cal-prev" aria-label="Mês anterior">&#8249;</button>
             <h2 class="cal-mes monthTitle"></h2>
@@ -964,18 +997,34 @@ function renderCalendario() {
         </div>
       </div>
     </div>
+  </div>
   </div>`;
 }
-function renderClientes() {
+function clientesStatsBar(totalClientes, doneMonth){
+  return `
+  <div class="balloon balloon--menu-bar clientes-menu">
+    <div class="mini-card stats-card clientes-cadastrados"><div class="stats-title">Clientes Cadastrados:</div><div class="stats-value" data-stat="clientes-total">${totalClientes}</div></div>
+    <div class="mini-card stats-card"><div class="stats-title">Contatos esse Mês:</div><div class="stats-value" data-stat="contatos-mes">${doneMonth}</div></div>
+    <div class="mini-card"><small>Reservado</small></div>
+    <div class="mini-card"><small>Reservado</small></div>
+  </div>`;
+}
+
+function updateClientesStats(){
+  const bar=document.querySelector('.clientes-menu');
+  if(!bar) return;
+  const total=db.listarClientes().length;
+  const {doneMonth}=getFollowupsStats();
+  const totalEl=bar.querySelector('[data-stat="clientes-total"]');
+  if(totalEl) totalEl.textContent=total;
+  const doneEl=bar.querySelector('[data-stat="contatos-mes"]');
+  if(doneEl) doneEl.textContent=doneMonth;
+}
+function renderClientesVisaoGeral() {
   const totalClientes=db.listarClientes().length;
   const {doneMonth}=getFollowupsStats();
   return `
-  <div class="balloon balloon--menu-bar clientes-menu">
-    <div class="mini-card stats-card clientes-cadastrados"><div class="stats-title">Clientes Cadastrados:</div><div class="stats-value">${totalClientes}</div></div>
-    <div class="mini-card stats-card"><div class="stats-title">Contatos esse Mês:</div><div class="stats-value">${doneMonth}</div></div>
-    <div class="mini-card"><small>Reservado</small></div>
-    <div class="mini-card"><small>Reservado</small></div>
-  </div>
+  ${clientesStatsBar(totalClientes, doneMonth)}
   <div class="card-grid">
     <div class="card" data-card-id="lista-clientes" data-colspan="6">
       <div class="card-header">
@@ -1020,6 +1069,75 @@ function renderClientes() {
       </div>
       <div class="card-body detalhe-body">
         <div class="empty-state">Selecione um cliente à esquerda</div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function renderClientesCadastro(){
+  const totalClientes=db.listarClientes().length;
+  const {doneMonth}=getFollowupsStats();
+  return `
+  ${clientesStatsBar(totalClientes, doneMonth)}
+  <div class="card-grid">
+    <div class="card" data-card-id="cadastro-clientes" data-colspan="12">
+      <div class="card-header">
+        <div class="card-head">Cadastro de Clientes</div>
+        <div class="card-subtitle">Utilize o formulário completo abaixo para registrar novos clientes com todos os detalhes.</div>
+      </div>
+      <div class="card-body">
+        ${clienteFormTemplate({ includeObservacoes:false, includePurchaseSection:true, includeActions:true, actionLabel:'Salvar Cliente' })}
+      </div>
+    </div>
+  </div>`;
+}
+
+function renderClientesTabela(){
+  const totalClientes=db.listarClientes().length;
+  const {doneMonth}=getFollowupsStats();
+  return `
+  ${clientesStatsBar(totalClientes, doneMonth)}
+  <div class="card-grid">
+    <div class="card" data-card-id="tabela-clientes" data-colspan="12">
+      <div class="card-header">
+        <div class="card-head">Tabela de Clientes</div>
+        <div class="list-toolbar clients-toolbar">
+          <div class="search-wrap">
+            <span class="icon">${iconSearch}</span>
+            <input id="clientTableSearch" class="search-input" type="search" placeholder="Pesquisar clientes…" aria-label="Pesquisar clientes" />
+          </div>
+          <div class="filters-wrap">
+            <button id="tagMenuBtn" type="button" class="btn-dropdown">Etiquetas ▾</button>
+          </div>
+          <button class="btn-icon btn-plus add-cliente" data-action="client:new" aria-label="Adicionar" title="Adicionar">${iconPlus}</button>
+        </div>
+      </div>
+      <div class="card-body table-wrapper">
+        <table class="table table-clients table-clients-full">
+          <thead>
+            <tr>
+              <th data-field="nome" class="sortable" tabindex="0" role="button" aria-sort="none">NOME<span class="sort-indicator"></span></th>
+              <th>TELEFONE</th>
+              <th>CPF</th>
+              <th>GÊNERO</th>
+              <th>INTERESSES</th>
+              <th data-field="data" class="sortable" tabindex="0" role="button" aria-sort="none">ÚLTIMA COMPRA<span class="sort-indicator"></span></th>
+              <th data-field="valor" class="sortable" tabindex="0" role="button" aria-sort="none">VALOR ÚLTIMA COMPRA<span class="sort-indicator"></span></th>
+              <th data-field="quantidade" class="sortable" tabindex="0" role="button" aria-sort="none">COMPRAS<span class="sort-indicator"></span></th>
+            </tr>
+          </thead>
+          <tbody id="clientsFullTbody"></tbody>
+        </table>
+      </div>
+      <div class="card-footer clients-pagination clients-table-pagination">
+        <button class="btn prev-page" aria-label="Página anterior">Anterior</button>
+        <span class="page-info"></span>
+        <select class="page-size">
+          <option value="25">25</option>
+          <option value="50">50</option>
+          <option value="100">100</option>
+        </select>
+        <button class="btn next-page" aria-label="Próxima página">Próxima</button>
       </div>
     </div>
   </div>`;
@@ -1219,20 +1337,8 @@ const iconPlus='<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" v
 const iconEdit='<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>';
 const iconTrash='<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>';
 
-function openClienteModal(id, onSave) {
-  const modal = document.getElementById('app-modal');
-  const saveBtn = modal.querySelector('#modal-save');
-  saveBtn.removeAttribute('data-action');
-  saveBtn.setAttribute('type','submit');
-  const title = document.getElementById('modal-title');
-  const body = modal.querySelector('.modal-body');
-  const content = modal.querySelector('.modal-dialog');
-  content.classList.remove('modal-novo-cliente','modal-editar-cliente','modal-nova-compra');
-  content.classList.add(id ? 'modal-editar-cliente' : 'modal-novo-cliente');
-  const cliente = id ? db.buscarPorId(id) : null;
-  title.textContent = id ? 'Editar Cliente' : 'Novo Cliente';
-    body.replaceChildren();
-    body.insertAdjacentHTML('afterbegin', `
+function clienteFormTemplate({ includeObservacoes=false, includePurchaseSection=true, includeActions=false, actionLabel='Salvar Cliente' }={}){
+  return `
         <form id="cliente-form">
         <input type="hidden" id="cliente-id">
         <div class="modal-section">
@@ -1260,10 +1366,10 @@ function openClienteModal(id, onSave) {
                 <button type="button" class="chip" data-value="SOLAR" aria-pressed="false">SOLAR</button>
               </div>
             </div>
-            ${id ? '<div class="form-field col-span-12"><label for="cliente-observacoes">Observações</label><textarea id="cliente-observacoes" name="observacoes" class="textarea" rows="4"></textarea></div>' : ''}
+            ${includeObservacoes ? '<div class="form-field col-span-12"><label for="cliente-observacoes">Observações</label><textarea id="cliente-observacoes" name="observacoes" class="textarea" rows="4"></textarea></div>' : ''}
           </div>
         </div>
-        ${id ? '' : `
+        ${includePurchaseSection ? `
         <div class="modal-section">
           <h3>Dados da Compra</h3>
           <div class="form-grid">
@@ -1289,90 +1395,171 @@ function openClienteModal(id, onSave) {
             </div>
             <div class="form-field col-span-12"><label for="compra-observacoes">Observações</label><textarea id="compra-observacoes" name="observacoes" class="textarea" rows="3"></textarea></div>
             <fieldset class="col-span-12">
-              <legend>Receituário</legend>
-              <div class="rx-table-wrapper">
-                <table class="rx-table">
-                  <thead>
-                    <tr><th></th><th>Esférico</th><th>Cilíndrico</th><th>Eixo</th><th>DNP</th><th>Adição</th></tr>
-                  </thead>
-                  <tbody>
-                    <tr><td>OE</td><td><input name="oe_esferico"></td><td><input name="oe_cilindrico"></td><td><input name="oe_eixo"></td><td><input name="oe_dnp"></td><td><input name="oe_adicao"></td></tr>
-                    <tr><td>OD</td><td><input name="od_esferico"></td><td><input name="od_cilindrico"></td><td><input name="od_eixo"></td><td><input name="od_dnp"></td><td><input name="od_adicao"></td></tr>
-                  </tbody>
-                </table>
+              <legend class="field-label">Receituário</legend>
+              <div class="receituario">
+                <div class="rx-table-wrapper">
+                  <table class="rx-table">
+                    <thead>
+                      <tr><th></th><th>Esférico</th><th>Cilíndrico</th><th>Eixo</th><th>DNP</th><th>Adição</th></tr>
+                    </thead>
+                    <tbody>
+                      <tr><td>OE</td><td><input name="oe_esferico"></td><td><input name="oe_cilindrico"></td><td><input name="oe_eixo"></td><td><input name="oe_dnp"></td><td><input name="oe_adicao"></td></tr>
+                      <tr><td>OD</td><td><input name="od_esferico"></td><td><input name="od_cilindrico"></td><td><input name="od_eixo"></td><td><input name="od_dnp"></td><td><input name="od_adicao"></td></tr>
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </fieldset>
           </div>
         </div>
-        `}
-        </form>`);
+        ` : ''}
+        ${includeActions ? `
+        <div class="form-actions">
+          <button type="reset" class="btn btn-outline">Limpar</button>
+          <button type="button" class="btn btn-primary" data-action="client:save">${actionLabel}</button>
+        </div>
+        ` : ''}
+        </form>`;
+}
+
+function initClienteForm(form, { cliente=null, includePurchaseSection=true }={}){
+  if(!form) return;
+  form.dataset.id = cliente?.id || '';
+  const idInput=form.querySelector('#cliente-id');
+  if(idInput) idInput.value=cliente?.id || '';
+
+  const nomeInput=form.querySelector('#cliente-nome');
+  if(nomeInput) nomeInput.value=cliente?.nome || '';
+
+  const telInput=form.querySelector('#cliente-telefone');
+  if(telInput){
+    const maskTelefone=()=>{
+      let digits=telInput.value.replace(/\D/g,'').slice(0,11);
+      telInput.value=digits?formatTelefone(digits):'';
+    };
+    telInput.addEventListener('input', maskTelefone);
+    if(cliente?.telefone) telInput.value=formatTelefone(cliente.telefone);
+  }
+
+  const dataNascimento=form.querySelector('#cliente-dataNascimento');
+  if(dataNascimento) dataNascimento.value=cliente?.dataNascimento || '';
+
+  const cpfInput=form.querySelector('#cliente-cpf');
+  if(cpfInput) cpfInput.value=cliente?.cpf || '';
+
+  const interessesDiv=form.querySelector('#cliente-interesses');
+  if(interessesDiv){
+    const interesseButtons=Array.from(interessesDiv.querySelectorAll('button'));
+    interesseButtons.forEach(btn=>{
+      btn.setAttribute('aria-pressed','false');
+      btn.addEventListener('click',()=>{
+        const pressed=btn.getAttribute('aria-pressed')==='true';
+        btn.setAttribute('aria-pressed',(!pressed).toString());
+      });
+    });
+    const interesses=(cliente?.interesses||cliente?.usos)||[];
+    interesses.forEach(val=>{
+      interessesDiv.querySelector(`button[data-value="${val}"]`)?.setAttribute('aria-pressed','true');
+    });
+  }
+
+  const generoDiv=form.querySelector('#cliente-genero');
+  if(generoDiv){
+    const generoButtons=Array.from(generoDiv.querySelectorAll('button'));
+    generoButtons.forEach(btn=>{
+      btn.setAttribute('aria-pressed','false');
+      btn.addEventListener('click',()=>{
+        generoButtons.forEach(b=>b.setAttribute('aria-pressed','false'));
+        btn.setAttribute('aria-pressed','true');
+      });
+    });
+    if(cliente?.genero){
+      generoDiv.querySelector(`button[data-value="${cliente.genero}"]`)?.setAttribute('aria-pressed','true');
+    }
+  }
+
+  const obsInput=form.querySelector('#cliente-observacoes');
+  if(obsInput) obsInput.value=cliente?.observacoes || '';
+
+  const valorInput=form.querySelector('#compra-valor');
+  if(valorInput){
+    valorInput.addEventListener('input',()=>{
+      let digits=valorInput.value.replace(/\D/g,'');
+      valorInput.value=digits? (Number(digits)/100).toLocaleString('pt-BR',{style:'currency',currency:'BRL'}):'';
+    });
+  }
+
+  if(includePurchaseSection){
+    const dataInput=form.querySelector('#compra-data');
+    if(dataInput && !dataInput.value){
+      dataInput.value=new Date().toISOString().slice(0,10);
+    }
+    const materialDiv=form.querySelector('#compra-material');
+    materialDiv?.querySelectorAll('button').forEach(btn=>{
+      btn.setAttribute('aria-pressed','false');
+      btn.addEventListener('click',()=>{
+        materialDiv.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed','false'));
+        btn.setAttribute('aria-pressed','true');
+      });
+    });
+    const tiposDiv=form.querySelector('#compra-tipos');
+    tiposDiv?.querySelectorAll('button').forEach(btn=>{
+      btn.setAttribute('aria-pressed','false');
+      btn.addEventListener('click',()=>{
+        const pressed=btn.getAttribute('aria-pressed')==='true';
+        btn.setAttribute('aria-pressed',(!pressed).toString());
+      });
+    });
+  }
+
+  form.addEventListener('reset',()=>{
+    setTimeout(()=>{
+      form.dataset.id='';
+      if(idInput) idInput.value='';
+      if(nomeInput) nomeInput.value='';
+      if(telInput) telInput.value='';
+      if(dataNascimento) dataNascimento.value='';
+      if(cpfInput) cpfInput.value='';
+      if(obsInput) obsInput.value='';
+      form.querySelectorAll('#cliente-interesses button').forEach(btn=>btn.setAttribute('aria-pressed','false'));
+      form.querySelectorAll('#cliente-genero .seg-btn').forEach(btn=>btn.setAttribute('aria-pressed','false'));
+      if(includePurchaseSection){
+        const dataInput=form.querySelector('#compra-data');
+        if(dataInput) dataInput.value=new Date().toISOString().slice(0,10);
+        form.querySelectorAll('#compra-material .seg-btn, #compra-tipos .seg-btn').forEach(btn=>btn.setAttribute('aria-pressed','false'));
+        form.querySelectorAll('#compra-armacao, #compra-lente, #compra-nfe, #compra-valor, #compra-observacoes').forEach(el=>{ if(el) el.value=''; });
+        form.querySelectorAll('.rx-table input').forEach(input=>{ input.value=''; });
+      }
+    },0);
+  });
+
+  if(cliente){
+    if(obsInput) obsInput.value=cliente.observacoes || '';
+  }
+}
+
+function openClienteModal(id, onSave) {
+  const modal = document.getElementById('app-modal');
+  const saveBtn = modal.querySelector('#modal-save');
+  saveBtn.removeAttribute('data-action');
+  saveBtn.setAttribute('type','submit');
+  const title = document.getElementById('modal-title');
+  const body = modal.querySelector('.modal-body');
+  const content = modal.querySelector('.modal-dialog');
+  content.classList.remove('modal-novo-cliente','modal-editar-cliente','modal-nova-compra');
+  content.classList.add(id ? 'modal-editar-cliente' : 'modal-novo-cliente');
+  const cliente = id ? db.buscarPorId(id) : null;
+  title.textContent = id ? 'Editar Cliente' : 'Novo Cliente';
+  body.replaceChildren();
+  body.insertAdjacentHTML('afterbegin', clienteFormTemplate({ includeObservacoes: Boolean(id), includePurchaseSection: !id, includeActions: false }));
   saveBtn.setAttribute('form','cliente-form');
   saveBtn.setAttribute('data-action','client:save');
   saveBtn.setAttribute('type','button');
   const cancelBtn = modal.querySelector('[data-modal-close]');
   cancelBtn.setAttribute('data-action','client:cancel');
   const form = body.querySelector('#cliente-form');
-  form.dataset.id = id || '';
-  const idInput = form.querySelector('#cliente-id');
-  if(idInput) idInput.value = id || '';
+  initClienteForm(form, { cliente, includePurchaseSection: !id });
   clientModalOnSave = onSave;
-  const today = new Date().toISOString().slice(0,10);
-  if (!id && form.dataCompra) form.dataCompra.value = today;
-  const telInput = form.telefone;
-  telInput.addEventListener('input', () => {
-    let digits = telInput.value.replace(/\D/g,'').slice(0,11);
-    telInput.value = formatTelefone(digits);
-  });
-  if (form.valorLente) {
-    form.valorLente.addEventListener('input', () => {
-      let digits = form.valorLente.value.replace(/\D/g,'');
-      form.valorLente.value = (Number(digits)/100).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
-    });
-  }
-  const interessesDiv = form.querySelector('#cliente-interesses');
-  interessesDiv.querySelectorAll('button').forEach(btn=>{
-    btn.addEventListener('click',()=>{
-      const pressed = btn.getAttribute('aria-pressed')==='true';
-      btn.setAttribute('aria-pressed',(!pressed).toString());
-    });
-  });
-  const generoDiv = form.querySelector('#cliente-genero');
-  generoDiv?.querySelectorAll('button').forEach(btn=>{
-    btn.addEventListener('click',()=>{
-      generoDiv.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed','false'));
-      btn.setAttribute('aria-pressed','true');
-    });
-  });
-  let tiposDiv, materialDiv;
-  if(!id){
-    tiposDiv = form.querySelector('#compra-tipos');
-    tiposDiv.querySelectorAll('button').forEach(btn=>{
-      btn.addEventListener('click',()=>{
-        const pressed=btn.getAttribute('aria-pressed')==='true';
-        btn.setAttribute('aria-pressed',(!pressed).toString());
-      });
-    });
-    materialDiv = form.querySelector('#compra-material');
-    materialDiv.querySelectorAll('button').forEach(btn=>{
-      btn.addEventListener('click',()=>{
-        materialDiv.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed','false'));
-        btn.setAttribute('aria-pressed','true');
-      });
-    });
-  }
-  if (cliente) {
-    form.nome.value = cliente.nome;
-    form.telefone.value = formatTelefone(cliente.telefone);
-    form.dataNascimento.value = cliente.dataNascimento || '';
-    form.cpf.value = cliente.cpf || '';
-    if (form.observacoes) form.observacoes.value = cliente.observacoes || '';
-    (cliente.interesses || []).forEach(u=>{
-      interessesDiv.querySelector(`button[data-value="${u}"]`)?.setAttribute('aria-pressed','true');
-    });
-    if(cliente.genero){
-      generoDiv?.querySelector(`button[data-value="${cliente.genero}"]`)?.setAttribute('aria-pressed','true');
-    }
-  }
   modal.open();
 }
 
@@ -2065,7 +2252,7 @@ function initCalendarioPage() {
   render();
   updateCalendarMenuBar();
 }
-function initClientesPage() {
+function initClientesVisaoGeral() {
   db.initComSeeds();
   const tbody = document.getElementById('clientsTbody');
   const searchInput = document.getElementById('clientSearch');
@@ -2136,6 +2323,7 @@ function initClientesPage() {
     prevBtn.disabled = page<=1;
     nextBtn.disabled = page>=totalPages;
     persist();
+    updateClientesStats();
   }
 
     function renderDetail() {
@@ -2332,6 +2520,168 @@ function initClientesPage() {
   updateSortIndicators();
   updateTable();
   renderDetail();
+}
+
+function initClientesCadastro(){
+  db.initComSeeds();
+  clientModalOnSave=null;
+  const form=document.getElementById('cliente-form');
+  if(form){
+    initClienteForm(form,{ includePurchaseSection:true });
+    clientModalOnSave=()=>{
+      toast('Cliente cadastrado');
+      form.reset();
+      form.querySelector('#cliente-nome')?.focus();
+      updateClientesStats();
+    };
+  }
+  window.openNovoCliente=()=>{
+    if(form){
+      form.scrollIntoView({ behavior:'smooth', block:'start' });
+      form.querySelector('#cliente-nome')?.focus();
+    }
+  };
+  window.refreshClientsTable=undefined;
+  window.renderClientsTable=undefined;
+  window.renderClientDetail=undefined;
+  updateClientesStats();
+}
+
+function initClientesTabela(){
+  db.initComSeeds();
+  const tbody=document.getElementById('clientsFullTbody');
+  const searchInput=document.getElementById('clientTableSearch');
+  const tagBtn=document.getElementById('tagMenuBtn');
+  const pag=document.querySelector('.clients-table-pagination');
+  const prevBtn=pag?.querySelector('.prev-page');
+  const nextBtn=pag?.querySelector('.next-page');
+  const pageInfo=pag?.querySelector('.page-info');
+  const pageSizeSel=pag?.querySelector('.page-size');
+  const headers=document.querySelectorAll('.table-clients-full th.sortable');
+  if(!tbody) return;
+
+  ui.clients.filters.interesses=getJSON(prefix()+'clients.filters.interesses', []);
+  ui.clients.search='';
+  let uiState=getJSON(prefix()+'clients.table.ui', { page:1, pageSize:25, sort:{key:'nome',dir:'asc'} });
+  let sortBy=uiState.sort.key;
+  let sortDir=uiState.sort.dir;
+  let page=uiState.page;
+  let pageSize=uiState.pageSize;
+  if(pageSizeSel) pageSizeSel.value=String(pageSize);
+
+  function persist(){
+    setJSON(prefix()+'clients.table.ui',{ page, pageSize, sort:{key:sortBy, dir:sortDir} });
+    setJSON(prefix()+'clients.filters.interesses', ui.clients.filters.interesses);
+  }
+
+  function getDerived(c){
+    const ultimaCompra=getUltimaCompra(c.compras);
+    const valorUltima=ultimaCompra ? Number(ultimaCompra.valor ?? ultimaCompra.valorLente ?? 0) : 0;
+    const dataUltima=ultimaCompra?.dataCompra || '';
+    const comprasCount=(c.compras||[]).length;
+    return { ultimaCompra, valorUltima, dataUltima, comprasCount };
+  }
+
+  function updateTable(){
+    const source=getClients();
+    let clientes=filterClientsBySearchAndTags(source, ui.clients.search);
+    const compareNome=(a,b)=> sortDir==='asc' ? a.nome.localeCompare(b.nome) : b.nome.localeCompare(a.nome);
+    clientes.sort((a,b)=>{
+      const da=getDerived(a);
+      const db=getDerived(b);
+      if(sortBy==='data'){
+        if(da.dataUltima===db.dataUltima) return compareNome(a,b);
+        return sortDir==='asc' ? da.dataUltima.localeCompare(db.dataUltima) : db.dataUltima.localeCompare(da.dataUltima);
+      }
+      if(sortBy==='valor'){
+        if(da.valorUltima===db.valorUltima) return compareNome(a,b);
+        return sortDir==='asc' ? da.valorUltima - db.valorUltima : db.valorUltima - da.valorUltima;
+      }
+      if(sortBy==='quantidade'){
+        if(da.comprasCount===db.comprasCount) return compareNome(a,b);
+        return sortDir==='asc' ? da.comprasCount - db.comprasCount : db.comprasCount - da.comprasCount;
+      }
+      return compareNome(a,b);
+    });
+
+    const totalPages=Math.max(1, Math.ceil(clientes.length / pageSize));
+    if(page>totalPages) page=totalPages;
+    const start=(page-1)*pageSize;
+    const slice=clientes.slice(start, start+pageSize);
+    if(slice.length===0){
+      const msg=source.length? 'Nenhum cliente encontrado com os filtros atuais' : 'Nada por aqui ainda';
+      tbody.innerHTML=`<tr><td colspan="8" class="empty-state">${msg}</td></tr>`;
+    }else{
+      tbody.innerHTML=slice.map(c=>{
+        const derived=getDerived(c);
+        const ultimaCompra=derived.ultimaCompra;
+        const telefone=c.telefone ? formatTelefone(c.telefone) : '-';
+        const cpf=c.cpf ? formatCpf(c.cpf) : '-';
+        const genero=c.genero || '-';
+        const interesses=((c.interesses||c.usos)||[]).join(', ') || '-';
+        const ultimaData=ultimaCompra ? formatDateDDMMYYYY(ultimaCompra.dataCompra) : '-';
+        const valorExibicao=ultimaCompra ? formatCurrency(derived.valorUltima) : '-';
+        const comprasCount=derived.comprasCount;
+        return `<tr><td>${c.nome}</td><td>${telefone}</td><td>${cpf}</td><td>${genero}</td><td>${interesses}</td><td>${ultimaData}</td><td>${valorExibicao}</td><td>${comprasCount}</td></tr>`;
+      }).join('');
+    }
+    if(pageInfo) pageInfo.textContent=`Página ${clientes.length ? page : 0} de ${totalPages}`;
+    if(prevBtn) prevBtn.disabled=page<=1;
+    if(nextBtn) nextBtn.disabled=page>=totalPages;
+    persist();
+    updateClientesStats();
+  }
+
+  function updateSortIndicators(){
+    headers.forEach(h=>{
+      const field=h.dataset.field;
+      if(field===sortBy){
+        h.setAttribute('aria-sort', sortDir==='asc'?'ascending':'descending');
+        h.querySelector('.sort-indicator').textContent=sortDir==='asc'?'↑':'↓';
+      }else{
+        h.setAttribute('aria-sort','none');
+        h.querySelector('.sort-indicator').textContent='';
+      }
+    });
+  }
+
+  if(searchInput){
+    searchInput.addEventListener('input',()=>{ ui.clients.search=searchInput.value; page=1; updateTable(); });
+    searchInput.addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); ui.clients.search=searchInput.value; page=1; updateTable(); }});
+  }
+  if(tagBtn){
+    tagBtn.onclick=e=>{
+      e.stopPropagation();
+      if(tagMenuOpen){ closeTagMenu(); } else { openTagMenu(); }
+    };
+  }
+  if(prevBtn) prevBtn.addEventListener('click',()=>{ if(page>1){ page--; updateTable(); } });
+  if(nextBtn) nextBtn.addEventListener('click',()=>{ page++; updateTable(); });
+  if(pageSizeSel) pageSizeSel.addEventListener('change',()=>{ pageSize=parseInt(pageSizeSel.value,10); page=1; updateTable(); });
+
+  headers.forEach(th=>{
+    th.addEventListener('click',()=>{
+      const field=th.dataset.field;
+      if(sortBy===field){
+        sortDir=sortDir==='asc'?'desc':'asc';
+      }else{
+        sortBy=field;
+        sortDir=(field==='data'||field==='valor'||field==='quantidade')?'desc':'asc';
+      }
+      page=1;
+      updateSortIndicators();
+      updateTable();
+    });
+    th.addEventListener('keydown',e=>{ if(e.key==='Enter') th.click(); });
+  });
+
+  window.openNovoCliente=()=>{ location.hash='#/clientes-cadastro'; };
+  window.refreshClientsTable=updateTable;
+  window.renderClientsTable=updateTable;
+  window.renderClientDetail=undefined;
+
+  updateSortIndicators();
+  updateTable();
 }
 
 
@@ -2827,6 +3177,7 @@ function closePurchaseModal(){
 }
 
 function refreshUI(){
+  updateClientesStats();
   window.renderClientsTable?.();
   window.renderClientDetail?.();
   renderSelectedPurchaseDetails?.();
@@ -3798,9 +4149,42 @@ document.addEventListener('DOMContentLoaded', async () => {
       onProfileChanged();
     });
   }
+  const toggleSubmenu=(item, expanded)=>{
+    item.classList.toggle('is-expanded', expanded);
+    item.setAttribute('aria-expanded', expanded);
+    item.dataset.expanded = expanded ? 'true' : 'false';
+  };
   document.querySelectorAll('.nav-item').forEach(item => {
-    item.addEventListener('click', () => { location.hash = '#/'+item.dataset.route; });
-    item.addEventListener('keydown', e => { if(e.key==='Enter') location.hash = '#/'+item.dataset.route; });
+    if(item.classList.contains('has-submenu')){
+      item.addEventListener('click', () => {
+        const expanded=item.dataset.expanded==='true';
+        const next=!expanded;
+        toggleSubmenu(item,next);
+        if(next){
+          const def=item.dataset.defaultRoute;
+          if(def) location.hash = '#/'+def;
+        }
+      });
+      item.addEventListener('keydown', e => {
+        if(e.key==='Enter' || e.key===' '){
+          e.preventDefault();
+          const expanded=item.dataset.expanded==='true';
+          const next=!expanded;
+          toggleSubmenu(item,next);
+          if(next){
+            const def=item.dataset.defaultRoute;
+            if(def) location.hash = '#/'+def;
+          }
+        }
+      });
+    } else {
+      item.addEventListener('click', () => { location.hash = '#/'+item.dataset.route; });
+      item.addEventListener('keydown', e => { if(e.key==='Enter') location.hash = '#/'+item.dataset.route; });
+    }
+  });
+  document.querySelectorAll('.nav-subitem').forEach(sub => {
+    sub.addEventListener('click', () => { location.hash = '#/'+sub.dataset.route; });
+    sub.addEventListener('keydown', e => { if(e.key==='Enter') location.hash = '#/'+sub.dataset.route; });
   });
   applyPerfilGates();
   await limparCachesJoaoClaro();
