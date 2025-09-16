@@ -145,8 +145,13 @@ function toast(msg){ ui?.toast ? ui.toast(msg) : console.log(msg); }
 
 on(document.getElementById('btnNovoContato'), 'click', e => { e.preventDefault(); openContactModalForSelected?.(); });
 
-function renderCalendarMonth(){
+let calendarMonthRenderer = null;
+
+function renderCalendarMonth(date){
   purgeOrphanEvents();
+  if (typeof calendarMonthRenderer === 'function') {
+    calendarMonthRenderer(date);
+  }
 }
 
 let addGuard = false;
@@ -817,6 +822,7 @@ function resolveRoute(name){
 function renderRoute(name){
   currentRoute = resolveRoute(name);
   const main = document.querySelector('#app-main');
+  if(currentRoute !== 'calendario') calendarMonthRenderer = null;
   if(currentRoute==='gerencia') main.innerHTML='';
   else main.innerHTML = routes[currentRoute]() || '';
   cards.apply(main);
@@ -1853,7 +1859,8 @@ function initCalendarioPage() {
     else { renderWeek(); weekNav.style.display='flex'; }
   }
 
-  window.renderCalendarMonth = render;
+  calendarMonthRenderer = render;
+  window.renderCalendarMonth = renderCalendarMonth;
 
   function renderMonth(){
     const mes=currentDate.getMonth();
