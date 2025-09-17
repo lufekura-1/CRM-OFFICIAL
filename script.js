@@ -2626,6 +2626,136 @@ function initClientesTabela(){
   let currentPageIds=[];
   const selectAllCheckbox=document.getElementById('clientSelectAll');
   const CONTACT_PERIODS=['3m','6m','12m'];
+  const CONTACT_LABELS={ '3m':'3 meses','6m':'6 meses','12m':'12 meses' };
+
+  function renderFollowupBadges(cp){
+    const followUps=cp.followUps||{};
+    const badges=CONTACT_PERIODS.map(period=>{
+      const info=followUps[period];
+      const done=!!info?.done;
+      const doneDate=done && info?.doneAt ? formatDateDDMMYYYY(info.doneAt) : '';
+      const tooltip=done ? (doneDate ? `Realizado em ${doneDate}` : 'Realizado') : 'Pendente';
+      return `<span class="followup-badge ${done?'is-done':'is-pending'}" title="${tooltip}">${CONTACT_LABELS[period]||period}</span>`;
+    }).join('');
+    return `<div class="followup-badges">${badges}</div>`;
+  }
+
+  function renderRxTable(cp){
+    const rx=cp.receituario;
+    if(!rx) return '';
+    const fields=['esferico','cilindrico','eixo','dnp','adicao'];
+    const hasData=fields.some(key=>{
+      const oe=rx.oe?.[key];
+      const od=rx.od?.[key];
+      return (oe && String(oe).trim()!=='') || (od && String(od).trim()!=='');
+    });
+    if(!hasData) return '';
+    const makeRow=(side)=>fields.map(key=>rx[side]?.[key]||'').map(val=>`<td>${val||''}</td>`).join('');
+    return `
+      <div class="rx-table-wrapper">
+        <table class="rx-table">
+          <thead><tr><th></th><th>Esférico</th><th>Cilíndrico</th><th>Eixo</th><th>DNP</th><th>Adição</th></tr></thead>
+          <tbody>
+            <tr><td>OE</td>${makeRow('oe')}</tr>
+            <tr><td>OD</td>${makeRow('od')}</tr>
+          </tbody>
+        </table>
+      </div>`;
+  }
+
+  function buildPurchaseCard(cp){
+    const data=cp.dataCompra ? formatDateDDMMYYYY(cp.dataCompra) : '';
+    const valor=cp.valor!=null || cp.valorLente!=null ? formatCurrency(cp.valor ?? cp.valorLente) : '-';
+    const material=cp.armacaoMaterial ? `<span class="tag">${cp.armacaoMaterial}</span>` : '';
+    const tipos=cp.tiposCompra?.length ? cp.tiposCompra.map(t=>`<span class="tag">${t}</span>`).join(' ') : '';
+    const nfe=cp.nfe ? `<div class="info-label">NFE/NFC-e</div><div class="info-value">${cp.nfe}</div>` : '';
+    const observacoes=cp.observacoes ? `<div><strong>Observações:</strong> ${cp.observacoes}</div>` : '';
+    return `
+      <article class="purchase-card" data-id="${cp.id}">
+        <h4>Compra${data ? ` · ${data}` : ''}</h4>
+        <div class="info-grid">
+          <div class="info-label">Armação</div><div class="info-value">${cp.armacao||'-'}${material?` ${material}`:''}</div>
+          <div class="info-label">Lente</div><div class="info-value">${cp.lente||'-'}</div>
+          <div class="info-label">Valor</div><div class="info-value">${valor}</div>
+          ${nfe}
+          ${tipos?`<div class="info-label">Tipos</div><div class="info-value">${tipos}</div>`:''}
+        </div>
+        ${renderFollowupBadges(cp)}
+        ${renderRxTable(cp)}
+        ${observacoes}
+      </article>`;
+  }
+
+  function buildClientDetailModalHTML(cliente){
+    const telefone=cliente.telefone ? formatTelefone(cliente.telefone) : '-';
+    const nascimento=cliente.dataNascimento ? formatDateDDMMYYYY(cliente.dataNascimento) : '-';
+    const cpf=cliente.cpf ? formatCpf(cliente.cpf) : '-';
+    const genero=cliente.genero || '-';
+    const interesses=((cliente.interesses||cliente.usos)||[]).join(', ') || '-';
+    const compras=[...(cliente.compras||[])].sort((a,b)=>(b.dataCompra||'').localeCompare(a.dataCompra||''));
+    const comprasHtml=compras.length ? `<div class="purchase-history-list">${compras.map(buildPurchaseCard).join('')}</div>` : '<p>Sem compras registradas</p>';
+    return `
+      <div class="client-detail-modal">
+        <div class="mini-card client-overview">
+          <h2>${cliente.nome}</h2>
+          <div class="dados-pessoais info-grid">
+            <div class="info-label">Telefone</div><div class="info-value">${telefone}</div>
+            <div class="info-label">Nascimento</div><div class="info-value">${nascimento||'-'}</div>
+            <div class="info-label">CPF</div><div class="info-value">${cpf}</div>
+            <div class="info-label">Gênero</div><div class="info-value">${genero}</div>
+            <div class="info-label">Interesses</div><div class="info-value">${interesses}</div>
+          </div>
+        </div>
+        <div class="mini-card">
+          <div class="detalhe-head"><h3>Histórico de Compras</h3></div>
+          ${comprasHtml}
+        </div>
+      </div>`;
+  }
+
+  function openClienteDetailModal(clienteId){
+    const cliente=db.buscarPorId(clienteId);
+    if(!cliente) return;
+    const modal=document.getElementById('app-modal');
+    const title=document.getElementById('modal-title');
+    const body=modal.querySelector('.modal-body');
+    const saveBtn=modal.querySelector('#modal-save');
+    const cancelBtn=modal.querySelector('[data-modal-close]');
+    const dialog=modal.querySelector('.modal-dialog');
+    const prev={
+      saveDisplay: saveBtn.style.display,
+      saveForm: saveBtn.getAttribute('form'),
+      saveAction: saveBtn.getAttribute('data-action'),
+      saveType: saveBtn.getAttribute('type'),
+      cancelText: cancelBtn.textContent,
+      cancelAction: cancelBtn.getAttribute('data-action'),
+      cancelType: cancelBtn.getAttribute('type')
+    };
+    saveBtn.style.display='none';
+    if(saveBtn.getAttribute('form')) saveBtn.removeAttribute('form');
+    if(saveBtn.getAttribute('data-action')) saveBtn.removeAttribute('data-action');
+    saveBtn.setAttribute('type','button');
+    cancelBtn.textContent='Fechar';
+    if(cancelBtn.getAttribute('data-action')) cancelBtn.removeAttribute('data-action');
+    cancelBtn.setAttribute('type','button');
+    dialog.classList.add('modal-cliente-detalhe');
+    title.textContent=cliente.nome;
+    body.innerHTML=buildClientDetailModalHTML(cliente);
+    const originalClose=modal.close.bind(modal);
+    modal.close=()=>{
+      saveBtn.style.display=prev.saveDisplay;
+      if(prev.saveForm) saveBtn.setAttribute('form', prev.saveForm); else saveBtn.removeAttribute('form');
+      if(prev.saveAction) saveBtn.setAttribute('data-action', prev.saveAction); else saveBtn.removeAttribute('data-action');
+      if(prev.saveType) saveBtn.setAttribute('type', prev.saveType); else saveBtn.setAttribute('type','button');
+      cancelBtn.textContent=prev.cancelText;
+      if(prev.cancelAction) cancelBtn.setAttribute('data-action', prev.cancelAction); else cancelBtn.removeAttribute('data-action');
+      if(prev.cancelType) cancelBtn.setAttribute('type', prev.cancelType); else cancelBtn.setAttribute('type','button');
+      dialog.classList.remove('modal-cliente-detalhe');
+      modal.close=originalClose;
+      originalClose();
+    };
+    modal.open();
+  }
 
   ui.clients.filters.interesses=getJSON(prefix()+'clients.filters.interesses', []);
   ui.clients.search='';
@@ -2759,7 +2889,7 @@ function initClientesTabela(){
           const dotClass=getContactDotClass(info, todayISO);
           return `<span class="contact-dot ${dotClass}"></span>`;
         }).join('');
-        return `<tr${isSelected?' class="row-selected"':''}>`
+        return `<tr data-id="${c.id}"${isSelected?' class="row-selected"':''} tabindex="0">`
           +`<td class="select-cell select-col"><input type="checkbox" class="client-select-row" data-id="${c.id}" ${isSelected?'checked':''} aria-label="Selecionar cliente"></td>`
           +`<td data-field="nome">${c.nome}</td>`
           +`<td data-field="telefone">${telefone}</td>`
@@ -2779,6 +2909,21 @@ function initClientesTabela(){
           if(cb.checked){ selectedIds.add(id); } else { selectedIds.delete(id); }
           cb.closest('tr')?.classList.toggle('row-selected', cb.checked);
           syncSelectAll();
+        });
+      });
+      tbody.querySelectorAll('tr[data-id]').forEach(row=>{
+        row.addEventListener('click',e=>{
+          if(e.target.closest('.client-select-row')) return;
+          if(e.target.closest('button')) return;
+          const id=row.dataset.id;
+          if(id) openClienteDetailModal(id);
+        });
+        row.addEventListener('keydown',e=>{
+          if(e.key==='Enter' || e.key===' '){
+            e.preventDefault();
+            const id=row.dataset.id;
+            if(id) openClienteDetailModal(id);
+          }
         });
       });
     }
@@ -4307,6 +4452,15 @@ document.addEventListener('DOMContentLoaded', async () => {
       onProfileChanged();
     });
   }
+  const sidebar=document.querySelector('.sidebar');
+  if(sidebar){
+    const expand=()=>sidebar.classList.add('is-expanded');
+    const collapse=()=>sidebar.classList.remove('is-expanded');
+    sidebar.addEventListener('mouseenter',expand);
+    sidebar.addEventListener('mouseleave',collapse);
+    sidebar.addEventListener('focusin',expand);
+    sidebar.addEventListener('focusout',e=>{ if(!sidebar.contains(e.relatedTarget)) collapse(); });
+  }
   document.querySelectorAll('.nav-item').forEach(item => {
     if(item.classList.contains('has-submenu')){
       setNavSubmenuState(item, item.dataset.expanded==='true');
@@ -4359,6 +4513,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         location.hash = '#/'+sub.dataset.route;
       }
     });
+  });
+  document.addEventListener('click',e=>{
+    if(!e.target.closest('.nav-group')) collapseAllSubmenus();
   });
   applyPerfilGates();
   await limparCachesJoaoClaro();
