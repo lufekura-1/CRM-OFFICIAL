@@ -852,6 +852,8 @@ function resolveRoute(name){
 function renderRoute(name){
   currentRoute = resolveRoute(name);
   const main = document.querySelector('#app-main');
+  const sidebar=document.querySelector('.sidebar');
+  const keepCollapsed = sidebar?.dataset.keepCollapse === 'true';
   if(currentRoute !== 'calendario') calendarMonthRenderer = null;
   if(currentRoute==='gerencia') main.innerHTML='';
   else main.innerHTML = routes[currentRoute]() || '';
@@ -874,7 +876,7 @@ function renderRoute(name){
     const root=item.dataset.root;
     if(item.classList.contains('has-submenu')){
       const activeRoot = routeMatchesRoot(root, currentRoute);
-      setNavSubmenuState(item, activeRoot);
+      setNavSubmenuState(item, activeRoot && !keepCollapsed);
       item.classList.toggle('is-active', activeRoot);
       const group=item.closest('.nav-group');
       if(group){
@@ -887,6 +889,7 @@ function renderRoute(name){
   document.querySelectorAll('.nav-subitem').forEach(sub => {
     sub.classList.toggle('is-active', sub.dataset.route === currentRoute);
   });
+  if(sidebar) delete sidebar.dataset.keepCollapse;
   if(currentRoute === 'dashboard') initDashboardPage();
   if(currentRoute === 'clientes-visao-geral') initClientesVisaoGeral();
   if(currentRoute === 'clientes-cadastro') initClientesCadastro();
@@ -976,7 +979,10 @@ function renderCalendarMenuBar(){
           </div>
         </div>
         <div class="mini-widget mini-empty"></div>
-        <div class="mini-widget mini-empty"></div>
+        <div class="mini-widget mini-actions">
+          <button class="btn-eventos" type="button">Eventos</button>
+          <button class="btn-folgas" type="button">Folgas</button>
+        </div>
       </div>
     </div>`;
 }
@@ -4457,9 +4463,17 @@ document.addEventListener('DOMContentLoaded', async () => {
     const expand=()=>sidebar.classList.add('is-expanded');
     const collapse=()=>sidebar.classList.remove('is-expanded');
     sidebar.addEventListener('mouseenter',expand);
-    sidebar.addEventListener('mouseleave',collapse);
+    sidebar.addEventListener('mouseleave',()=>{
+      collapse();
+      collapseAllSubmenus();
+    });
     sidebar.addEventListener('focusin',expand);
-    sidebar.addEventListener('focusout',e=>{ if(!sidebar.contains(e.relatedTarget)) collapse(); });
+    sidebar.addEventListener('focusout',e=>{
+      if(!sidebar.contains(e.relatedTarget)){
+        collapse();
+        collapseAllSubmenus();
+      }
+    });
   }
   document.querySelectorAll('.nav-item').forEach(item => {
     if(item.classList.contains('has-submenu')){
@@ -4504,12 +4518,20 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
   document.querySelectorAll('.nav-subitem').forEach(sub => {
     sub.addEventListener('click', () => {
-      collapseAllSubmenus(sub.dataset.parent);
+      const parent = document.querySelector(`.nav-item[data-root="${sub.dataset.parent}"]`);
+      const sidebar=document.querySelector('.sidebar');
+      if(sidebar) sidebar.dataset.keepCollapse='true';
+      collapseAllSubmenus();
+      if(parent) setNavSubmenuState(parent, false);
       location.hash = '#/'+sub.dataset.route;
     });
     sub.addEventListener('keydown', e => {
       if(e.key==='Enter'){
-        collapseAllSubmenus(sub.dataset.parent);
+        const parent = document.querySelector(`.nav-item[data-root="${sub.dataset.parent}"]`);
+        const sidebar=document.querySelector('.sidebar');
+        if(sidebar) sidebar.dataset.keepCollapse='true';
+        collapseAllSubmenus();
+        if(parent) setNavSubmenuState(parent, false);
         location.hash = '#/'+sub.dataset.route;
       }
     });
