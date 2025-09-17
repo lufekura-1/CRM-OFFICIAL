@@ -778,9 +778,6 @@ const ui = {
     document.addEventListener('keydown', e => {
       if (e.key === 'Escape' && !modal.hidden) {
         modal.close();
-      } else if (e.key === '/' && document.activeElement !== document.querySelector('.global-search')) {
-        e.preventDefault();
-        document.querySelector('.global-search').focus();
       }
     });
     modal.addEventListener('click', e => {
@@ -811,6 +808,39 @@ const routes = {
   configuracoes: renderConfig
 };
 const CLIENTES_SUBROUTES = new Set(['clientes-visao-geral','clientes-cadastro','clientes-tabela']);
+const SUBMENU_ROUTES = { clientes: CLIENTES_SUBROUTES };
+
+function routeMatchesRoot(root, route){
+  const set = SUBMENU_ROUTES[root];
+  return set ? set.has(route) : route === root;
+}
+
+function setNavSubmenuState(item, expanded){
+  if(!item) return;
+  const group = item.closest('.nav-group');
+  item.classList.toggle('is-expanded', expanded);
+  item.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+  item.dataset.expanded = expanded ? 'true' : 'false';
+  if(group){
+    group.classList.toggle('is-expanded', expanded);
+    const submenu = group.querySelector('.nav-submenu');
+    if(submenu){
+      submenu.hidden = !expanded;
+    }
+  }
+}
+
+function collapseAllSubmenus(exceptRoot){
+  document.querySelectorAll('.nav-item.has-submenu').forEach(nav => {
+    if(nav.dataset.root !== exceptRoot){
+      setNavSubmenuState(nav, false);
+      const group = nav.closest('.nav-group');
+      if(group){
+        group.classList.remove('is-highlighted');
+      }
+    }
+  });
+}
 const routeAliases = { clientes: 'clientes-visao-geral' };
 let currentRoute = 'dashboard';
 
@@ -840,16 +870,16 @@ function renderRoute(name){
   };
   const pageTitle = titles[currentRoute] || titles[routeAliases[currentRoute]] || currentRoute;
   document.getElementById('page-title').textContent = pageTitle;
-  const isClientesRoute = CLIENTES_SUBROUTES.has(currentRoute);
   document.querySelectorAll('.nav-item').forEach(item => {
     const root=item.dataset.root;
     if(item.classList.contains('has-submenu')){
-      const manual=item.dataset.expanded==='true';
-      const shouldExpand=(root==='clientes' && isClientesRoute) || manual;
-      item.classList.toggle('is-active', root==='clientes' && isClientesRoute);
-      item.classList.toggle('is-expanded', shouldExpand);
-      item.setAttribute('aria-expanded', shouldExpand);
-      if(root==='clientes' && isClientesRoute) item.dataset.expanded='true';
+      const activeRoot = routeMatchesRoot(root, currentRoute);
+      setNavSubmenuState(item, activeRoot);
+      item.classList.toggle('is-active', activeRoot);
+      const group=item.closest('.nav-group');
+      if(group){
+        group.classList.toggle('is-highlighted', activeRoot);
+      }
     }else{
       item.classList.toggle('is-active', item.dataset.route === currentRoute);
     }
@@ -894,11 +924,11 @@ function renderCalendarMenuBar(){
         <div class="mini-widget mini-blue">
           <div class="mini-title">Contatos</div>
           <div class="mini-split">
-            <div class="mini-part">
+            <div class="mini-stat">
               <div class="mini-value" data-stat="contatos-hoje">0</div>
               <div class="mini-label">Hoje</div>
             </div>
-            <div class="mini-part">
+            <div class="mini-stat">
               <div class="mini-value" data-stat="contatos-semana">0</div>
               <div class="mini-label">Semana</div>
             </div>
@@ -907,15 +937,15 @@ function renderCalendarMenuBar(){
         <div class="mini-widget mini-yellow">
           <div class="mini-title">Aguardando Serviços</div>
           <div class="mini-triple">
-            <div class="mini-part">
+            <div class="mini-stat">
               <div class="mini-value" data-stat="os-aguardando-o">0</div>
               <div class="mini-label">Óptica</div>
             </div>
-            <div class="mini-part">
+            <div class="mini-stat">
               <div class="mini-value" data-stat="os-aguardando-r">0</div>
               <div class="mini-label">Relógio</div>
             </div>
-            <div class="mini-part">
+            <div class="mini-stat">
               <div class="mini-value" data-stat="os-aguardando-j">0</div>
               <div class="mini-label">Jóias</div>
             </div>
@@ -924,15 +954,15 @@ function renderCalendarMenuBar(){
         <div class="mini-widget mini-yellow">
           <div class="mini-title">Aguardando Retirada</div>
           <div class="mini-triple">
-            <div class="mini-part">
+            <div class="mini-stat">
               <div class="mini-value" data-stat="os-retirada-o">0</div>
               <div class="mini-label">Óptica</div>
             </div>
-            <div class="mini-part">
+            <div class="mini-stat">
               <div class="mini-value" data-stat="os-retirada-r">0</div>
               <div class="mini-label">Relógio</div>
             </div>
-            <div class="mini-part">
+            <div class="mini-stat">
               <div class="mini-value" data-stat="os-retirada-j">0</div>
               <div class="mini-label">Jóias</div>
             </div>
@@ -940,7 +970,10 @@ function renderCalendarMenuBar(){
         </div>
         <div class="mini-widget mini-yellow">
           <div class="mini-title">O.S para Hoje</div>
-          <div class="mini-value" data-stat="os-hoje">0</div>
+          <div class="mini-stat">
+            <div class="mini-value" data-stat="os-hoje">0</div>
+            <div class="mini-label">Hoje</div>
+          </div>
         </div>
         <div class="mini-widget mini-empty"></div>
         <div class="mini-widget mini-empty"></div>
@@ -1105,10 +1138,7 @@ function renderClientesVisaoGeral() {
 }
 
 function renderClientesCadastro(){
-  const totalClientes=db.listarClientes().length;
-  const {doneMonth}=getFollowupsStats();
   return `
-  ${clientesStatsBar(totalClientes, doneMonth)}
   <div class="card-grid">
     <div class="card" data-card-id="cadastro-clientes" data-colspan="12">
       <div class="card-header">
@@ -1123,10 +1153,7 @@ function renderClientesCadastro(){
 }
 
 function renderClientesTabela(){
-  const totalClientes=db.listarClientes().length;
-  const {doneMonth}=getFollowupsStats();
   return `
-  ${clientesStatsBar(totalClientes, doneMonth)}
   <div class="card-grid">
     <div class="card" data-card-id="tabela-clientes" data-colspan="12">
       <div class="card-header">
@@ -1146,13 +1173,15 @@ function renderClientesTabela(){
         <table class="table table-clients table-clients-full">
           <thead>
             <tr>
+              <th class="select-col select-toggle" scope="col"><input type="checkbox" id="clientSelectAll" aria-label="Selecionar todos os clientes da página"></th>
               <th data-field="nome" class="sortable" tabindex="0" role="button" aria-sort="none">NOME<span class="sort-indicator"></span></th>
-              <th>TELEFONE</th>
-              <th>CPF</th>
-              <th>GÊNERO</th>
-              <th>INTERESSES</th>
+              <th data-field="telefone">TELEFONE</th>
+              <th data-field="cpf">CPF</th>
+              <th data-field="genero">GÊNERO</th>
+              <th data-field="interesses">INTERESSES</th>
               <th data-field="data" class="sortable" tabindex="0" role="button" aria-sort="none">ÚLTIMA COMPRA<span class="sort-indicator"></span></th>
               <th data-field="valor" class="sortable" tabindex="0" role="button" aria-sort="none">VALOR ÚLTIMA COMPRA<span class="sort-indicator"></span></th>
+              <th class="contacts-col" scope="col">CONTATOS</th>
               <th data-field="quantidade" class="sortable" tabindex="0" role="button" aria-sort="none">COMPRAS<span class="sort-indicator"></span></th>
             </tr>
           </thead>
@@ -2593,6 +2622,11 @@ function initClientesTabela(){
   const headers=document.querySelectorAll('.table-clients-full th.sortable');
   if(!tbody) return;
 
+  const selectedIds=new Set();
+  let currentPageIds=[];
+  const selectAllCheckbox=document.getElementById('clientSelectAll');
+  const CONTACT_PERIODS=['3m','6m','12m'];
+
   ui.clients.filters.interesses=getJSON(prefix()+'clients.filters.interesses', []);
   ui.clients.search='';
   let uiState=getJSON(prefix()+'clients.table.ui', { page:1, pageSize:25, sort:{key:'nome',dir:'asc'} });
@@ -2602,9 +2636,70 @@ function initClientesTabela(){
   let pageSize=uiState.pageSize;
   if(pageSizeSel) pageSizeSel.value=String(pageSize);
 
+  function syncSelectAll(){
+    if(!selectAllCheckbox) return;
+    const total=currentPageIds.length;
+    let selectedCount=0;
+    currentPageIds.forEach(id=>{ if(selectedIds.has(id)) selectedCount++; });
+    selectAllCheckbox.checked=total>0 && selectedCount===total;
+    selectAllCheckbox.indeterminate=selectedCount>0 && selectedCount<total;
+  }
+
+  if(selectAllCheckbox){
+    selectAllCheckbox.addEventListener('change',()=>{
+      if(selectAllCheckbox.checked){
+        currentPageIds.forEach(id=>selectedIds.add(id));
+      }else{
+        currentPageIds.forEach(id=>selectedIds.delete(id));
+      }
+      updateTable();
+    });
+  }
+
   function persist(){
     setJSON(prefix()+'clients.table.ui',{ page, pageSize, sort:{key:sortBy, dir:sortDir} });
     setJSON(prefix()+'clients.filters.interesses', ui.clients.filters.interesses);
+  }
+
+  function buildFollowupLookup(){
+    const events=getJSON(calKey(), []).filter(e=>e.meta?.type==='followup');
+    const map=new Map();
+    events.forEach(ev=>{
+      const stage=ev.meta?.stage;
+      const clientId=ev.meta?.clienteId || ev.meta?.clientId;
+      if(!stage || !clientId) return;
+      const key=`${clientId}:${stage}`;
+      const due=ev.date || ev.meta?.dueDateISO || '';
+      const existing=map.get(key);
+      if(!existing || due > existing.dueDate){
+        map.set(key,{ dueDate: due, done: !!ev.meta?.done });
+      }
+    });
+    return map;
+  }
+
+  function deriveFollowupFromPurchases(cliente, stage){
+    let record=null;
+    (cliente.compras||[]).forEach(cp=>{
+      const fu=cp.followUps?.[stage];
+      if(!fu) return;
+      const due=fu.dueDateISO || cp.dataCompra || '';
+      if(!record || due > record.dueDate){
+        record={ dueDate: due, done: !!fu.done };
+      }
+    });
+    return record;
+  }
+
+  function getContactStageInfo(cliente, stage, lookup){
+    const key=`${cliente.id}:${stage}`;
+    return lookup.get(key) || deriveFollowupFromPurchases(cliente, stage) || null;
+  }
+
+  function getContactDotClass(info, todayISO){
+    if(info?.done) return 'is-green';
+    if(info?.dueDate && todayISO && info.dueDate < todayISO) return 'is-orange';
+    return 'is-gray';
   }
 
   function getDerived(c){
@@ -2641,9 +2736,12 @@ function initClientesTabela(){
     if(page>totalPages) page=totalPages;
     const start=(page-1)*pageSize;
     const slice=clientes.slice(start, start+pageSize);
+    currentPageIds=slice.map(c=>c.id);
+    const followupLookup=buildFollowupLookup();
+    const todayISO=formatDateYYYYMMDD(new Date());
     if(slice.length===0){
       const msg=source.length? 'Nenhum cliente encontrado com os filtros atuais' : 'Nada por aqui ainda';
-      tbody.innerHTML=`<tr><td colspan="8" class="empty-state">${msg}</td></tr>`;
+      tbody.innerHTML=`<tr><td colspan="10" class="empty-state">${msg}</td></tr>`;
     }else{
       tbody.innerHTML=slice.map(c=>{
         const derived=getDerived(c);
@@ -2652,12 +2750,39 @@ function initClientesTabela(){
         const cpf=c.cpf ? formatCpf(c.cpf) : '-';
         const genero=c.genero || '-';
         const interesses=((c.interesses||c.usos)||[]).join(', ') || '-';
-        const ultimaData=ultimaCompra ? formatDateDDMMYYYY(ultimaCompra.dataCompra) : '-';
+        const ultimaData=derived.dataUltima ? formatDateDDMMYYYY(derived.dataUltima) : '-';
         const valorExibicao=ultimaCompra ? formatCurrency(derived.valorUltima) : '-';
         const comprasCount=derived.comprasCount;
-        return `<tr><td>${c.nome}</td><td>${telefone}</td><td>${cpf}</td><td>${genero}</td><td>${interesses}</td><td>${ultimaData}</td><td>${valorExibicao}</td><td>${comprasCount}</td></tr>`;
+        const isSelected=selectedIds.has(c.id);
+        const contactDots=CONTACT_PERIODS.map(stage=>{
+          const info=getContactStageInfo(c, stage, followupLookup);
+          const dotClass=getContactDotClass(info, todayISO);
+          return `<span class="contact-dot ${dotClass}"></span>`;
+        }).join('');
+        return `<tr${isSelected?' class="row-selected"':''}>`
+          +`<td class="select-cell select-col"><input type="checkbox" class="client-select-row" data-id="${c.id}" ${isSelected?'checked':''} aria-label="Selecionar cliente"></td>`
+          +`<td data-field="nome">${c.nome}</td>`
+          +`<td data-field="telefone">${telefone}</td>`
+          +`<td data-field="cpf">${cpf}</td>`
+          +`<td data-field="genero">${genero}</td>`
+          +`<td data-field="interesses">${interesses}</td>`
+          +`<td data-field="data">${ultimaData || '-'}</td>`
+          +`<td data-field="valor">${valorExibicao}</td>`
+          +`<td class="contacts-col"><div class="contact-dots">${contactDots}</div></td>`
+          +`<td data-field="quantidade">${comprasCount}</td>`
+          +`</tr>`;
       }).join('');
+      tbody.querySelectorAll('.client-select-row').forEach(cb=>{
+        cb.addEventListener('change',()=>{
+          const id=cb.dataset.id;
+          if(!id) return;
+          if(cb.checked){ selectedIds.add(id); } else { selectedIds.delete(id); }
+          cb.closest('tr')?.classList.toggle('row-selected', cb.checked);
+          syncSelectAll();
+        });
+      });
     }
+    syncSelectAll();
     if(pageInfo) pageInfo.textContent=`Página ${clientes.length ? page : 0} de ${totalPages}`;
     if(prevBtn) prevBtn.disabled=page<=1;
     if(nextBtn) nextBtn.disabled=page>=totalPages;
@@ -4182,21 +4307,18 @@ document.addEventListener('DOMContentLoaded', async () => {
       onProfileChanged();
     });
   }
-  const toggleSubmenu=(item, expanded)=>{
-    item.classList.toggle('is-expanded', expanded);
-    item.setAttribute('aria-expanded', expanded);
-    item.dataset.expanded = expanded ? 'true' : 'false';
-  };
   document.querySelectorAll('.nav-item').forEach(item => {
     if(item.classList.contains('has-submenu')){
+      setNavSubmenuState(item, item.dataset.expanded==='true');
       item.addEventListener('click', () => {
         const expanded=item.dataset.expanded==='true';
         const def=item.dataset.defaultRoute;
-        if(expanded && def && currentRoute===def){
-          toggleSubmenu(item,false);
+        if(expanded){
+          setNavSubmenuState(item,false);
           return;
         }
-        toggleSubmenu(item,true);
+        collapseAllSubmenus(item.dataset.root);
+        setNavSubmenuState(item,true);
         if(def) location.hash = '#/'+def;
       });
       item.addEventListener('keydown', e => {
@@ -4204,22 +4326,39 @@ document.addEventListener('DOMContentLoaded', async () => {
           e.preventDefault();
           const expanded=item.dataset.expanded==='true';
           const def=item.dataset.defaultRoute;
-          if(expanded && def && currentRoute===def){
-            toggleSubmenu(item,false);
+          if(expanded){
+            setNavSubmenuState(item,false);
             return;
           }
-          toggleSubmenu(item,true);
+          collapseAllSubmenus(item.dataset.root);
+          setNavSubmenuState(item,true);
           if(def) location.hash = '#/'+def;
         }
       });
     } else {
-      item.addEventListener('click', () => { location.hash = '#/'+item.dataset.route; });
-      item.addEventListener('keydown', e => { if(e.key==='Enter') location.hash = '#/'+item.dataset.route; });
+      item.addEventListener('click', () => {
+        collapseAllSubmenus();
+        location.hash = '#/'+item.dataset.route;
+      });
+      item.addEventListener('keydown', e => {
+        if(e.key==='Enter'){
+          collapseAllSubmenus();
+          location.hash = '#/'+item.dataset.route;
+        }
+      });
     }
   });
   document.querySelectorAll('.nav-subitem').forEach(sub => {
-    sub.addEventListener('click', () => { location.hash = '#/'+sub.dataset.route; });
-    sub.addEventListener('keydown', e => { if(e.key==='Enter') location.hash = '#/'+sub.dataset.route; });
+    sub.addEventListener('click', () => {
+      collapseAllSubmenus(sub.dataset.parent);
+      location.hash = '#/'+sub.dataset.route;
+    });
+    sub.addEventListener('keydown', e => {
+      if(e.key==='Enter'){
+        collapseAllSubmenus(sub.dataset.parent);
+        location.hash = '#/'+sub.dataset.route;
+      }
+    });
   });
   applyPerfilGates();
   await limparCachesJoaoClaro();
