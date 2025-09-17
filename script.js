@@ -154,7 +154,37 @@ function renderCalendarMonth(date){
   }
 }
 
+const DASHBOARD_SLOT_LIMIT = 4; // Ajuste: limita a quantidade de slots visíveis no dashboard
+const DEFAULT_DASHBOARD_SLOTS = [
+  { id:'widget.clientsCount', size:'1x1' },
+  { id:'widget.followupsToday', size:'1x1' },
+  { id:'widget.followupsLate', size:'1x1' },
+  { id:'widget.followupsDone', size:'1x1' }
+];
+
 let addGuard = false;
+function defaultDashLayout(){ // Ajuste: layout base com os 4 cartões principais
+  return { slots: DEFAULT_DASHBOARD_SLOTS.map(slot => ({ ...slot })), version:2 };
+}
+
+function normalizeDashSlots(slots){ // Ajuste: garante apenas 4 slots válidos
+  const normalized = [];
+  const seen = new Set();
+  if(Array.isArray(slots)){
+    slots.forEach(slot => {
+      if(!slot || seen.has(slot.id)) return;
+      normalized.push({ ...slot });
+      seen.add(slot.id);
+    });
+  }
+  if(normalized.length === 0){
+    return DEFAULT_DASHBOARD_SLOTS.map(slot => ({ ...slot }));
+  }
+  const capped = normalized.slice(0, DASHBOARD_SLOT_LIMIT);
+  while(capped.length < DASHBOARD_SLOT_LIMIT) capped.push(null);
+  return capped;
+}
+
 bindOnce(document.getElementById('dashAddMenu'),'click', e=>{
   const btn = e.target.closest('[data-widget]'); if(!btn || addGuard) return;
   addGuard = true;
@@ -176,9 +206,9 @@ function insertWidgetOnce(type){
 function dashKey(profile = getPerfil()){ return `perfil:${profile}:dashboard.layout`; }
 function ensureSeed(profile = getPerfil()){
   const cur = getJSON(dashKey(profile), null);
-  if(!cur || !Array.isArray(cur.slots) || cur.slots.length < 8){
-    setJSON(dashKey(profile), { slots:Array(8).fill(null), version:1 });
-  }
+  const slots = normalizeDashSlots(cur?.slots);
+  const next = cur && typeof cur === 'object' ? { ...cur, slots, version:2 } : defaultDashLayout();
+  setJSON(dashKey(profile), next);
 }
 function seedAllDash(){ PROFILES.forEach(ensureSeed); }
 
@@ -2996,15 +3026,16 @@ function initClientesTabela(){
 
 function loadDashLayout(){
   ensureSeed(getPerfil());
-  return getJSON(dashKey(), { slots: Array(8).fill(null), version:1 });
+  const layout = getJSON(dashKey(), defaultDashLayout());
+  layout.slots = normalizeDashSlots(layout?.slots);
+  return layout;
 }
 
 function saveDashLayout(layout){ setJSON(dashKey(), layout); }
 
 function ensureFreeSlot(layout){
-  layout.slots = layout.slots.slice(0,8);
-  while(layout.slots.length < 8) layout.slots.push(null);
-  return layout;
+  const normalized = normalizeDashSlots(layout?.slots);
+  return { ...layout, slots: normalized };
 }
 
 function getFollowupsStats(){
