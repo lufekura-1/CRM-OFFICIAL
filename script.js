@@ -1072,21 +1072,23 @@ function renderCalendario() {
         <div class="card-body calendario-wrapper">
           <div id="calendar" class="calendar">
             <div class="cal-toolbar">
+              <div class="cal-actions">
+                <button class="btn btn-cal-eventos">Adicionar Evento</button>
+              </div>
               <div class="cal-nav">
                 <button class="btn cal-prev" aria-label="Mês anterior">&#8249;</button>
                 <h2 class="cal-mes monthTitle"></h2>
                 <button class="btn cal-next" aria-label="Próximo mês">&#8250;</button>
               </div>
-              <div class="cal-right">
-                <button class="btn btn-cal-eventos">Adicionar Evento</button>
-                <div class="cal-controls">
+              <div class="cal-controls">
+                <div class="cal-selects">
                   <select class="cal-mes-select" aria-label="Mês"></select>
                   <select class="cal-ano" aria-label="Ano"></select>
-                  <button class="btn cal-hoje">Hoje</button>
-                  <div class="segmented" role="group" aria-label="Modo de visualização">
-                    <button class="seg-btn" data-modo="mes" aria-pressed="true">Mês</button>
-                    <button class="seg-btn" data-modo="semana" aria-pressed="false">Semana</button>
-                  </div>
+                </div>
+                <button class="btn cal-hoje">Hoje</button>
+                <div class="segmented" role="group" aria-label="Modo de visualização">
+                  <button class="seg-btn" data-modo="mes" aria-pressed="true">Mês</button>
+                  <button class="seg-btn" data-modo="semana" aria-pressed="false">Semana</button>
                 </div>
               </div>
             </div>
