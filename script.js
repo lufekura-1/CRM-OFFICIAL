@@ -1684,14 +1684,16 @@ function openCompraModal(clienteId, compraId, onSave) {
 function initCalendarioPage() {
   db.initComSeeds();
   const wrapper = document.querySelector('.calendario-wrapper');
+  if(!wrapper) return;
+  const calendarPage = document.querySelector('.calendar-page');
   const grid = wrapper.querySelector('.cal-grid');
   const emptyEl = wrapper.querySelector('.cal-empty');
   const monthEl = wrapper.querySelector('.cal-mes');
   const monthSelect = wrapper.querySelector('.cal-mes-select');
   const yearSelect = wrapper.querySelector('.cal-ano');
   const btnHoje = wrapper.querySelector('.cal-hoje');
-  const btnEventos = wrapper.querySelector('.btn-cal-eventos');
-  const btnDesf = wrapper.querySelector('.btn-cal-desfalques');
+  const btnEventos = calendarPage?.querySelector('.btn-cal-eventos');
+  const btnDesf = calendarPage?.querySelector('.btn-cal-desfalques');
   const btnPrev = wrapper.querySelector('.cal-prev');
   const btnNext = wrapper.querySelector('.cal-next');
   const segBtns = wrapper.querySelectorAll('.seg-btn');
@@ -1713,8 +1715,8 @@ function initCalendarioPage() {
     if(ev.meta?.type==='followup') return 1;
     return 2;
   }
-  btnEventos.addEventListener('click',()=>openEventoModal());
-  if(getPerfil()==='Administrador'){
+  btnEventos?.addEventListener('click',()=>openEventoModal());
+  if(getPerfil()==='Administrador' && btnDesf){
     btnDesf.style.display='inline-block';
     btnDesf.addEventListener('click',()=>openDesfalqueModal());
   }
