@@ -149,18 +149,25 @@ a { color: inherit; text-decoration: none; }
   height: 40px;
   display: flex;
   align-items: center;
-  gap:8px;
-  padding: 0 20px;
+  gap: 10px;
+  padding: 0 16px 0 24px;
   justify-content: flex-start;
   border-radius: var(--radius-md);
   cursor: pointer;
   position: relative;
-  color:#ccc;
-  border-left:none;
+  color: #ccc;
+  border-left: none;
   margin: 0 16px;
-  transition: background 0.2s ease, color 0.2s ease, padding 0.24s ease;
+  transition: background 0.2s ease, color 0.2s ease;
 }
-.nav-item .icon { width:18px; height:18px; display:inline-flex; flex-shrink:0; }
+.nav-item .icon {
+  width: 24px;
+  height: 24px;
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+}
 .nav-item .icon svg { width:100%; height:100%; }
 .nav-item .label,
 .nav-subitem .label {
@@ -173,9 +180,12 @@ a { color: inherit; text-decoration: none; }
 }
 .sidebar:not(.is-expanded) .nav-item,
 .sidebar:not(.is-expanded) .nav-subitem {
-  justify-content: center;
-  padding-inline: 0;
   margin-inline: 12px;
+  padding-left: 24px;
+  padding-right: 16px;
+}
+.sidebar:not(.is-expanded) .nav-item {
+  justify-content: flex-start;
 }
 .sidebar:not(.is-expanded) .nav-item .label,
 .sidebar:not(.is-expanded) .nav-subitem .label,
@@ -188,7 +198,8 @@ a { color: inherit; text-decoration: none; }
 .sidebar.is-expanded .nav-item,
 .sidebar.is-expanded .nav-subitem {
   justify-content: flex-start;
-  padding-inline: 20px;
+  padding-left: 24px;
+  padding-right: 16px;
   margin-inline: 16px;
 }
 .sidebar:not(.is-expanded) .nav-submenu {
@@ -230,12 +241,12 @@ a { color: inherit; text-decoration: none; }
 .nav-subitem {
   align-items: center;
   gap: 8px;
-  padding: 0 20px 0 52px;
+  padding: 0 16px 0 56px;
   height: 36px;
   color: #ccc;
   cursor: pointer;
   border-left: none;
-  transition: background 0.2s ease, color 0.2s ease, padding 0.24s ease;
+  transition: background 0.2s ease, color 0.2s ease;
 }
 .nav-subitem.is-active {
   color: #fff;
@@ -245,17 +256,25 @@ a { color: inherit; text-decoration: none; }
 .topbar {
   position: sticky;
   top: 0;
-  left: auto; right: auto;
-  height: 60px;
+  left: auto;
+  right: auto;
+  height: 52px;
   background: #2A2F37;
   border-bottom: 1px solid #1F232A;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 1rem;
+  padding: 0 0.75rem;
   z-index: 10;
   border-radius: 0;
-  color:#fff;
+  color: #fff;
+}
+.topbar h1 {
+  font-size: 1.125rem;
+}
+.topbar select {
+  height: 34px;
+  font-size: 0.9rem;
 }
 .topbar .actions { display: flex; gap: 0.5rem; align-items: center; }
 
@@ -269,14 +288,23 @@ body.modal-open .topbar { pointer-events:none; filter:grayscale(1) opacity(.5); 
 
 .sidebar:not(.is-expanded) #profileBadge {
   gap: 0;
+  padding: 6px;
+  background: linear-gradient(135deg, rgba(255,255,255,0.08), rgba(0,0,0,0.15));
+}
+.sidebar:not(.is-expanded) #profileBadge.profile-admin {
+  background: linear-gradient(135deg, rgba(46,125,50,0.35), rgba(13,71,161,0.15));
+}
+.sidebar:not(.is-expanded) #profileBadge.profile-other {
+  background: linear-gradient(135deg, rgba(255,152,0,0.38), rgba(183,28,28,0.18));
 }
 .sidebar:not(.is-expanded) #profileBadge .profile-name {
   display: none;
 }
 .sidebar:not(.is-expanded) #profileBadge .profile-pic {
-  width: 48px;
-  height: 48px;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
+  border: 2px solid rgba(255,255,255,0.35);
 }
 .sidebar:not(.is-expanded) .brand-tile {
   width: 48px;
@@ -284,6 +312,8 @@ body.modal-open .topbar { pointer-events:none; filter:grayscale(1) opacity(.5); 
   margin: 16px auto 12px;
   border-radius: 50%;
   padding: 0;
+  background: #2A2F37;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.08);
 }
 
 .sidebar:not(.is-expanded) .nav-item.has-submenu::after {
@@ -982,7 +1012,7 @@ input[name="telefone"] { width:18ch; }
   }
 }
 /* ===== Calendar ===== */
-.calendario-wrapper { display:flex; flex-direction:column; gap:1rem; --neutral-100: var(--color-border); --green-600: var(--color-primary); --red-600: #c62828; --red-400: #e57373; --card-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+.calendario-wrapper { display:flex; flex-direction:column; gap:1rem; width:100%; --neutral-100: var(--color-border); --green-600: var(--color-primary); --red-600: #c62828; --red-400: #e57373; --card-shadow: 0 2px 4px rgba(0,0,0,0.1); }
 .cal-toolbar { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:1rem; }
 .cal-right { display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap; }
 .cal-nav {
@@ -1052,10 +1082,10 @@ input[name="telefone"] { width:18ch; }
 .segmented [aria-pressed="false"] { background:var(--neutral-200); color:var(--color-text); }
 
 /* ===== Calendar Menu Bar ===== */
-.calendar-menu-bar { background:var(--surface); border-radius:var(--radius-lg); padding:1rem; display:grid; grid-template-columns:max-content 1fr; gap:1rem; align-items:center; margin-bottom:1.5rem; }
-.calendar-menu-bar .menu-actions { display:flex; gap:0.5rem; }
-.calendar-menu-bar .menu-widgets { display:grid; grid-template-columns:repeat(auto-fit,minmax(90px,1fr)); gap:0.5rem; }
-.calendar-menu-bar .mini-widget { background:var(--surface); border:1px solid var(--color-border); border-radius:var(--radius-md); padding:1rem; display:flex; flex-direction:column; align-items:center; justify-content:center; min-width:80px; min-height:100px; box-shadow:var(--card-shadow); }
+.calendar-menu-bar { background:var(--surface); border-radius:var(--radius-lg); padding:1rem; display:grid; grid-template-columns:minmax(0,max-content) minmax(0,1fr); gap:1rem; align-items:center; margin-bottom:1.5rem; width:100%; box-sizing:border-box; }
+.calendar-menu-bar .menu-actions { display:flex; gap:0.5rem; align-self:start; }
+.calendar-menu-bar .menu-widgets { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:0.75rem; align-items:stretch; }
+.calendar-menu-bar .mini-widget { background:var(--surface); border:1px solid var(--color-border); border-radius:var(--radius-md); padding:0.85rem; display:flex; flex-direction:column; align-items:center; justify-content:center; min-width:120px; min-height:110px; box-shadow:var(--card-shadow); }
 .calendar-menu-bar .mini-title { font-weight:700; font-size:1rem; margin-bottom:4px; text-align:center; white-space:nowrap; }
 .calendar-menu-bar .mini-value { font-weight:700; text-align:center; font-size:1.5rem; }
 .calendar-menu-bar .mini-widget { gap:0.75rem; }
@@ -1078,7 +1108,12 @@ input[name="telefone"] { width:18ch; }
 .calendar-menu-bar .mini-label { font-size:0.875rem; font-weight:400; }
 .calendar-menu-bar .mini-widget.mini-blue { background:#e3f2fd; }
 .calendar-menu-bar .mini-widget.mini-yellow { background:#fff8e1; }
-.calendar-menu-bar .mini-empty { border:1px dashed var(--color-border); box-shadow:none; }
+.calendar-menu-bar .mini-widget.mini-empty { border:1px dashed var(--color-border); box-shadow:none; }
+.calendar-menu-bar .mini-widget.mini-actions { align-items:stretch; justify-content:flex-start; gap:0.5rem; padding:0.75rem; }
+.calendar-menu-bar .mini-widget.mini-actions button { width:100%; border:none; border-radius:var(--radius-md); font-weight:700; text-transform:uppercase; padding:0.65rem 0.75rem; cursor:pointer; transition:filter 0.2s ease; letter-spacing:0.04em; }
+.calendar-menu-bar .mini-widget.mini-actions button.btn-eventos { background:var(--accent-orange); color:#fff; }
+.calendar-menu-bar .mini-widget.mini-actions button.btn-folgas { background:#424242; color:#fff; }
+.calendar-menu-bar .mini-widget.mini-actions button:hover { filter:brightness(0.95); }
 @media (max-width:768px){
   .calendar-menu-bar{ grid-template-columns:1fr; }
   .calendar-menu-bar .menu-actions{ justify-content:flex-start; }
@@ -1250,6 +1285,8 @@ input[name="telefone"] { width:18ch; }
   background: #f8fbff;
   border-radius: 14px;
   padding: 10px 12px 16px;
+  width: 100%;
+  box-sizing: border-box;
 }
 .cal-toolbar, .calendar-toolbar { margin-bottom: 10px; }
 .cal-weekdays, .calendar-weeknames { margin: 6px 0 8px; }
@@ -1263,27 +1300,29 @@ input[name="telefone"] { width:18ch; }
 .card-danger{background:var(--card-danger-soft)}
 .purchase-card{position:relative}
 .purchase-date-badge{position:absolute; right:12px; top:10px; font-weight:800; font-size:1rem}
-.profile-admin{background:#eaf8ee}
-.profile-other{background:#ffecec}
+.profile-admin{background:rgba(46,125,50,0.12)}
+.profile-other{background:rgba(255,152,0,0.12)}
 #profileBadge{
-  border-radius:12px;
-  padding:18px 20px;
+  border-radius:16px;
+  padding:12px;
   font-weight:800;
   text-align:center;
   display:flex;
   flex-direction:column;
   align-items:center;
   justify-content:center;
-  gap:8px;
+  gap:6px;
   height:auto;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.06);
 }
 
 #profileBadge .profile-pic{
-  width:72px;
-  height:72px;
-  border-radius:var(--radius-md);
+  width:64px;
+  height:64px;
+  border-radius:14px;
   object-fit:cover;
   object-position:50% 50%;
+  box-shadow:0 6px 18px rgba(0,0,0,0.18);
 }
 
 #profileBadge.editable .profile-pic{cursor:move;}
@@ -1292,8 +1331,8 @@ input[name="telefone"] { width:18ch; }
 #profileBadge .profile-name{font-weight:800;}
 
 #profileBadge .profile-placeholder{
-  width:72px;
-  height:72px;
+  width:64px;
+  height:64px;
   border-radius:var(--radius-md);
   background:var(--neutral-200);
   display:flex;
@@ -1357,38 +1396,41 @@ input[name="telefone"] { width:18ch; }
   }
 }
 .nav-group {
-  margin: 0 16px;
-  border-radius: var(--radius-md);
-  overflow: hidden;
+  margin: 0;
+  border-radius: 0;
+  overflow: visible;
   transition: background 0.2s ease;
 }
 .nav-group > .nav-item {
-  margin: 0;
-  border-radius: 0;
+  margin: 0 16px;
+  border-radius: var(--radius-md);
 }
 .nav-submenu {
   list-style: none;
-  margin: 0;
-  padding: 0;
+  margin: 4px 16px 0;
+  padding: 6px 0;
   display: none;
   flex-direction: column;
   background: var(--sidebar-sub-bg);
+  border-radius: var(--radius-md);
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,0.1);
 }
 .nav-group.is-expanded .nav-submenu {
   display: flex;
 }
 .nav-group.is-expanded > .nav-item {
-  border-bottom: 1px solid rgba(255,255,255,0.08);
+  border-bottom: none;
 }
 .nav-group.is-highlighted {
+  background: transparent;
+}
+.nav-group.is-highlighted > .nav-item {
   background: #2A2F37;
-  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.05);
 }
 .nav-group.is-highlighted .nav-item,
 .nav-group.is-highlighted .nav-subitem {
   color: #fff;
 }
-.nav-group.is-highlighted .nav-item:hover,
 .nav-group.is-highlighted .nav-subitem:hover {
   background: rgba(255,255,255,0.05);
 }
