@@ -952,7 +952,6 @@ function renderCalendarMenuBar(){
   return `
     <div class="calendar-menu-bar">
       <div class="menu-actions">
-        <button class="btn btn-cal-eventos">Eventos</button>
         <button class="btn btn-cal-desfalques" style="display:none">Desfalques</button>
       </div>
       <div class="menu-widgets">
@@ -1009,6 +1008,8 @@ function renderCalendarMenuBar(){
             <div class="mini-value" data-stat="os-hoje">0</div>
             <div class="mini-label">Hoje</div>
           </div>
+        </div>
+        <div class="mini-widget mini-actions-only">
           <div class="mini-actions-inline">
             <button class="btn-eventos" type="button">Eventos</button>
             <button class="btn-folgas" type="button">Folgas</button>
@@ -1070,30 +1071,34 @@ function renderCalendario() {
       <div class="card" data-card-id="calendario" data-colspan="12">
         <div class="card-body calendario-wrapper">
           <div id="calendar" class="calendar">
-          <div class="cal-toolbar">
-          <div class="cal-nav">
-            <button class="btn cal-prev" aria-label="Mês anterior">&#8249;</button>
-            <h2 class="cal-mes monthTitle"></h2>
-            <button class="btn cal-next" aria-label="Próximo mês">&#8250;</button>
-          </div>
-          <div class="cal-right">
-            <select class="cal-mes-select" aria-label="Mês"></select>
-            <select class="cal-ano" aria-label="Ano"></select>
-            <button class="btn cal-hoje">Hoje</button>
-            <div class="segmented" role="group" aria-label="Modo de visualização">
-              <button class="seg-btn" data-modo="mes" aria-pressed="true">Mês</button>
-              <button class="seg-btn" data-modo="semana" aria-pressed="false">Semana</button>
+            <div class="cal-toolbar">
+              <div class="cal-nav">
+                <button class="btn cal-prev" aria-label="Mês anterior">&#8249;</button>
+                <h2 class="cal-mes monthTitle"></h2>
+                <button class="btn cal-next" aria-label="Próximo mês">&#8250;</button>
+              </div>
+              <div class="cal-right">
+                <button class="btn btn-cal-eventos">Adicionar Evento</button>
+                <div class="cal-controls">
+                  <select class="cal-mes-select" aria-label="Mês"></select>
+                  <select class="cal-ano" aria-label="Ano"></select>
+                  <button class="btn cal-hoje">Hoje</button>
+                  <div class="segmented" role="group" aria-label="Modo de visualização">
+                    <button class="seg-btn" data-modo="mes" aria-pressed="true">Mês</button>
+                    <button class="seg-btn" data-modo="semana" aria-pressed="false">Semana</button>
+                  </div>
+                </div>
+              </div>
             </div>
+            <div class="cal-weekdays"></div>
+            <div class="cal-week-nav">
+              <button class="btn cal-prev-week">&#8249; Semana</button>
+              <button class="btn cal-next-week">Semana &#8250;</button>
+            </div>
+            <div class="cal-grid"></div>
+            <div id="calPopoverLayer" class="cal-popover-layer"></div>
+            <div class="cal-empty empty-state" style="display:none">Nada por aqui ainda</div>
           </div>
-        </div>
-        <div class="cal-weekdays"></div>
-        <div class="cal-week-nav">
-          <button class="btn cal-prev-week">&#8249; Semana</button>
-          <button class="btn cal-next-week">Semana &#8250;</button>
-        </div>
-        <div class="cal-grid"></div>
-        <div id="calPopoverLayer" class="cal-popover-layer"></div>
-        <div class="cal-empty empty-state" style="display:none">Nada por aqui ainda</div>
         </div>
       </div>
     </div>
