@@ -180,9 +180,7 @@ function normalizeDashSlots(slots){ // Ajuste: garante apenas 4 slots válidos
   if(normalized.length === 0){
     return DEFAULT_DASHBOARD_SLOTS.map(slot => ({ ...slot }));
   }
-  const capped = normalized.slice(0, DASHBOARD_SLOT_LIMIT);
-  while(capped.length < DASHBOARD_SLOT_LIMIT) capped.push(null);
-  return capped;
+  return normalized.slice(0, DASHBOARD_SLOT_LIMIT);
 }
 
 bindOnce(document.getElementById('dashAddMenu'),'click', e=>{
@@ -195,10 +193,14 @@ bindOnce(document.getElementById('dashAddMenu'),'click', e=>{
 });
 
 function insertWidgetOnce(type){
-  const layout = ensureFreeSlot(loadDashLayout());
-  const firstEmpty = layout.slots.findIndex(s => s == null);
-  if(firstEmpty === -1) return toast('Sem espaço');
-  layout.slots[firstEmpty] = { id:type, size: type==='widget.clientsContactsChart' ? '2x1' : '1x1' };
+  const layout = loadDashLayout();
+  if(layout.slots.some(slot => slot?.id === type)){
+    return toast('Já adicionado');
+  }
+  if(layout.slots.length >= DASHBOARD_SLOT_LIMIT){
+    return toast('Sem espaço');
+  }
+  layout.slots.push({ id:type, size: type==='widget.clientsContactsChart' ? '2x1' : '1x1' });
   saveDashLayout(layout);
   renderDashboard?.();
 }
@@ -1001,17 +1003,16 @@ function renderCalendarMenuBar(){
             </div>
           </div>
         </div>
-        <div class="mini-widget mini-yellow">
+        <div class="mini-widget mini-compact">
           <div class="mini-title">O.S para Hoje</div>
-          <div class="mini-stat">
+          <div class="mini-stat mini-single">
             <div class="mini-value" data-stat="os-hoje">0</div>
             <div class="mini-label">Hoje</div>
           </div>
-        </div>
-        <div class="mini-widget mini-empty"></div>
-        <div class="mini-widget mini-actions">
-          <button class="btn-eventos" type="button">Eventos</button>
-          <button class="btn-folgas" type="button">Folgas</button>
+          <div class="mini-actions-inline">
+            <button class="btn-eventos" type="button">Eventos</button>
+            <button class="btn-folgas" type="button">Folgas</button>
+          </div>
         </div>
       </div>
     </div>`;
@@ -3033,11 +3034,6 @@ function loadDashLayout(){
 
 function saveDashLayout(layout){ setJSON(dashKey(), layout); }
 
-function ensureFreeSlot(layout){
-  const normalized = normalizeDashSlots(layout?.slots);
-  return { ...layout, slots: normalized };
-}
-
 function getFollowupsStats(){
   const events = getJSON(calKey(), []).filter(e=>e.meta && e.meta.type==='followup');
   const today = new Date(); const tz = today.getTimezoneOffset();
@@ -3133,11 +3129,12 @@ function renderDashboard(){
   purgeOrphanEvents();
   const grid = document.getElementById('dashboardGrid');
   if(!grid) return;
-  const layout = ensureFreeSlot(loadDashLayout());
+  const layout = loadDashLayout();
   grid.innerHTML = '';
   layout.slots.forEach((slot, i)=>{
+    if(!slot) return;
     const slotEl = document.createElement('div');
-    slotEl.className = 'dash-slot' + (slot? '' : ' empty');
+    slotEl.className = 'dash-slot';
     slotEl.dataset.slot = i;
     if(slot?.size==='2x1') slotEl.style.gridColumn='span 2';
     slotEl.addEventListener('dragover', e=>{e.preventDefault(); slotEl.classList.add('dropping');});
@@ -3151,27 +3148,27 @@ function renderDashboard(){
       saveDashLayout(lay); renderDashboard();
     });
 
-    if(slot){
-      const card = document.createElement('div');
-      card.className = 'dash-card';
-      card.draggable = true;
-      card.addEventListener('dragstart', e=>e.dataTransfer.setData('text/plain', i));
+    const card = document.createElement('div');
+    card.className = 'dash-card';
+    card.draggable = true;
+    card.addEventListener('dragstart', e=>e.dataTransfer.setData('text/plain', i));
 
-      const close = document.createElement('button');
-      close.className = 'card-close';
-      close.title = 'Remover';
-      close.textContent = '×';
-      close.onclick = ()=>{
-        const lay = loadDashLayout();
-        lay.slots[i] = null; saveDashLayout(ensureFreeSlot(lay)); renderDashboard();
-      };
+    const close = document.createElement('button');
+    close.className = 'card-close';
+    close.title = 'Remover';
+    close.textContent = '×';
+    close.onclick = ()=>{
+      const lay = loadDashLayout();
+      lay.slots = lay.slots.filter((_, idx)=>idx !== i);
+      saveDashLayout(lay);
+      renderDashboard();
+    };
 
-      const wrap = document.createElement('div'); wrap.className = 'dash-card-inner';
-      renderWidgetContent(card, wrap, slot);
-      card.appendChild(close);
-      card.appendChild(wrap);
-      slotEl.appendChild(card);
-    }
+    const wrap = document.createElement('div'); wrap.className = 'dash-card-inner';
+    renderWidgetContent(card, wrap, slot);
+    card.appendChild(close);
+    card.appendChild(wrap);
+    slotEl.appendChild(card);
 
     grid.appendChild(slotEl);
   });
