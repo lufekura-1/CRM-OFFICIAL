@@ -922,6 +922,23 @@ function renderCalendarMenuBar(){
           </div>
         </div>
         <div class="mini-widget mini-yellow">
+          <div class="mini-title">Aguardando Retirada</div>
+          <div class="mini-triple">
+            <div class="mini-part">
+              <div class="mini-value" data-stat="os-retirada-o">0</div>
+              <div class="mini-label">Óptica</div>
+            </div>
+            <div class="mini-part">
+              <div class="mini-value" data-stat="os-retirada-r">0</div>
+              <div class="mini-label">Relógio</div>
+            </div>
+            <div class="mini-part">
+              <div class="mini-value" data-stat="os-retirada-j">0</div>
+              <div class="mini-label">Jóias</div>
+            </div>
+          </div>
+        </div>
+        <div class="mini-widget mini-yellow">
           <div class="mini-title">O.S para Hoje</div>
           <div class="mini-value" data-stat="os-hoje">0</div>
         </div>
@@ -954,6 +971,7 @@ function updateCalendarMenuBar(){
   const list=loadOSList();
   const todayISO=formatDateYYYYMMDD(new Date());
   const aguardando={reloj:0, joia:0, optica:0};
+  const aguardandoRetirada={reloj:0, joia:0, optica:0};
   let osHoje=0;
   list.forEach(os=>{
     const tipo=os.tipo||'reloj';
@@ -961,10 +979,16 @@ function updateCalendarMenuBar(){
       aguardando[tipo]=(aguardando[tipo]||0)+1;
       if(os.campos?.dataOficina===todayISO) osHoje++;
     }
+    if(os.status==='aguardando'){
+      aguardandoRetirada[tipo]=(aguardandoRetirada[tipo]||0)+1;
+    }
   });
   bar.querySelector('[data-stat="os-aguardando-o"]').textContent=aguardando.optica||0;
   bar.querySelector('[data-stat="os-aguardando-r"]').textContent=aguardando.reloj||0;
   bar.querySelector('[data-stat="os-aguardando-j"]').textContent=aguardando.joia||0;
+  bar.querySelector('[data-stat="os-retirada-o"]').textContent=aguardandoRetirada.optica||0;
+  bar.querySelector('[data-stat="os-retirada-r"]').textContent=aguardandoRetirada.reloj||0;
+  bar.querySelector('[data-stat="os-retirada-j"]').textContent=aguardandoRetirada.joia||0;
   bar.querySelector('[data-stat="os-hoje"]').textContent=osHoje;
 }
 
@@ -4167,23 +4191,25 @@ document.addEventListener('DOMContentLoaded', async () => {
     if(item.classList.contains('has-submenu')){
       item.addEventListener('click', () => {
         const expanded=item.dataset.expanded==='true';
-        const next=!expanded;
-        toggleSubmenu(item,next);
-        if(next){
-          const def=item.dataset.defaultRoute;
-          if(def) location.hash = '#/'+def;
+        const def=item.dataset.defaultRoute;
+        if(expanded && def && currentRoute===def){
+          toggleSubmenu(item,false);
+          return;
         }
+        toggleSubmenu(item,true);
+        if(def) location.hash = '#/'+def;
       });
       item.addEventListener('keydown', e => {
         if(e.key==='Enter' || e.key===' '){
           e.preventDefault();
           const expanded=item.dataset.expanded==='true';
-          const next=!expanded;
-          toggleSubmenu(item,next);
-          if(next){
-            const def=item.dataset.defaultRoute;
-            if(def) location.hash = '#/'+def;
+          const def=item.dataset.defaultRoute;
+          if(expanded && def && currentRoute===def){
+            toggleSubmenu(item,false);
+            return;
           }
+          toggleSubmenu(item,true);
+          if(def) location.hash = '#/'+def;
         }
       });
     } else {
