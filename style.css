@@ -103,14 +103,13 @@ a { color: inherit; text-decoration: none; }
 }
 .sidebar ul {
   list-style: none;
-  padding: 0;
+  padding: 16px 0;
   margin: 0;
   width: 100%;
   flex: 1;
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  gap: 12px;
+  gap: 8px;
 }
 .brand-tile {
   height: 80px;
@@ -140,11 +139,12 @@ a { color: inherit; text-decoration: none; }
   gap:8px;
   padding: 0 20px;
   justify-content: flex-start;
-  border-radius: 0;
+  border-radius: var(--radius-md);
   cursor: pointer;
   position: relative;
   color:#ccc;
   border-left:none;
+  margin: 0 16px;
 }
 .nav-item .icon { width:18px; height:18px; display:inline-flex; flex-shrink:0; }
 .nav-item .icon svg { width:100%; height:100%; }
@@ -183,7 +183,6 @@ a { color: inherit; text-decoration: none; }
 }
 .nav-item.has-submenu.is-expanded .submenu-caret { transform: rotate(90deg); }
 .nav-subitem {
-  display: none;
   align-items: center;
   gap: 8px;
   padding: 0 20px 0 52px;
@@ -193,15 +192,10 @@ a { color: inherit; text-decoration: none; }
   border-left: none;
 }
 .nav-subitem.is-active {
-  background: #2A2F37;
   color: #fff;
   font-weight: 600;
 }
-.nav-subitem:hover { background: #2A2F37; }
-.nav-item.has-submenu.is-expanded[data-root="clientes"] ~ .nav-subitem[data-parent="clientes"] {
-  display: flex;
-  background: var(--sidebar-sub-bg);
-}
+.nav-subitem:hover { background: rgba(255,255,255,0.05); }
 .topbar {
   position: sticky;
   top: 0;
@@ -248,15 +242,6 @@ body.modal-open .topbar { pointer-events:none; filter:grayscale(1) opacity(.5); 
   padding: 0.6rem 1.2rem;
   border-radius: var(--radius-lg);
 }
-.global-search {
-  padding: 0 0.75rem;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  width: 200px;
-  height: var(--control-height);
-  line-height: var(--control-height);
-}
-.global-search:focus { outline:none; }
 /* Info grid */
 .info-grid { display:grid; grid-template-columns:3fr 9fr; column-gap:12px; row-gap:8px; align-items:start; }
 .info-label { color:var(--text-weak); font-weight:600; white-space:nowrap; }
@@ -714,11 +699,37 @@ input[name="telefone"] { width:18ch; }
 .table-clients thead th:first-child { border-top-left-radius:var(--radius-lg); }
 .table-clients thead th:last-child { border-top-right-radius:var(--radius-lg); }
 .table-clients thead tr { overflow:hidden; }
-.table-clients th:nth-child(1), .table-clients td:nth-child(1) { width:40%; }
-.table-clients th:nth-child(2), .table-clients td:nth-child(2) { width:30%; }
-.table-clients th:nth-child(3), .table-clients td:nth-child(3) { width:30%; }
-.table-clients th:nth-child(2), .table-clients td:nth-child(2),
-.table-clients th:nth-child(3), .table-clients td:nth-child(3) { min-width:140px; }
+.table-clients-full th.select-col,
+.table-clients-full td.select-col {
+  width: 48px;
+  text-align: center;
+}
+.table-clients-full th.contacts-col,
+.table-clients-full td.contacts-col {
+  width: 140px;
+}
+.table-clients-full td.contacts-col {
+  padding-top: 0.75rem;
+  padding-bottom: 0.75rem;
+}
+.table-clients-full th[data-field="nome"],
+.table-clients-full td[data-field="nome"] {
+  min-width: 200px;
+}
+.table-clients-full th[data-field="telefone"],
+.table-clients-full td[data-field="telefone"],
+.table-clients-full th[data-field="cpf"],
+.table-clients-full td[data-field="cpf"] {
+  min-width: 140px;
+}
+.table-clients-full th[data-field="genero"],
+.table-clients-full td[data-field="genero"] {
+  min-width: 110px;
+}
+.table-clients-full th[data-field="interesses"],
+.table-clients-full td[data-field="interesses"] {
+  min-width: 200px;
+}
 .table-clients th.sortable { cursor:pointer; }
 .table-clients th .sort-indicator { margin-left:4px; }
 .table-clients tbody tr { cursor:pointer; background:#fff; }
@@ -727,6 +738,40 @@ input[name="telefone"] { width:18ch; }
 .table-clients tbody tr.row-selected { background:#e0e0e0; border-top-color:transparent !important; box-shadow:none; }
 .table-clients tbody tr.row-selected:focus { box-shadow:none; border-top-color:transparent; }
 .table-clients tbody tr.row-selected { border-top:none; }
+.table-clients-full .select-toggle,
+.table-clients-full .select-cell {
+  text-align: center;
+}
+.table-clients-full .select-toggle input,
+.table-clients-full .select-cell input {
+  width: 16px;
+  height: 16px;
+}
+.contact-dots {
+  display:flex;
+  gap:6px;
+  justify-content:center;
+  align-items:center;
+}
+.contact-dot {
+  width:12px;
+  height:12px;
+  border-radius:50%;
+  background:#757575;
+  border:1px solid rgba(0,0,0,0.15);
+}
+.contact-dot.is-green {
+  background: var(--green-500);
+  border-color: var(--green-500);
+}
+.contact-dot.is-orange {
+  background: var(--accent-orange);
+  border-color: var(--accent-orange);
+}
+.contact-dot.is-gray {
+  background:#9e9e9e;
+  border-color:#9e9e9e;
+}
 .btn-sm { padding:0.25rem 0.5rem; font-size:0.8rem; }
 .detalhe-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem; }
 .detalhe-actions { display:flex; gap:0.5rem; align-items:center; justify-content:flex-end; }
@@ -781,13 +826,40 @@ input[name="telefone"] { width:18ch; }
 .compra-buttons { display:flex; gap:8px; margin-top:8px; }
 
 @media (max-width:768px) {
-  .table-clients thead { display:none; }
-  .table-clients, .table-clients tbody, .table-clients tr, .table-clients td { display:block; width:100%; }
-  .table-clients tr { border:1px solid var(--color-border); border-radius:var(--radius-sm); padding:0.5rem; margin-bottom:0.5rem; }
-  .table-clients td { padding:0.25rem 0; }
+  .table-clients thead,
+  .table-clients-full thead { display:none; }
+  .table-clients, .table-clients tbody, .table-clients tr, .table-clients td,
+  .table-clients-full, .table-clients-full tbody, .table-clients-full tr, .table-clients-full td {
+    display:block;
+    width:100%;
+  }
+  .table-clients tr,
+  .table-clients-full tr {
+    border:1px solid var(--color-border);
+    border-radius:var(--radius-sm);
+    padding:0.5rem;
+    margin-bottom:0.5rem;
+  }
+  .table-clients td,
+  .table-clients-full td {
+    padding:0.25rem 0;
+  }
   .table-clients td:nth-child(1)::before { content:'Nome: '; font-weight:600; }
   .table-clients td:nth-child(2)::before { content:'Telefone: '; font-weight:600; }
   .table-clients td:nth-child(3)::before { content:'Última compra: '; font-weight:600; }
+  .table-clients-full td:nth-child(1)::before { content:'Selecionar: '; font-weight:600; }
+  .table-clients-full td:nth-child(2)::before { content:'Nome: '; font-weight:600; }
+  .table-clients-full td:nth-child(3)::before { content:'Telefone: '; font-weight:600; }
+  .table-clients-full td:nth-child(4)::before { content:'CPF: '; font-weight:600; }
+  .table-clients-full td:nth-child(5)::before { content:'Gênero: '; font-weight:600; }
+  .table-clients-full td:nth-child(6)::before { content:'Interesses: '; font-weight:600; }
+  .table-clients-full td:nth-child(7)::before { content:'Última compra: '; font-weight:600; }
+  .table-clients-full td:nth-child(8)::before { content:'Valor última compra: '; font-weight:600; }
+  .table-clients-full td:nth-child(9)::before { content:'Contatos: '; font-weight:600; }
+  .table-clients-full td:nth-child(10)::before { content:'Compras: '; font-weight:600; }
+  .table-clients-full td.contacts-col .contact-dots {
+    justify-content:flex-start;
+  }
 }
 .btn-outline { background:none; border:1px solid var(--color-primary); color:var(--color-primary); }
 .modal-section { margin-bottom:1.25rem; }
@@ -898,8 +970,23 @@ input[name="telefone"] { width:18ch; }
 .calendar-menu-bar .mini-widget { background:var(--surface); border:1px solid var(--color-border); border-radius:var(--radius-md); padding:1rem; display:flex; flex-direction:column; align-items:center; justify-content:center; min-width:80px; min-height:100px; box-shadow:var(--card-shadow); }
 .calendar-menu-bar .mini-title { font-weight:700; font-size:1rem; margin-bottom:4px; text-align:center; white-space:nowrap; }
 .calendar-menu-bar .mini-value { font-weight:700; text-align:center; font-size:1.5rem; }
-.calendar-menu-bar .mini-split, .calendar-menu-bar .mini-triple { display:flex; gap:0.5rem; }
-.calendar-menu-bar .mini-part { display:flex; flex-direction:column; align-items:center; }
+.calendar-menu-bar .mini-widget { gap:0.75rem; }
+.calendar-menu-bar .mini-split, .calendar-menu-bar .mini-triple { display:flex; gap:0.75rem; justify-content:center; }
+.calendar-menu-bar .mini-stat {
+  border-radius: var(--radius-md);
+  padding:0.5rem 0.75rem;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:0.25rem;
+  min-width:72px;
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,0.05);
+  text-align:center;
+}
+.calendar-menu-bar .mini-widget.mini-blue .mini-stat { background:#c9def8; }
+.calendar-menu-bar .mini-widget.mini-yellow .mini-stat { background:#ffe2a6; }
+.calendar-menu-bar .mini-widget:not(.mini-blue):not(.mini-yellow) .mini-stat { background:#e0e0e0; }
 .calendar-menu-bar .mini-label { font-size:0.875rem; font-weight:400; }
 .calendar-menu-bar .mini-widget.mini-blue { background:#e3f2fd; }
 .calendar-menu-bar .mini-widget.mini-yellow { background:#fff8e1; }
@@ -1174,4 +1261,43 @@ input[name="telefone"] { width:18ch; }
   .os-card-actions .os-action {
     display:none!important;
   }
+}
+.nav-group {
+  margin: 0 16px;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  transition: background 0.2s ease;
+}
+.nav-group > .nav-item {
+  margin: 0;
+  border-radius: 0;
+}
+.nav-submenu {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: none;
+  flex-direction: column;
+  background: var(--sidebar-sub-bg);
+}
+.nav-group.is-expanded .nav-submenu {
+  display: flex;
+}
+.nav-group.is-expanded > .nav-item {
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+.nav-group.is-highlighted {
+  background: #2A2F37;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.05);
+}
+.nav-group.is-highlighted .nav-item,
+.nav-group.is-highlighted .nav-subitem {
+  color: #fff;
+}
+.nav-group.is-highlighted .nav-item:hover,
+.nav-group.is-highlighted .nav-subitem:hover {
+  background: rgba(255,255,255,0.05);
+}
+.nav-group:not(.is-highlighted) .nav-subitem.is-active {
+  background: #2A2F37;
 }
