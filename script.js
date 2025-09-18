@@ -1858,6 +1858,38 @@ function initCalendarioPage() {
     return initials ? `${firstFormatted} ${initials}.` : firstFormatted;
   }
 
+  const FOLLOWUP_STAGE_LABELS={
+    '3m':'3M',
+    '6m':'6M',
+    '12m':'12M'
+  };
+  const FOLLOWUP_STAGE_TEXT={
+    '3m':'3 meses',
+    '6m':'6 meses',
+    '12m':'12 meses'
+  };
+  function resolveFollowupStage(ev){
+    const offset=ev.meta?.followupOffsetDays;
+    const map={90:'3m',180:'6m',365:'12m'};
+    return ev.meta?.stage || map[offset] || null;
+  }
+  function getFollowupContext(ev){
+    const stage=resolveFollowupStage(ev);
+    const clienteId=ev.meta?.clienteId ?? ev.meta?.clientId;
+    const compraId=ev.meta?.compraId ?? ev.meta?.purchaseId;
+    const cliente=clienteId ? db.buscarPorId(clienteId) : null;
+    const comprasDoCliente=cliente?.compras || [];
+    const compra=comprasDoCliente.find(c=>c.id===compraId);
+    const titleSource=(ev.title || ev.titulo || '').split('(')[0];
+    const rawName=cliente?.nome || titleSource;
+    const shortCandidate=formatClientShortName(rawName||'');
+    const fallbackName=(rawName||'').trim() || (ev.title || ev.titulo || '');
+    const shortName=shortCandidate || fallbackName;
+    const stageLabel=stage ? (FOLLOWUP_STAGE_LABELS[stage] || stage.toUpperCase()) : '';
+    const stageLong=stage ? (FOLLOWUP_STAGE_TEXT[stage] || stageLabel) : '';
+    return { cliente, compra, shortName, stage, stageLabel, stageLong };
+  }
+
   function buildCompras(){
     const arr=[];
     db.listarClientes().forEach(c=>{
@@ -2019,7 +2051,10 @@ function initCalendarioPage() {
           item.className='calendar-item';
           const chip=document.createElement('div');
           chip.className='calendar-chip compra';
-          chip.textContent=cmp.clienteNome;
+          const nameSpan=document.createElement('span');
+          nameSpan.className='chip-name';
+          nameSpan.textContent=cmp.clienteNome;
+          chip.appendChild(nameSpan);
           chip.tabIndex=0;
           setupCalendarChipEvents(chip,()=>showCompraPopover(chip,cmp));
           item.appendChild(chip);
@@ -2045,7 +2080,22 @@ function initCalendarioPage() {
             const color=ev.color;
             if(color) chip.classList.add(`event-color-${color}`);
             if(ev.meta?.type==='followup' || color==='followup') chip.classList.add('followup');
-            chip.textContent=ev.title || ev.titulo;
+            if(ev.meta?.type==='followup' || color==='followup'){
+              const ctx=getFollowupContext(ev);
+              const name=document.createElement('span');
+              name.className='chip-name';
+              name.textContent=ctx.shortName;
+              chip.appendChild(name);
+              if(ctx.stageLabel){
+                const stage=document.createElement('span');
+                stage.className='chip-stage';
+                stage.textContent=ctx.stageLabel;
+                if(ctx.stageLong) stage.title=ctx.stageLong;
+                chip.appendChild(stage);
+              }
+            }else{
+              chip.textContent=ev.title || ev.titulo;
+            }
             const done = ev.meta?.done ?? ev.efetuado ?? false;
             const hasToggle = ev.meta?.type==='followup' || ev.efetuado!==undefined || ev.meta?.kind==='os';
             if(hasToggle) chip.setAttribute('data-efetuado', done);
@@ -2120,7 +2170,27 @@ function initCalendarioPage() {
           const color=ev.color;
           if(color) card.classList.add(`event-color-${color}`);
           if(ev.meta?.type==='followup' || color==='followup') card.classList.add('followup');
-          card.innerHTML=`<strong>${ev.title || ev.titulo}</strong>${ev.observacao?`<p>${ev.observacao}</p>`:''}`;
+          if(ev.meta?.type==='followup' || color==='followup'){
+            const ctx=getFollowupContext(ev);
+            card.innerHTML='';
+            const title=document.createElement('strong');
+            title.appendChild(document.createTextNode(ctx.shortName));
+            if(ctx.stageLabel){
+              const badge=document.createElement('span');
+              badge.className='tag stage-tag';
+              badge.textContent=ctx.stageLabel;
+              if(ctx.stageLong) badge.title=ctx.stageLong;
+              title.appendChild(badge);
+            }
+            card.appendChild(title);
+            if(ev.observacao){
+              const obs=document.createElement('p');
+              obs.textContent=ev.observacao;
+              card.appendChild(obs);
+            }
+          }else{
+            card.innerHTML=`<strong>${ev.title || ev.titulo}</strong>${ev.observacao?`<p>${ev.observacao}</p>`:''}`;
+          }
           const done = ev.meta?.done ?? ev.efetuado ?? false;
           const hasToggle = ev.meta?.type==='followup' || ev.efetuado!==undefined || ev.meta?.kind==='os';
           if(hasToggle){
@@ -2253,10 +2323,8 @@ function initCalendarioPage() {
       return;
     }
     if(ev.meta?.type==='followup' || ev.color==='followup'){
-      const clienteId = ev.meta?.clienteId ?? ev.meta?.clientId;
-      const compraId = ev.meta?.compraId ?? ev.meta?.purchaseId;
-      const cliente = clienteId ? db.buscarPorId(clienteId) : null;
-      const compra = cliente?.compras?.find(c=>c.id===compraId);
+      const ctx=getFollowupContext(ev);
+      const {cliente, compra, stageLabel, stageLong, shortName}=ctx;
       const telefone = cliente?.telefone ? formatTelefone(cliente.telefone) : '';
       const email = cliente?.email || '';
       const valorBruto = compra ? (compra.valor ?? compra.valorLente ?? null) : null;
@@ -2269,22 +2337,24 @@ function initCalendarioPage() {
       const armacaoHtml = compra && (compra.armacao || compra.armacaoMaterial)
         ? `${compra.armacao || ''}${compra.armacaoMaterial ? ` <span class="tag">${compra.armacaoMaterial}</span>` : ''}`
         : '';
+      const followupDate = formatDateDDMMYYYY(ev.date || ev.dataISO);
       const rows=[];
       if(cliente) rows.push(`<div class="popover-row"><span class="label">Cliente</span><span class="value">${cliente.nome}</span></div>`);
       if(telefone) rows.push(`<div class="popover-row"><span class="label">Telefone</span><span class="value">${telefone}</span></div>`);
       if(email) rows.push(`<div class="popover-row"><span class="label">Email</span><span class="value">${email}</span></div>`);
       if(compra?.dataCompra) rows.push(`<div class="popover-row"><span class="label">Compra</span><span class="value">${formatDateDDMMYYYY(compra.dataCompra)}</span></div>`);
+      if(compra?.nfe) rows.push(`<div class="popover-row"><span class="label">NFE/NFC-e</span><span class="value">${compra.nfe}</span></div>`);
+      if(valorHtml) rows.push(`<div class="popover-row"><span class="label">Valor</span><span class="value">${valorHtml}</span></div>`);
       if(armacaoHtml) rows.push(`<div class="popover-row"><span class="label">Armação</span><span class="value">${armacaoHtml}</span></div>`);
       if(compra?.lente) rows.push(`<div class="popover-row"><span class="label">Lente</span><span class="value">${compra.lente}</span></div>`);
-      if(compra?.nfe) rows.push(`<div class="popover-row"><span class="label">NFE/NFC-e</span><span class="value">${compra.nfe}</span></div>`);
       if(tiposHtml) rows.push(`<div class="popover-row"><span class="label">Tipos</span><span class="value">${tiposHtml}</span></div>`);
-      if(valorHtml) rows.push(`<div class="popover-row"><span class="label">Valor</span><span class="value">${valorHtml}</span></div>`);
       if(observacoesHtml) rows.push(`<div class="popover-row"><span class="label">Observações</span><span class="value">${observacoesHtml}</span></div>`);
       const bodyHtml = rows.join('');
       const doneAttr = ev.meta?.done ? 'checked' : '';
       const bodySection = bodyHtml ? `<div class="pop-divider"></div><div class="popover-body">${bodyHtml}</div>` : '';
-      pop.innerHTML=`<div class="pop-head"><span class="pop-date">${formatDateDDMMYYYY(ev.date)}</span></div>`
-        +`<div class="pop-title">${ev.title || ''}</div>`
+      const stageTag = stageLabel ? ` <span class="tag">${stageLong || stageLabel}</span>` : '';
+      pop.innerHTML=`<div class="pop-head"><span class="pop-date">${followupDate}</span></div>`
+        +`<div class="pop-title">${shortName || (ev.title || '')}${stageTag}</div>`
         +`${bodySection}`
         +`<div class="pop-footer"><label>Contato efetuado <input type="checkbox" class="switch" ${doneAttr}></label></div>`;
       const layer=document.getElementById('calPopoverLayer');
