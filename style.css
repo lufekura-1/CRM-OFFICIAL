@@ -1744,7 +1744,7 @@ input[name="telefone"] { width:18ch; }
 
 .calendar {
   background:#fff;
-  border-radius:24px;
+  border-radius:var(--radius-lg);
   padding:24px;
   width:100%;
   box-sizing:border-box;
