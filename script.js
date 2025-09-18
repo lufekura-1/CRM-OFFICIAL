@@ -1847,13 +1847,24 @@ function initCalendarioPage() {
     const ev = eventos.find(e=>e.id===id);
     if(ev){ closePopover(); openEventoModal(null, ev); }
   }
+  function formatClientShortName(nome=''){
+    if(!nome || typeof nome!=='string') return '';
+    const parts = nome.trim().split(/\s+/).filter(Boolean);
+    if(!parts.length) return '';
+    const [first, ...rest] = parts;
+    const firstFormatted = first.charAt(0).toUpperCase() + first.slice(1).toLowerCase();
+    if(!rest.length) return firstFormatted;
+    const initials = rest.map(p=>p.charAt(0).toUpperCase()).filter(Boolean).join('.');
+    return initials ? `${firstFormatted} ${initials}.` : firstFormatted;
+  }
+
   function buildCompras(){
     const arr=[];
     db.listarClientes().forEach(c=>{
       (c.compras||[]).forEach(cp=>{
         arr.push({
           dataISO: cp.dataCompra,
-          clienteNome: c.nome,
+          clienteNome: formatClientShortName(c.nome),
           clienteDados:{ telefone: c.telefone, email: c.email },
           armacao: cp.armacao,
           lente: cp.lente || '',

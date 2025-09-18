@@ -1316,10 +1316,15 @@ input[name="telefone"] { width:18ch; }
 .cal-week-nav { display:none; justify-content:space-between; align-items:center; }
 .cal-week-nav button { padding:0.25rem 0.5rem; }
 .cal-grid {
+  --calendar-cell-min-width: 150px;
   display:grid;
-  grid-template-columns:repeat(7, minmax(0,1fr));
+  grid-template-columns:repeat(7, minmax(var(--calendar-cell-min-width), 1fr));
   grid-auto-rows:minmax(150px,auto);
   gap:1rem;
+  width:100%;
+  overflow-x:auto;
+  padding-bottom:0.5rem;
+  box-sizing:border-box;
 }
 .calendar-day {
   background:#fff;
@@ -1329,13 +1334,15 @@ input[name="telefone"] { width:18ch; }
   display:flex;
   flex-direction:column;
   align-content:flex-start;
-  gap:0.5rem;
+  gap:0.75rem;
   position:relative;
   min-width:0;
+  box-sizing:border-box;
   overflow:hidden;
 }
 .calendar-day.today {
   border-color:#16a34a;
+  padding-top:0;
 }
 .calendar-day.day--outside {
   background:#f8fafc;
@@ -1346,12 +1353,14 @@ input[name="telefone"] { width:18ch; }
 .day-head {
   position:relative;
   display:flex;
-  align-items:flex-start;
+  align-items:center;
   justify-content:space-between;
   gap:0.5rem;
   height:auto;
+  flex-wrap:nowrap;
+  margin-bottom:0.75rem;
 }
-.day-head { margin-bottom:0.75rem; }
+.day-head > * { white-space:nowrap; }
 .calendar-day .calendar-item { margin-top:0.5rem; }
 .day-num {
   position:static;
@@ -1368,20 +1377,31 @@ input[name="telefone"] { width:18ch; }
   letter-spacing:0.1em;
   font-size:0.65rem;
   padding:0;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
   text-transform:uppercase;
 }
 .calendar-day.today .day-head {
   width:100%;
   background:#16a34a;
   color:#fff;
-  border-radius:10px;
-  padding:0.5rem 0.75rem;
+  border-radius:18px 18px 12px 12px;
+  padding:0.65rem 1rem;
+  margin:-1rem -1rem 0.75rem;
+  box-sizing:border-box;
 }
 .calendar-day.today .day-num {
   color:#fff;
+  font-size:1.35rem;
 }
 .calendar-day.today .today-badge {
   color:#fff;
+  background:rgba(255,255,255,0.16);
+  padding:0.25rem 0.65rem;
+  border-radius:999px;
+  font-size:0.7rem;
+  letter-spacing:0.12em;
 }
 .calendar-item {
   display:flex;
@@ -1389,11 +1409,13 @@ input[name="telefone"] { width:18ch; }
   gap:0.5rem;
   margin-top:0.5rem;
   min-width:0;
+  width:100%;
 }
 .day-add { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:32px; height:32px; border-radius:50%; background:var(--neutral-200); border:none; display:flex; align-items:center; justify-content:center; cursor:pointer; }
 .day-add:focus { outline:none; box-shadow:0 0 0 2px var(--green-500); }
 .calendar-chip {
-  flex:1;
+  flex:1 1 auto;
+  width:100%;
   padding:0.45rem 0.75rem;
   border-radius:6px;
   background:#eef2ff;
@@ -1408,6 +1430,8 @@ input[name="telefone"] { width:18ch; }
   display:flex;
   align-items:center;
   color:#1f2937;
+  justify-content:flex-start;
+  box-sizing:border-box;
 }
 .calendar-chip.compra { background:var(--color-primary); color:#fff; }
 .calendar-chip.evento { background:var(--accent-orange); color:#fff; padding-right:20px; }
@@ -1428,6 +1452,8 @@ input[name="telefone"] { width:18ch; }
   max-width:100%;
   overflow:hidden;
   white-space:normal;
+  width:100%;
+  box-sizing:border-box;
 }
 .calendar-card.compra { background:var(--color-primary); color:#fff; }
 .calendar-card.evento { background:var(--accent-orange); color:#fff; padding-left:0; padding-right:1.25rem; }
@@ -1504,11 +1530,24 @@ input[name="telefone"] { width:18ch; }
 }
 
 @media (max-width:1024px){
-  .cal-grid { grid-auto-rows:minmax(130px,auto); gap:0.85rem; }
+  .cal-grid {
+    grid-auto-rows:minmax(130px,auto);
+    gap:0.85rem;
+    --calendar-cell-min-width: 140px;
+  }
+}
+
+@media (max-width:768px){
+  .cal-grid {
+    --calendar-cell-min-width: 180px;
+  }
 }
 
 @media (max-width:640px){
-  .cal-grid { grid-auto-rows:minmax(110px,auto); gap:0.75rem; }
+  .cal-grid {
+    grid-auto-rows:minmax(110px,auto);
+    gap:0.75rem;
+  }
 }
 .table-usuarios td.acoes { display:flex; gap:4px; }
 .opcoes h4 { margin:0 0 0.5rem 0; font-size:0.875rem; color:var(--text-weak); }
