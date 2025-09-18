@@ -1231,7 +1231,7 @@ input[name="telefone"] { width:18ch; }
 /* ===== Calendar Menu Bar ===== */
 .calendar-menu-bar { background:var(--surface); border-radius:var(--radius-lg); padding:clamp(12px,1.6vw,16px); display:flex; flex-direction:column; gap:clamp(10px,1.4vw,16px); align-items:stretch; margin:0 auto 1.5rem; width:100%; max-width:1200px; box-sizing:border-box; }
 .calendar-menu-bar .menu-actions { display:flex; flex-wrap:wrap; gap:var(--space-sm); align-items:center; align-self:flex-start; flex:0 0 auto; }
-.calendar-menu-bar .menu-widgets { display:grid; grid-template-columns:repeat(5, minmax(200px,1fr)); gap:clamp(10px,1.4vw,16px); align-items:stretch; width:100%; box-sizing:border-box; overflow-x:auto; }
+.calendar-menu-bar .menu-widgets { display:grid; grid-template-columns:repeat(5, minmax(200px,1fr)); gap:clamp(6px,1vw,12px); align-items:stretch; width:100%; box-sizing:border-box; overflow-x:auto; }
 .calendar-menu-bar .menu-widgets::-webkit-scrollbar{height:6px;}
 .calendar-menu-bar .menu-widgets::-webkit-scrollbar-thumb{background:rgba(0,0,0,0.15);border-radius:999px;}
 .calendar-menu-bar .mini-widget { background:var(--surface); border:1px solid var(--color-border); border-radius:var(--radius-md); padding:clamp(4px,0.6vw,8px); display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:clamp(32px,4vw,40px); box-sizing:border-box; overflow:hidden; text-align:center; gap:clamp(6px,0.9vw,9px); width:100%; }
@@ -1241,7 +1241,7 @@ input[name="telefone"] { width:18ch; }
 .calendar-menu-bar .mini-label { flex:0 0 auto; }
 .calendar-menu-bar .mini-split, .calendar-menu-bar .mini-triple {
   display:grid;
-  gap:clamp(6px,1vw,10px);
+  gap:clamp(4px,0.7vw,8px);
   justify-items:stretch;
   align-items:stretch;
   grid-auto-rows:1fr;
@@ -1249,13 +1249,13 @@ input[name="telefone"] { width:18ch; }
   box-sizing:border-box;
 }
 .calendar-menu-bar .mini-split { grid-template-columns:repeat(2, minmax(150px, 1fr)); }
-.calendar-menu-bar .mini-triple { grid-template-columns:repeat(3, minmax(130px, 1fr)); }
+.calendar-menu-bar .mini-triple { grid-template-columns:repeat(3, minmax(0, 1fr)); }
 .calendar-menu-bar .mini-stat {
   display:flex;
   flex-direction:column;
   align-items:center;
   justify-content:center;
-  gap:clamp(2px,0.5vw,5px);
+  gap:clamp(1px,0.3vw,3px);
   min-width:0;
   width:100%;
   height:100%;
@@ -1270,8 +1270,8 @@ input[name="telefone"] { width:18ch; }
   display:inline-flex;
   align-items:center;
   justify-content:center;
-  padding:clamp(4px,0.6vw,6px) clamp(10px,1.2vw,14px);
-  border-radius:999px;
+  padding:clamp(4px,0.6vw,6px) clamp(8px,1vw,12px);
+  border-radius:12px;
   line-height:1;
   min-width:clamp(32px,3vw,44px);
   max-width:100%;
