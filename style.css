@@ -1138,7 +1138,6 @@ input[name="telefone"] { width:18ch; }
 .cal-controls .segmented [aria-pressed="true"] {
   background:#16a34a;
   color:#fff;
-  box-shadow:0 6px 14px rgba(16,185,129,0.2);
 }
 .cal-controls .segmented [aria-pressed="false"] {
   background:#fff;
@@ -1288,7 +1287,7 @@ input[name="telefone"] { width:18ch; }
 .calendar-menu-bar .mini-label { font-size:clamp(0.7rem,1.2vw,0.85rem); font-weight:500; margin-top:clamp(2px,0.4vw,4px); display:block; line-height:1.2; }
 .calendar-menu-bar .mini-value {
   background:var(--mini-widget-value-bg);
-  color:#fff;
+  color:#000;
   display:inline-flex;
   align-items:center;
   justify-content:center;
