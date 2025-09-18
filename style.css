@@ -1325,9 +1325,22 @@ input[name="telefone"] { width:18ch; }
 .calendar-menu-bar .mini-actions-inline button.btn-folgas { background:#424242; color:#fff; }
 
 .calendar-page .card-grid {
-  margin:0 auto;
-  max-width:1200px;
+  margin:0;
+  max-width:none;
   width:100%;
+  gap:0;
+}
+
+.calendar-page .card {
+  background:transparent;
+  border:none;
+  border-radius:0;
+  box-shadow:none;
+  padding:0;
+}
+
+.calendar-page .card .card-body {
+  padding:0;
 }
 @media (max-width:768px){
   .calendar-menu-bar{ align-items:stretch; }
