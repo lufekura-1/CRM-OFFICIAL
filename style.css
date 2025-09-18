@@ -1064,9 +1064,9 @@ input[name="telefone"] { width:18ch; }
   align-items:center;
   gap:1rem;
   padding:16px 20px;
-  background:#f4f6fa;
+  background:transparent;
   border-radius:20px;
-  box-shadow:inset 0 0 0 1px rgba(15,23,42,0.04);
+  box-shadow:none;
   flex-wrap:nowrap;
 }
 .cal-actions {
@@ -1342,7 +1342,7 @@ input[name="telefone"] { width:18ch; }
 }
 .calendar-day.today {
   border-color:#16a34a;
-  padding-top:0;
+  box-shadow:0 0 0 3px rgba(22,163,74,0.12);
 }
 .calendar-day.day--outside {
   background:#f8fafc;
@@ -1383,22 +1383,20 @@ input[name="telefone"] { width:18ch; }
   text-transform:uppercase;
 }
 .calendar-day.today .day-head {
-  width:100%;
-  background:#16a34a;
-  color:#fff;
-  border-radius:18px 18px 12px 12px;
-  padding:0.65rem 1rem;
-  margin:-1rem -1rem 0.75rem;
-  box-sizing:border-box;
+  background:transparent;
+  color:#166534;
+  border-radius:12px;
+  padding:0;
+  margin:0;
 }
 .calendar-day.today .day-num {
-  color:#fff;
-  font-size:1.35rem;
+  color:#166534;
+  font-size:1.3rem;
 }
 .calendar-day.today .today-badge {
-  color:#fff;
-  background:rgba(255,255,255,0.16);
-  padding:0.25rem 0.65rem;
+  color:#166534;
+  background:rgba(22,163,74,0.15);
+  padding:0.25rem 0.75rem;
   border-radius:999px;
   font-size:0.7rem;
   letter-spacing:0.12em;
@@ -1416,10 +1414,10 @@ input[name="telefone"] { width:18ch; }
 .calendar-chip {
   flex:1 1 auto;
   width:100%;
-  padding:0.45rem 0.75rem;
+  padding:0.35rem 0.65rem;
   border-radius:6px;
   background:#eef2ff;
-  font-size:0.8rem;
+  font-size:0.78rem;
   font-weight:600;
   cursor:pointer;
   max-width:100%;
@@ -1454,7 +1452,19 @@ input[name="telefone"] { width:18ch; }
   white-space:normal;
   width:100%;
   box-sizing:border-box;
+  display:flex;
+  flex-direction:column;
+  align-items:flex-start;
+  gap:0.35rem;
 }
+.calendar-card strong,
+.calendar-card p {
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  max-width:100%;
+}
+.calendar-card p { margin:0; font-size:0.75rem; color:inherit; }
 .calendar-card.compra { background:var(--color-primary); color:#fff; }
 .calendar-card.evento { background:var(--accent-orange); color:#fff; padding-left:0; padding-right:1.25rem; }
 .calendar-card.evento.admin { background:#9c27b0; color:#fff; }
@@ -1620,7 +1630,11 @@ input[name="telefone"] { width:18ch; }
 .switch.on .knob{left:22px}
 .calendar{position:relative}
 .cal-day.is-out-month{opacity:.55}
-.cal-day.is-today{border:2px solid #2e7dd7;border-radius:14px}
+.cal-day.is-today{
+  border:1px solid #16a34a;
+  border-radius:18px;
+  box-shadow:0 0 0 3px rgba(22,163,74,0.12);
+}
 .cal-popover-layer{position:absolute;inset:0;pointer-events:none}
 .cal-popover{position:absolute;pointer-events:auto;max-width:min(360px, 90vw);max-height:70vh;overflow:auto;background:#2f2f2f;color:#fff;border-radius:12px;padding:10px;box-shadow:0 10px 30px rgba(0,0,0,.3)}
 
