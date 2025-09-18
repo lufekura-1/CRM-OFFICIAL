@@ -2343,15 +2343,15 @@ function initCalendarioPage() {
       if(telefone) rows.push(`<div class="popover-row"><span class="label">Telefone</span><span class="value">${telefone}</span></div>`);
       if(email) rows.push(`<div class="popover-row"><span class="label">Email</span><span class="value">${email}</span></div>`);
       if(compra?.dataCompra) rows.push(`<div class="popover-row"><span class="label">Compra</span><span class="value">${formatDateDDMMYYYY(compra.dataCompra)}</span></div>`);
-      if(compra?.nfe) rows.push(`<div class="popover-row"><span class="label">NFE/NFC-e</span><span class="value">${compra.nfe}</span></div>`);
-      if(valorHtml) rows.push(`<div class="popover-row"><span class="label">Valor</span><span class="value">${valorHtml}</span></div>`);
-      if(armacaoHtml) rows.push(`<div class="popover-row"><span class="label">Armação</span><span class="value">${armacaoHtml}</span></div>`);
-      if(compra?.lente) rows.push(`<div class="popover-row"><span class="label">Lente</span><span class="value">${compra.lente}</span></div>`);
-      if(tiposHtml) rows.push(`<div class="popover-row"><span class="label">Tipos</span><span class="value">${tiposHtml}</span></div>`);
+      rows.push(`<div class="popover-row"><span class="label">NFE/NFC-e</span><span class="value">${compra?.nfe || '-'}</span></div>`);
+      rows.push(`<div class="popover-row"><span class="label">Armação</span><span class="value">${armacaoHtml || '-'}</span></div>`);
+      rows.push(`<div class="popover-row"><span class="label">Lente</span><span class="value">${compra?.lente || '-'}</span></div>`);
+      rows.push(`<div class="popover-row"><span class="label">Tipos</span><span class="value">${tiposHtml || '-'}</span></div>`);
+      rows.push(`<div class="popover-row"><span class="label">Valor</span><span class="value">${valorHtml || '-'}</span></div>`);
       if(observacoesHtml) rows.push(`<div class="popover-row"><span class="label">Observações</span><span class="value">${observacoesHtml}</span></div>`);
       const bodyHtml = rows.join('');
       const doneAttr = ev.meta?.done ? 'checked' : '';
-      const bodySection = bodyHtml ? `<div class="pop-divider"></div><div class="popover-body">${bodyHtml}</div>` : '';
+      const bodySection = bodyHtml ? `<div class="popover-body">${bodyHtml}</div>` : '';
       const stageTag = stageLabel ? ` <span class="tag">${stageLong || stageLabel}</span>` : '';
       pop.innerHTML=`<div class="pop-head"><span class="pop-date">${followupDate}</span></div>`
         +`<div class="pop-title">${shortName || (ev.title || '')}${stageTag}</div>`
