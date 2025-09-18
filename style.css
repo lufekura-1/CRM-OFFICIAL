@@ -1351,8 +1351,8 @@ input[name="telefone"] { width:18ch; }
   gap:0.5rem;
   height:auto;
 }
-.day-head { margin-bottom:0.5rem; }
-.calendar-day .calendar-item { margin-top:0.25rem; }
+.day-head { margin-bottom:0.75rem; }
+.calendar-day .calendar-item { margin-top:0.5rem; }
 .day-num {
   position:static;
   font-weight:700;
@@ -1362,20 +1362,32 @@ input[name="telefone"] { width:18ch; }
 .today-badge {
   position:static;
   transform:none;
-  background:#16a34a;
-  color:#fff;
+  background:transparent;
+  color:inherit;
   font-weight:700;
   letter-spacing:0.1em;
   font-size:0.65rem;
-  padding:0.15rem 0.6rem;
-  border-radius:999px;
+  padding:0;
   text-transform:uppercase;
+}
+.calendar-day.today .day-head {
+  width:100%;
+  background:#16a34a;
+  color:#fff;
+  border-radius:10px;
+  padding:0.5rem 0.75rem;
+}
+.calendar-day.today .day-num {
+  color:#fff;
+}
+.calendar-day.today .today-badge {
+  color:#fff;
 }
 .calendar-item {
   display:flex;
   align-items:center;
   gap:0.5rem;
-  margin-top:0.25rem;
+  margin-top:0.5rem;
   min-width:0;
 }
 .day-add { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:32px; height:32px; border-radius:50%; background:var(--neutral-200); border:none; display:flex; align-items:center; justify-content:center; cursor:pointer; }
@@ -1383,7 +1395,7 @@ input[name="telefone"] { width:18ch; }
 .calendar-chip {
   flex:1;
   padding:0.45rem 0.75rem;
-  border-radius:12px;
+  border-radius:6px;
   background:#eef2ff;
   font-size:0.8rem;
   font-weight:600;
@@ -1407,7 +1419,7 @@ input[name="telefone"] { width:18ch; }
 .cal-ano, .cal-mes-select { min-height:auto; padding:0; border-radius:0; }
 .calendar-card {
   padding:0.75rem 1rem;
-  border-radius:16px;
+  border-radius:8px;
   background:#fff;
   border:1px solid rgba(15,23,42,0.05);
   margin-top:0.5rem;
