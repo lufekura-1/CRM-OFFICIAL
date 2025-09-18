@@ -1239,9 +1239,17 @@ input[name="telefone"] { width:18ch; }
 .calendar-menu-bar .mini-value { font-weight:700; text-align:center; font-size:clamp(1.05rem,2.8vw,1.6rem); }
 .calendar-menu-bar .mini-value,
 .calendar-menu-bar .mini-label { flex:0 0 auto; }
-.calendar-menu-bar .mini-split, .calendar-menu-bar .mini-triple { display:grid; gap:clamp(6px,1vw,10px); justify-items:center; align-items:center; width:100%; box-sizing:border-box; }
-.calendar-menu-bar .mini-split { grid-template-columns:repeat(auto-fit, minmax(120px, 1fr)); }
-.calendar-menu-bar .mini-triple { grid-template-columns:repeat(auto-fit, minmax(110px, 1fr)); }
+.calendar-menu-bar .mini-split, .calendar-menu-bar .mini-triple {
+  display:grid;
+  gap:clamp(6px,1vw,10px);
+  justify-items:stretch;
+  align-items:stretch;
+  grid-auto-rows:1fr;
+  width:100%;
+  box-sizing:border-box;
+}
+.calendar-menu-bar .mini-split { grid-template-columns:repeat(2, minmax(150px, 1fr)); }
+.calendar-menu-bar .mini-triple { grid-template-columns:repeat(3, minmax(130px, 1fr)); }
 .calendar-menu-bar .mini-stat {
   border-radius: var(--radius-md);
   padding:clamp(6px,0.8vw,10px) clamp(10px,1.4vw,14px);
@@ -1253,6 +1261,7 @@ input[name="telefone"] { width:18ch; }
   min-width:0;
   min-height:40px;
   width:100%;
+  height:100%;
   text-align:center;
   box-sizing:border-box;
   overflow:hidden;
@@ -1289,9 +1298,18 @@ input[name="telefone"] { width:18ch; }
   .calendar-menu-bar .menu-actions{ align-self:center; }
   .calendar-menu-bar .menu-widgets{ justify-content:flex-start; }
 }
+@media (max-width: 900px){
+  .calendar-menu-bar .mini-triple{ grid-template-columns:repeat(2, minmax(130px, 1fr)); }
+}
 @media (max-width: 640px){
   .calendar-menu-bar .mini-widget{ min-width:0; }
   .calendar-menu-bar .mini-widget.mini-compact{ padding:var(--space-sm); }
+  .calendar-menu-bar .mini-split{ grid-template-columns:repeat(2, minmax(140px, 1fr)); }
+  .calendar-menu-bar .mini-triple{ grid-template-columns:repeat(2, minmax(140px, 1fr)); }
+}
+@media (max-width: 480px){
+  .calendar-menu-bar .mini-split,
+  .calendar-menu-bar .mini-triple{ grid-template-columns:1fr; }
 }
 
 .chips { display:flex; flex-wrap:wrap; gap:0.5rem; }
