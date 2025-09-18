@@ -1856,9 +1856,12 @@ function initCalendarioPage() {
           clienteNome: c.nome,
           clienteDados:{ telefone: c.telefone, email: c.email },
           armacao: cp.armacao,
+          lente: cp.lente || '',
           nfe: cp.nfe || '',
           tiposCompra: cp.tiposCompra || [],
-          armacaoMaterial: cp.armacaoMaterial || ''
+          armacaoMaterial: cp.armacaoMaterial || '',
+          valor: cp.valor ?? cp.valorLente ?? null,
+          observacoes: cp.observacoes || ''
         });
       });
     });
@@ -2239,7 +2242,40 @@ function initCalendarioPage() {
       return;
     }
     if(ev.meta?.type==='followup' || ev.color==='followup'){
-      pop.innerHTML=`<div class="pop-head"><span class="pop-date">${formatDateDDMMYYYY(ev.date)}</span></div><div class="pop-title">${ev.title || ''}</div><div class="pop-footer"><label>Contato efetuado <input type="checkbox" class="switch" ${ev.meta?.done?'checked':''}></label></div>`;
+      const clienteId = ev.meta?.clienteId ?? ev.meta?.clientId;
+      const compraId = ev.meta?.compraId ?? ev.meta?.purchaseId;
+      const cliente = clienteId ? db.buscarPorId(clienteId) : null;
+      const compra = cliente?.compras?.find(c=>c.id===compraId);
+      const telefone = cliente?.telefone ? formatTelefone(cliente.telefone) : '';
+      const email = cliente?.email || '';
+      const valorBruto = compra ? (compra.valor ?? compra.valorLente ?? null) : null;
+      const valorNumero = typeof valorBruto === 'number' ? valorBruto : Number(valorBruto);
+      const hasValor = valorBruto != null && Number.isFinite(valorNumero) && valorNumero > 0;
+      const valorHtml = hasValor ? formatCurrency(valorNumero) : '';
+      const tiposHtml = compra?.tiposCompra?.length ? compra.tiposCompra.map(t=>`<span class="tag">${t}</span>`).join(' ') : '';
+      const observacoesTexto = (compra?.observacoes || '').trim();
+      const observacoesHtml = observacoesTexto ? observacoesTexto.replace(/\n/g,'<br>') : '';
+      const armacaoHtml = compra && (compra.armacao || compra.armacaoMaterial)
+        ? `${compra.armacao || ''}${compra.armacaoMaterial ? ` <span class="tag">${compra.armacaoMaterial}</span>` : ''}`
+        : '';
+      const rows=[];
+      if(cliente) rows.push(`<div class="popover-row"><span class="label">Cliente</span><span class="value">${cliente.nome}</span></div>`);
+      if(telefone) rows.push(`<div class="popover-row"><span class="label">Telefone</span><span class="value">${telefone}</span></div>`);
+      if(email) rows.push(`<div class="popover-row"><span class="label">Email</span><span class="value">${email}</span></div>`);
+      if(compra?.dataCompra) rows.push(`<div class="popover-row"><span class="label">Compra</span><span class="value">${formatDateDDMMYYYY(compra.dataCompra)}</span></div>`);
+      if(armacaoHtml) rows.push(`<div class="popover-row"><span class="label">Armação</span><span class="value">${armacaoHtml}</span></div>`);
+      if(compra?.lente) rows.push(`<div class="popover-row"><span class="label">Lente</span><span class="value">${compra.lente}</span></div>`);
+      if(compra?.nfe) rows.push(`<div class="popover-row"><span class="label">NFE/NFC-e</span><span class="value">${compra.nfe}</span></div>`);
+      if(tiposHtml) rows.push(`<div class="popover-row"><span class="label">Tipos</span><span class="value">${tiposHtml}</span></div>`);
+      if(valorHtml) rows.push(`<div class="popover-row"><span class="label">Valor</span><span class="value">${valorHtml}</span></div>`);
+      if(observacoesHtml) rows.push(`<div class="popover-row"><span class="label">Observações</span><span class="value">${observacoesHtml}</span></div>`);
+      const bodyHtml = rows.join('');
+      const doneAttr = ev.meta?.done ? 'checked' : '';
+      const bodySection = bodyHtml ? `<div class="pop-divider"></div><div class="popover-body">${bodyHtml}</div>` : '';
+      pop.innerHTML=`<div class="pop-head"><span class="pop-date">${formatDateDDMMYYYY(ev.date)}</span></div>`
+        +`<div class="pop-title">${ev.title || ''}</div>`
+        +`${bodySection}`
+        +`<div class="pop-footer"><label>Contato efetuado <input type="checkbox" class="switch" ${doneAttr}></label></div>`;
       const layer=document.getElementById('calPopoverLayer');
       if(!layer) return;
       layer.appendChild(pop);
@@ -2279,15 +2315,31 @@ function initCalendarioPage() {
     closePopover();
     const pop=document.createElement('div');
     pop.className='popover';
-    pop.innerHTML=`<div class="popover-body">`
-      +`<div class="popover-row"><span class="label">Data</span><span class="value">${formatDateDDMMYYYY(cp.dataISO)}</span></div>`
-      +`<div class="popover-row"><span class="label">Cliente</span><span class="value">${cp.clienteNome}</span></div>`
-      +`${cp.nfe?`<div class="popover-row"><span class="label">NFE/NFC-e</span><span class="value">${cp.nfe}</span></div>`:''}`
-      +`${cp.armacao?`<div class="popover-row"><span class="label">Armação</span><span class="value">${cp.armacao}${cp.armacaoMaterial?` <span class='tag'>${cp.armacaoMaterial}</span>`:''}</span></div>`:''}`
-      +`${cp.tiposCompra?.length?`<div class="popover-row"><span class="label">Tipos</span><span class="value">${cp.tiposCompra.map(t=>`<span class='tag'>${t}</span>`).join(' ')}</span></div>`:''}`
-      +`${cp.clienteDados?.telefone?`<div class="popover-row"><span class="label">Telefone</span><span class="value">${formatTelefone(cp.clienteDados.telefone)}</span></div>`:''}`
-      +`${cp.clienteDados?.email?`<div class="popover-row"><span class="label">Email</span><span class="value">${cp.clienteDados.email}</span></div>`:''}`
-      +`</div>`;
+    const telefone = cp.clienteDados?.telefone ? formatTelefone(cp.clienteDados.telefone) : '';
+    const email = cp.clienteDados?.email || '';
+    const valorBruto = cp.valor;
+    const valorNumero = typeof valorBruto === 'number' ? valorBruto : Number(valorBruto);
+    const hasValor = valorBruto != null && Number.isFinite(valorNumero) && valorNumero > 0;
+    const valorHtml = hasValor ? formatCurrency(valorNumero) : '';
+    const tiposHtml = cp.tiposCompra?.length ? cp.tiposCompra.map(t=>`<span class="tag">${t}</span>`).join(' ') : '';
+    const observacoesTexto = (cp.observacoes || '').trim();
+    const observacoesHtml = observacoesTexto ? observacoesTexto.replace(/\n/g,'<br>') : '';
+    const armacaoHtml = (cp.armacao || cp.armacaoMaterial)
+      ? `${cp.armacao || ''}${cp.armacaoMaterial ? ` <span class="tag">${cp.armacaoMaterial}</span>` : ''}`
+      : '';
+    const rows = [
+      `<div class="popover-row"><span class="label">Data</span><span class="value">${formatDateDDMMYYYY(cp.dataISO)}</span></div>`,
+      `<div class="popover-row"><span class="label">Cliente</span><span class="value">${cp.clienteNome}</span></div>`
+    ];
+    if(telefone) rows.push(`<div class="popover-row"><span class="label">Telefone</span><span class="value">${telefone}</span></div>`);
+    if(email) rows.push(`<div class="popover-row"><span class="label">Email</span><span class="value">${email}</span></div>`);
+    if(cp.nfe) rows.push(`<div class="popover-row"><span class="label">NFE/NFC-e</span><span class="value">${cp.nfe}</span></div>`);
+    if(armacaoHtml) rows.push(`<div class="popover-row"><span class="label">Armação</span><span class="value">${armacaoHtml}</span></div>`);
+    if(cp.lente) rows.push(`<div class="popover-row"><span class="label">Lente</span><span class="value">${cp.lente}</span></div>`);
+    if(tiposHtml) rows.push(`<div class="popover-row"><span class="label">Tipos</span><span class="value">${tiposHtml}</span></div>`);
+    if(valorHtml) rows.push(`<div class="popover-row"><span class="label">Valor</span><span class="value">${valorHtml}</span></div>`);
+    if(observacoesHtml) rows.push(`<div class="popover-row"><span class="label">Observações</span><span class="value">${observacoesHtml}</span></div>`);
+    pop.innerHTML=`<div class="popover-body">${rows.join('')}</div>`;
     const layer=document.getElementById('calPopoverLayer');
     if(!layer) return;
     layer.appendChild(pop);
@@ -2338,7 +2390,7 @@ function initCalendarioPage() {
   function esc(e){ if(e.key==='Escape') closePopover(); }
   function clk(e){ if(currentPopover && !currentPopover.contains(e.target) && (!currentAnchor || !currentAnchor.contains(e.target))) closePopover(); }
   function cancelClose(){ clearTimeout(hideTimer); }
-  function scheduleClose(){ hideTimer=setTimeout(closePopover,800); }
+  function scheduleClose(){ hideTimer=setTimeout(closePopover,3000); }
   function setupPopoverDismiss(pop,anchor){
     currentPopover=pop;
     currentAnchor=anchor;
