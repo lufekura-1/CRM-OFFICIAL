@@ -47,8 +47,8 @@
   --space-lg: 24px;
   --sidebar-item-height: 44px; /* Ajuste: altura fixa para itens do menu lateral */
   /* Floating menu tokens */
-  --menu-popover-min-width: 180px;
-  --menu-popover-max-width: 320px;
+  --menu-popover-min-width: 176px;
+  --menu-popover-max-width: 260px;
   --menu-popover-max-height: 360px;
   /* White balloon tokens */
   --balloon-bg: var(--surface);

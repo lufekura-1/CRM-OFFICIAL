@@ -900,6 +900,7 @@ function positionSubmenu(item, submenu){
   const submenuRect = submenu.getBoundingClientRect();
   const margin = 16;
   const viewportHeight = window.innerHeight;
+  const viewportWidth = window.innerWidth;
   let top = rect.top + rect.height / 2 - submenuRect.height / 2;
   const maxTop = viewportHeight - submenuRect.height - margin;
   const minTop = margin;
@@ -909,6 +910,12 @@ function positionSubmenu(item, submenu){
     top = Math.max(0, viewportHeight - submenuRect.height);
   }
   submenu.style.top = `${top}px`;
+  const horizontalGap = 12;
+  let left = rect.right + horizontalGap;
+  const maxLeft = viewportWidth - submenuRect.width - margin;
+  const minLeft = margin;
+  left = Math.min(Math.max(left, minLeft), Math.max(minLeft, maxLeft));
+  submenu.style.left = `${left}px`;
   const updatedRect = submenu.getBoundingClientRect();
   const anchorCenter = rect.top + rect.height / 2;
   let arrowOffset = anchorCenter - updatedRect.top - 6;
@@ -939,6 +946,7 @@ function setNavSubmenuState(item, expanded){
     group.classList.remove('is-popover-open');
     submenu.hidden = true;
     submenu.style.top = '';
+    submenu.style.left = '';
     submenu.style.removeProperty('--submenu-anchor-offset');
     if(activeNavPopover && activeNavPopover.item === item) activeNavPopover = null;
   }
