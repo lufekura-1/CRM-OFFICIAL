@@ -1138,6 +1138,64 @@ input[name="telefone"] { width:18ch; }
   display: flex;
   flex-direction: column;
 }
+
+/* ===== Contatos histórico ===== */
+.contatos-historico .historico-tabs {
+  display: flex;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-md);
+}
+.contatos-historico .historico-tab {
+  border: 1px solid var(--color-border);
+  background: var(--surface);
+  color: var(--text-primary);
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius-md);
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+.contatos-historico .historico-tab.is-active {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: #fff;
+}
+.contatos-historico .historico-grid {
+  grid-template-columns: repeat(12, 1fr);
+}
+.contatos-historico .historico-card {
+  min-height: 220px;
+  display: flex;
+  flex-direction: column;
+}
+.contatos-historico .historico-card .card-body {
+  flex: 1;
+  overflow-x: auto;
+}
+.contatos-historico .historico-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 560px;
+}
+.contatos-historico .historico-table thead th {
+  text-align: left;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: var(--space-sm);
+  color: var(--text-muted);
+  background: var(--surface);
+}
+.contatos-historico .historico-table tbody td {
+  padding: var(--space-sm);
+  border-bottom: 1px solid var(--color-border);
+  font-size: 0.9rem;
+  color: var(--text-primary);
+}
+.contatos-historico .historico-table tbody tr:last-child td {
+  border-bottom: none;
+}
 .modal-client-page-btn { margin-right:auto; text-transform:uppercase; font-weight:600; }
 .btn-cliente-page { margin-right:var(--space-sm); }
 

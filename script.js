@@ -862,13 +862,14 @@ const routes = {
   'contatos-listas': renderContatosListas,
   'contatos-pos-venda': renderContatosPosVenda,
   'contatos-ofertas': renderContatosOfertas,
+  'contatos-historico': renderContatosHistorico,
   'gerencia-config': renderGerenciaConfig,
   'gerencia-mensagens': renderGerenciaMensagens,
   configuracoes: renderConfig
 };
 const CLIENTES_SUBROUTES = new Set(['clientes-visao-geral','clientes-cadastro','clientes-tabela','clientes-pagina']);
 const CALENDARIO_SUBROUTES = new Set(['calendario','calendario-folgas','calendario-visualizador']);
-const CONTATOS_SUBROUTES = new Set(['contatos-executar','contatos-listas','contatos-pos-venda','contatos-ofertas']);
+const CONTATOS_SUBROUTES = new Set(['contatos-executar','contatos-listas','contatos-pos-venda','contatos-ofertas','contatos-historico']);
 const GERENCIA_SUBROUTES = new Set(['gerencia-config','gerencia-mensagens']);
 const SUBMENU_ROUTES = { clientes: CLIENTES_SUBROUTES, calendario: CALENDARIO_SUBROUTES, contatos: CONTATOS_SUBROUTES, gerencia: GERENCIA_SUBROUTES };
 
@@ -1011,8 +1012,9 @@ function renderRoute(name){
     'contatos-listas': 'Contatos · Listas de Contatos',
     'contatos-pos-venda': 'Contatos · Pós Venda',
     'contatos-ofertas': 'Contatos · Ofertas',
-    'gerencia-config': 'Gerencia · Configurações do Perfil',
-    'gerencia-mensagens': 'Gerencia · Mensagens para Clientes',
+    'contatos-historico': 'Contatos · Histórico',
+    'gerencia-config': 'Gerencia · Configurações',
+    'gerencia-mensagens': 'Gerencia · Mensagens',
     configuracoes: 'Configurações'
   };
   const pageTitle = titles[currentRoute] || titles[routeAliases[currentRoute]] || currentRoute;
@@ -1042,6 +1044,7 @@ function renderRoute(name){
   if(currentRoute === 'clientes-pagina') initClientePagina();
   if(currentRoute === 'calendario') initCalendarioPage();
   if(currentRoute === 'os') initOSPage();
+  if(currentRoute === 'contatos-historico') initContatosHistoricoPage();
   if(currentRoute === 'gerencia-config') initGerenciaConfigPage();
   if(currentRoute === 'gerencia-mensagens') initGerenciaMensagensPage();
   if(currentRoute === 'configuracoes') initConfiguracoesPage();
@@ -1520,6 +1523,52 @@ function renderContatosPosVenda(){
 
 function renderContatosOfertas(){
   return renderContatosPlaceholder('Ofertas','ofertas');
+}
+
+const CONTATOS_HISTORICO_DATA={
+  'pos-venda':[
+    { cliente:'Ana Souza', ultimaCompra:'12/01/2024', ultimoContato:'15/02/2024', responsavel:'Carla Mendes', status:'Concluído' },
+    { cliente:'Bruno Lima', ultimaCompra:'28/02/2024', ultimoContato:'05/03/2024', responsavel:'Paulo Sérgio', status:'Em acompanhamento' },
+    { cliente:'Camila Rocha', ultimaCompra:'09/03/2024', ultimoContato:'20/03/2024', responsavel:'Lívia Prado', status:'Pendente' }
+  ],
+  ofertas:[
+    { cliente:'Daniel Alves', ultimaCompra:'18/01/2024', ultimoContato:'10/02/2024', responsavel:'Roberta Dias', status:'Oferta enviada' },
+    { cliente:'Eduarda Nunes', ultimaCompra:'22/02/2024', ultimoContato:'02/03/2024', responsavel:'Marcos Paulo', status:'Aguardando retorno' },
+    { cliente:'Felipe Barbosa', ultimaCompra:'30/03/2024', ultimoContato:'08/04/2024', responsavel:'Sofia Martins', status:'Oferta convertida' }
+  ]
+};
+
+function renderHistoricoTable(rows){
+  if(!rows?.length){
+    return '<div class="empty-state">Nenhum registro disponível.</div>';
+  }
+  return `<table class="historico-table">`
+    +'<thead><tr><th>Cliente</th><th>Última compra</th><th>Último contato</th><th>Responsável</th><th>Status</th></tr></thead>'
+    +'<tbody>'
+    +rows.map(row=>`<tr><td>${escapeHtml(row.cliente)}</td><td>${escapeHtml(row.ultimaCompra)}</td><td>${escapeHtml(row.ultimoContato)}</td><td>${escapeHtml(row.responsavel)}</td><td>${escapeHtml(row.status)}</td></tr>`).join('')
+    +'</tbody></table>';
+}
+
+function renderContatosHistorico(){
+  const posVendaTable=renderHistoricoTable(CONTATOS_HISTORICO_DATA['pos-venda']);
+  const ofertasTable=renderHistoricoTable(CONTATOS_HISTORICO_DATA.ofertas);
+  return `
+  <section id="contatosHistorico" class="contatos-historico">
+    <div class="historico-tabs" role="tablist">
+      <button type="button" class="historico-tab is-active" data-tab="pos-venda">Pós Venda</button>
+      <button type="button" class="historico-tab" data-tab="ofertas">Ofertas</button>
+    </div>
+    <div class="card-grid historico-grid">
+      <div class="card historico-card" data-colspan="12" data-tab-content="pos-venda">
+        <div class="card-header"><div class="card-head">Histórico de Pós Venda</div></div>
+        <div class="card-body">${posVendaTable}</div>
+      </div>
+      <div class="card historico-card" data-colspan="12" data-tab-content="ofertas" hidden>
+        <div class="card-header"><div class="card-head">Histórico de Ofertas</div></div>
+        <div class="card-body">${ofertasTable}</div>
+      </div>
+    </div>
+  </section>`;
 }
 
 function renderGerenciaConfig() {
@@ -3918,6 +3967,24 @@ function initDashboardPage(){
 document.addEventListener('click', (e)=>{
   if(dashMenu && !dashMenu.hidden && !dashMenu.contains(e.target) && e.target !== dashBtn) closeDashMenu();
 });
+
+function initContatosHistoricoPage(){
+  const container=document.getElementById('contatosHistorico');
+  if(!container) return;
+  const tabs=Array.from(container.querySelectorAll('.historico-tab'));
+  const panels=new Map(Array.from(container.querySelectorAll('[data-tab-content]')).map(panel=>[panel.dataset.tabContent,panel]));
+  function activate(tab){
+    const target=tab || tabs[0]?.dataset.tab;
+    tabs.forEach(btn=>{
+      btn.classList.toggle('is-active', btn.dataset.tab===target);
+    });
+    panels.forEach((panel,key)=>{
+      panel.hidden=key!==target;
+    });
+  }
+  tabs.forEach(btn=>btn.addEventListener('click',()=>activate(btn.dataset.tab)));
+  activate(container.querySelector('.historico-tab.is-active')?.dataset.tab);
+}
 
 function initGerenciaConfigPage(){
   initLojaConfig();
