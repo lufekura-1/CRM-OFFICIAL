@@ -903,7 +903,11 @@ function positionSubmenu(item, submenu){
   let top = rect.top + rect.height / 2 - submenuRect.height / 2;
   const maxTop = viewportHeight - submenuRect.height - margin;
   const minTop = margin;
-  top = Math.min(Math.max(top, minTop), Math.max(minTop, maxTop));
+  if(maxTop >= minTop){
+    top = Math.min(Math.max(top, minTop), Math.max(minTop, maxTop));
+  } else {
+    top = Math.max(0, viewportHeight - submenuRect.height);
+  }
   submenu.style.top = `${top}px`;
   const updatedRect = submenu.getBoundingClientRect();
   const anchorCenter = rect.top + rect.height / 2;
