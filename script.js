@@ -548,6 +548,18 @@ function applyPerfilGates(){
   const isAdmin = getPerfil()==='Administrador';
   const navConfig=document.querySelector('.nav-config');
   if(navConfig) navConfig.style.display = isAdmin ? '' : 'none';
+  const calendarioItem=document.querySelector('.nav-item[data-root="calendario"]');
+  const calendarioGroup=calendarioItem?.closest('.nav-group');
+  const calendarioSubmenu=calendarioGroup?.querySelector('.nav-submenu');
+  if(calendarioItem){
+    calendarioItem.dataset.submenuEnabled = isAdmin ? 'true' : 'false';
+    calendarioItem.setAttribute('aria-haspopup', isAdmin ? 'true' : 'false');
+    if(!isAdmin) setNavSubmenuState(calendarioItem, false);
+  }
+  if(calendarioSubmenu){
+    const shouldShow = isAdmin && calendarioItem?.dataset.expanded === 'true';
+    calendarioSubmenu.hidden = !shouldShow;
+  }
 }
 
 // ===== API Stub =====
@@ -830,6 +842,8 @@ const ui = {
 const routes = {
   dashboard: dashboardPage,
   calendario: renderCalendario,
+  'calendario-folgas': renderCalendarioFolgas,
+  'calendario-visualizador': renderCalendarioVisualizador,
   clientes: renderClientesVisaoGeral,
   'clientes-visao-geral': renderClientesVisaoGeral,
   'clientes-cadastro': renderClientesCadastro,
@@ -840,25 +854,95 @@ const routes = {
   configuracoes: renderConfig
 };
 const CLIENTES_SUBROUTES = new Set(['clientes-visao-geral','clientes-cadastro','clientes-tabela']);
-const SUBMENU_ROUTES = { clientes: CLIENTES_SUBROUTES };
+const CALENDARIO_SUBROUTES = new Set(['calendario','calendario-folgas','calendario-visualizador']);
+const SUBMENU_ROUTES = { clientes: CLIENTES_SUBROUTES, calendario: CALENDARIO_SUBROUTES };
 
 function routeMatchesRoot(root, route){
   const set = SUBMENU_ROUTES[root];
   return set ? set.has(route) : route === root;
 }
 
+function isSubmenuEnabled(item){
+  return item?.classList.contains('has-submenu') && item.dataset.submenuEnabled !== 'false';
+}
+
+let activeNavPopover = null;
+let navTooltipEl = null;
+
+function ensureNavTooltip(){
+  if(!navTooltipEl){
+    navTooltipEl = document.createElement('div');
+    navTooltipEl.className = 'nav-tooltip';
+    document.body.appendChild(navTooltipEl);
+  }
+  return navTooltipEl;
+}
+
+function showNavTooltipForItem(item){
+  const tooltip = ensureNavTooltip();
+  const label = item?.querySelector('.label');
+  const text = label ? label.textContent.trim() : '';
+  if(!text) return;
+  const rect = item.getBoundingClientRect();
+  tooltip.textContent = text;
+  tooltip.style.top = `${rect.top + rect.height / 2}px`;
+  tooltip.style.left = `${rect.right + 12}px`;
+  tooltip.classList.add('is-visible');
+}
+
+function hideNavTooltip(){
+  if(navTooltipEl) navTooltipEl.classList.remove('is-visible');
+}
+
+function positionSubmenu(item, submenu){
+  if(!item || !submenu) return;
+  const rect = item.getBoundingClientRect();
+  const submenuRect = submenu.getBoundingClientRect();
+  const margin = 16;
+  const viewportHeight = window.innerHeight;
+  let top = rect.top + rect.height / 2 - submenuRect.height / 2;
+  const maxTop = viewportHeight - submenuRect.height - margin;
+  const minTop = margin;
+  top = Math.min(Math.max(top, minTop), Math.max(minTop, maxTop));
+  submenu.style.top = `${top}px`;
+  const updatedRect = submenu.getBoundingClientRect();
+  const anchorCenter = rect.top + rect.height / 2;
+  let arrowOffset = anchorCenter - updatedRect.top - 6;
+  const arrowMin = 8;
+  const arrowMax = Math.max(arrowMin, updatedRect.height - 20);
+  arrowOffset = Math.min(Math.max(arrowOffset, arrowMin), arrowMax);
+  submenu.style.setProperty('--submenu-anchor-offset', `${arrowOffset}px`);
+}
+
 function setNavSubmenuState(item, expanded){
   if(!item) return;
   const group = item.closest('.nav-group');
+  const submenu = group?.querySelector('.nav-submenu');
   item.classList.toggle('is-expanded', expanded);
   item.setAttribute('aria-expanded', expanded ? 'true' : 'false');
   item.dataset.expanded = expanded ? 'true' : 'false';
-  if(group){
-    group.classList.toggle('is-expanded', expanded);
-    const submenu = group.querySelector('.nav-submenu');
-    if(submenu){
-      submenu.hidden = !expanded;
-    }
+  if(!group || !submenu){
+    if(activeNavPopover && activeNavPopover.item === item) activeNavPopover = null;
+    return;
+  }
+  if(expanded && isSubmenuEnabled(item)){
+    hideNavTooltip();
+    submenu.hidden = false;
+    group.classList.add('is-popover-open');
+    activeNavPopover = { item, submenu };
+    requestAnimationFrame(() => positionSubmenu(item, submenu));
+  } else {
+    group.classList.remove('is-popover-open');
+    submenu.hidden = true;
+    submenu.style.top = '';
+    submenu.style.removeProperty('--submenu-anchor-offset');
+    if(activeNavPopover && activeNavPopover.item === item) activeNavPopover = null;
+  }
+}
+
+function repositionActiveNavPopover(){
+  if(activeNavPopover && activeNavPopover.submenu && !activeNavPopover.submenu.hidden){
+    positionSubmenu(activeNavPopover.item, activeNavPopover.submenu);
   }
 }
 
@@ -866,12 +950,9 @@ function collapseAllSubmenus(exceptRoot){
   document.querySelectorAll('.nav-item.has-submenu').forEach(nav => {
     if(nav.dataset.root !== exceptRoot){
       setNavSubmenuState(nav, false);
-      const group = nav.closest('.nav-group');
-      if(group){
-        group.classList.remove('is-highlighted');
-      }
     }
   });
+  hideNavTooltip();
 }
 const routeAliases = { clientes: 'clientes-visao-geral' };
 let currentRoute = 'dashboard';
@@ -884,8 +965,6 @@ function resolveRoute(name){
 function renderRoute(name){
   currentRoute = resolveRoute(name);
   const main = document.querySelector('#app-main');
-  const sidebar=document.querySelector('.sidebar');
-  const keepCollapsed = sidebar?.dataset.keepCollapse === 'true';
   if(currentRoute !== 'calendario') calendarMonthRenderer = null;
   if(currentRoute==='gerencia') main.innerHTML='';
   else main.innerHTML = routes[currentRoute]() || '';
@@ -894,6 +973,8 @@ function renderRoute(name){
   const titles = {
     dashboard: 'Dashboard',
     calendario: 'Calendário',
+    'calendario-folgas': 'Calendário · Folgas',
+    'calendario-visualizador': 'Calendário · Visualizador de calendários',
     'clientes-visao-geral': 'Clientes · Visão Geral',
     'clientes-cadastro': 'Clientes · Cadastro',
     'clientes-tabela': 'Clientes · Tabela de Clientes',
@@ -908,7 +989,8 @@ function renderRoute(name){
     const root=item.dataset.root;
     if(item.classList.contains('has-submenu')){
       const activeRoot = routeMatchesRoot(root, currentRoute);
-      setNavSubmenuState(item, activeRoot && !keepCollapsed);
+      const shouldRemainOpen = activeRoot && item.dataset.expanded === 'true';
+      setNavSubmenuState(item, shouldRemainOpen);
       item.classList.toggle('is-active', activeRoot);
       const group=item.closest('.nav-group');
       if(group){
@@ -921,7 +1003,6 @@ function renderRoute(name){
   document.querySelectorAll('.nav-subitem').forEach(sub => {
     sub.classList.toggle('is-active', sub.dataset.route === currentRoute);
   });
-  if(sidebar) delete sidebar.dataset.keepCollapse;
   if(currentRoute === 'dashboard') initDashboardPage();
   if(currentRoute === 'clientes-visao-geral') initClientesVisaoGeral();
   if(currentRoute === 'clientes-cadastro') initClientesCadastro();
@@ -1105,6 +1186,36 @@ function renderCalendario() {
       </div>
     </div>
   </div>
+  </div>`;
+}
+
+function renderCalendarioFolgas(){
+  return `
+  <div class="card-grid">
+    <div class="card" data-card-id="calendario-folgas" data-colspan="12">
+      <div class="card-header">
+        <div class="card-head">Folgas</div>
+        <div class="card-subtitle">Área reservada para gerenciamento de folgas.</div>
+      </div>
+      <div class="card-body">
+        <div class="empty-state">Conteúdo em preparação.</div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function renderCalendarioVisualizador(){
+  return `
+  <div class="card-grid">
+    <div class="card" data-card-id="calendario-visualizador" data-colspan="12">
+      <div class="card-header">
+        <div class="card-head">Visualizador de calendários</div>
+        <div class="card-subtitle">Ferramentas de visualização serão adicionadas em breve.</div>
+      </div>
+      <div class="card-body">
+        <div class="empty-state">Nenhum conteúdo disponível no momento.</div>
+      </div>
+    </div>
   </div>`;
 }
 function clientesStatsBar(totalClientes, doneMonth){
@@ -4626,80 +4737,76 @@ document.addEventListener('DOMContentLoaded', async () => {
       onProfileChanged();
     });
   }
-  const sidebar=document.querySelector('.sidebar');
-  if(sidebar){
-    const expand=()=>sidebar.classList.add('is-expanded');
-    const collapse=()=>sidebar.classList.remove('is-expanded');
-    sidebar.addEventListener('mouseenter',expand);
-    sidebar.addEventListener('mouseleave',()=>{
-      collapse();
-      collapseAllSubmenus();
-    });
-    sidebar.addEventListener('focusin',expand);
-    sidebar.addEventListener('focusout',e=>{
-      if(!sidebar.contains(e.relatedTarget)){
-        collapse();
+  document.querySelectorAll('.nav-item').forEach(item => {
+    const hasSubmenu = item.classList.contains('has-submenu');
+    if(hasSubmenu){
+      const shouldOpen = item.dataset.expanded === 'true' && isSubmenuEnabled(item);
+      setNavSubmenuState(item, shouldOpen);
+    }
+    const activateSubmenu = () => {
+      const expanded = item.dataset.expanded === 'true';
+      if(expanded){
+        setNavSubmenuState(item, false);
+      } else {
+        collapseAllSubmenus(item.dataset.root);
+        setNavSubmenuState(item, true);
+      }
+    };
+    const activateRoute = () => {
+      const targetRoute = item.dataset.route || item.dataset.defaultRoute;
+      if(targetRoute){
         collapseAllSubmenus();
+        hideNavTooltip();
+        location.hash = '#/'+targetRoute;
+      }
+    };
+    item.addEventListener('click', e => {
+      if(hasSubmenu && isSubmenuEnabled(item)){
+        e.preventDefault();
+        activateSubmenu();
+      } else {
+        activateRoute();
       }
     });
-  }
-  document.querySelectorAll('.nav-item').forEach(item => {
-    if(item.classList.contains('has-submenu')){
-      setNavSubmenuState(item, item.dataset.expanded==='true');
-      item.addEventListener('click', () => {
-        const expanded=item.dataset.expanded==='true';
-        const def=item.dataset.defaultRoute;
-        if(expanded){
-          setNavSubmenuState(item,false);
-          return;
+    item.addEventListener('keydown', e => {
+      if(e.key==='Enter' || e.key===' '){
+        e.preventDefault();
+        if(hasSubmenu && isSubmenuEnabled(item)){
+          activateSubmenu();
+        } else {
+          activateRoute();
         }
-        collapseAllSubmenus(item.dataset.root);
-        setNavSubmenuState(item,true);
-        if(def) location.hash = '#/'+def;
-      });
-      item.addEventListener('keydown', e => {
-        if(e.key==='Enter' || e.key===' '){
-          e.preventDefault();
-          const expanded=item.dataset.expanded==='true';
-          const def=item.dataset.defaultRoute;
-          if(expanded){
-            setNavSubmenuState(item,false);
-            return;
-          }
-          collapseAllSubmenus(item.dataset.root);
-          setNavSubmenuState(item,true);
-          if(def) location.hash = '#/'+def;
-        }
-      });
-    } else {
-      item.addEventListener('click', () => {
-        collapseAllSubmenus();
-        location.hash = '#/'+item.dataset.route;
-      });
-      item.addEventListener('keydown', e => {
-        if(e.key==='Enter'){
-          collapseAllSubmenus();
-          location.hash = '#/'+item.dataset.route;
-        }
-      });
-    }
+      }
+    });
+    item.addEventListener('mouseenter', () => {
+      if(hasSubmenu && item.dataset.expanded === 'true') return;
+      showNavTooltipForItem(item);
+    });
+    item.addEventListener('mouseleave', () => {
+      hideNavTooltip();
+    });
+    item.addEventListener('focus', () => {
+      if(hasSubmenu && item.dataset.expanded === 'true') return;
+      showNavTooltipForItem(item);
+    });
+    item.addEventListener('blur', () => {
+      hideNavTooltip();
+    });
   });
   document.querySelectorAll('.nav-subitem').forEach(sub => {
     sub.addEventListener('click', () => {
       const parent = document.querySelector(`.nav-item[data-root="${sub.dataset.parent}"]`);
-      const sidebar=document.querySelector('.sidebar');
-      if(sidebar) sidebar.dataset.keepCollapse='true';
       collapseAllSubmenus();
       if(parent) setNavSubmenuState(parent, false);
+      hideNavTooltip();
       location.hash = '#/'+sub.dataset.route;
     });
     sub.addEventListener('keydown', e => {
       if(e.key==='Enter'){
         const parent = document.querySelector(`.nav-item[data-root="${sub.dataset.parent}"]`);
-        const sidebar=document.querySelector('.sidebar');
-        if(sidebar) sidebar.dataset.keepCollapse='true';
         collapseAllSubmenus();
         if(parent) setNavSubmenuState(parent, false);
+        hideNavTooltip();
         location.hash = '#/'+sub.dataset.route;
       }
     });
@@ -4714,6 +4821,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 window.addEventListener('hashchange', () => renderRoute(location.hash.slice(2) || 'dashboard'));
+
+const scheduleNavPopoverReposition = () => requestAnimationFrame(repositionActiveNavPopover);
+window.addEventListener('resize', scheduleNavPopoverReposition);
+window.addEventListener('scroll', scheduleNavPopoverReposition, true);
 
 // remove focus state from regular buttons after click
 document.addEventListener('click',e=>{
