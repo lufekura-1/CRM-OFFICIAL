@@ -1401,6 +1401,10 @@ function renderClientePagina(){
         <p id="clientePageSubtitle" class="cliente-page-subtitle"></p>
       </div>
       <div class="cliente-page-topbar-actions">
+        <label class="contact-pref" aria-label="Marcar cliente como não contatável">
+          <input type="checkbox" class="switch" data-action="cliente-toggle-nao-contate" disabled>
+          <span>Não contate</span>
+        </label>
         <button type="button" class="btn btn-primary" data-action="cliente-editar" disabled>Editar cliente</button>
       </div>
     </div>
@@ -1682,9 +1686,9 @@ function escapeHtml(str=''){
 }
 
 const CLIENT_STATUS={
-  POS_VENDA:{ key:'pos-venda', label:'PÓS VENDA' },
-  LISTA_OFERTAS:{ key:'lista-ofertas', label:'LISTA DE OFERTAS' },
-  NAO_CONTATE:{ key:'nao-contate', label:'NÃO CONTATE' }
+  POS_VENDA:{ key:'pos-venda', label:'P.V', ariaLabel:'Pós Venda' },
+  LISTA_OFERTAS:{ key:'lista-ofertas', label:'O.F', ariaLabel:'Lista de Ofertas' },
+  NAO_CONTATE:{ key:'nao-contate', label:'N.C', ariaLabel:'Não Contate' }
 };
 
 const DAY_IN_MS=24*60*60*1000;
@@ -1727,14 +1731,15 @@ function getClientStatus(cliente){
 function renderClientStatusBadge(cliente){
   const status=getClientStatus(cliente);
   if(!status) return '';
-  return `<span class="client-status-badge client-status-${status.key}" aria-label="${status.label}">${status.label}</span>`;
+  const aria=status.ariaLabel || status.label;
+  return `<span class="client-status-badge client-status-${status.key}" aria-label="${aria}">${status.label}</span>`;
 }
 
 function renderClientNameInline(cliente){
   const rawName=cliente?.nome;
   const name=escapeHtml(rawName || 'Cliente');
   const badge=renderClientStatusBadge(cliente);
-  return `<span class="client-name-with-status">${badge}<span class="client-name-text">${name}</span></span>`;
+  return `<span class="client-name-with-status"><span class="client-name-text">${name}</span>${badge}</span>`;
 }
 
 function buildFollowupBadges(cp){
@@ -3513,6 +3518,7 @@ function initClientePagina(){
   const dadosBody=container.querySelector('#clienteDadosPessoais');
   const comprasBody=container.querySelector('#clienteHistoricoCompras');
   const contatosBody=container.querySelector('#clienteHistoricoContatos');
+  const naoContateToggle=container.querySelector('[data-action="cliente-toggle-nao-contate"]');
 
   const setEmpty=()=>{
     if(titleEl) titleEl.textContent='Página do Cliente';
@@ -3521,6 +3527,11 @@ function initClientePagina(){
     if(sections) sections.hidden=true;
     if(editBtn){ editBtn.disabled=true; editBtn.onclick=null; }
     if(novaCompraBtn){ novaCompraBtn.disabled=true; novaCompraBtn.onclick=null; }
+    if(naoContateToggle){
+      naoContateToggle.checked=false;
+      naoContateToggle.disabled=true;
+      naoContateToggle.onchange=null;
+    }
     if(dadosBody) dadosBody.innerHTML='';
     if(comprasBody) comprasBody.innerHTML='';
     if(contatosBody) contatosBody.innerHTML='';
@@ -3549,6 +3560,19 @@ function initClientePagina(){
         window.renderClientsTable?.();
         window.renderClientDetail?.();
       });
+    }
+    if(naoContateToggle){
+      naoContateToggle.disabled=false;
+      naoContateToggle.checked=!!cliente.naoContate;
+      naoContateToggle.onchange=null;
+      naoContateToggle.onchange=()=>{
+        const marcado=naoContateToggle.checked;
+        db.atualizarCliente(cliente.id,{ naoContate:marcado });
+        cliente={ ...cliente, naoContate:marcado };
+        refreshCliente();
+        window.renderClientsTable?.();
+        window.renderClientDetail?.();
+      };
     }
   }
 
