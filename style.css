@@ -47,7 +47,7 @@
   --space-lg: 24px;
   --sidebar-item-height: 44px; /* Ajuste: altura fixa para itens do menu lateral */
   /* Floating menu tokens */
-  --menu-popover-min-width: 220px;
+  --menu-popover-min-width: 180px;
   --menu-popover-max-width: 320px;
   --menu-popover-max-height: 360px;
   /* White balloon tokens */
@@ -1893,11 +1893,12 @@ input[name="telefone"] { width:18ch; }
   left: calc(var(--sidebar-collapsed-w) + 8px);
   top: 0;
   min-width: var(--menu-popover-min-width);
-  width: clamp(var(--menu-popover-min-width), 26vw, var(--menu-popover-max-width));
+  width: fit-content;
+  width: max-content;
   max-width: min(var(--menu-popover-max-width), calc(100vw - var(--sidebar-collapsed-w) - 32px));
   max-height: min(var(--menu-popover-max-height), calc(100vh - 48px));
   overflow-y: auto;
-  z-index: 1400;
+  z-index: 2000;
   box-sizing: border-box;
 }
 .nav-submenu::before {
