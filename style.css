@@ -1877,17 +1877,23 @@ input[name="telefone"] { width:18ch; }
 .nav-submenu {
   list-style: none;
   margin: 0;
-  padding: 8px 0;
+  padding: 12px 0;
   display: none;
   flex-direction: column;
-  background: var(--sidebar-sub-bg);
-  border-radius: var(--radius-md);
+  row-gap: 4px;
+  background: rgba(24, 29, 38, 0.98);
+  color: #fff;
+  border-radius: var(--radius-lg);
   box-shadow: 0 12px 32px rgba(0,0,0,0.35);
   position: fixed;
-  left: var(--sidebar-collapsed-w);
+  left: calc(var(--sidebar-collapsed-w) + 8px);
   top: 0;
-  min-width: 200px;
-  z-index: 1000;
+  min-width: 320px;
+  width: min(400px, calc(100vw - var(--sidebar-collapsed-w) - 32px));
+  max-height: min(70vh, calc(100vh - 32px));
+  overflow-y: auto;
+  z-index: 1400;
+  box-sizing: border-box;
 }
 .nav-submenu::before {
   content: '';
@@ -1923,6 +1929,18 @@ input[name="telefone"] { width:18ch; }
 }
 .nav-group:not(.is-highlighted) .nav-subitem.is-active {
   background: #2A2F37;
+}
+.nav-group.is-popover-open .nav-subitem,
+.nav-group.is-popover-open .nav-subitem .label {
+  color: inherit;
+}
+.sidebar:not(.is-expanded) .nav-group.is-popover-open .nav-subitem {
+  justify-content: flex-start;
+}
+.sidebar:not(.is-expanded) .nav-group.is-popover-open .nav-subitem .label {
+  opacity: 1;
+  visibility: visible;
+  width: auto;
 }
 .nav-tooltip {
   position: fixed;
