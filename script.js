@@ -657,6 +657,7 @@ function removeFollowUpEvents(clienteId,compraId){
       genero: payload.genero || '',
       observacoes: payload.observacoes || '',
       interesses: payload.interesses || [],
+      naoContate: Boolean(payload.naoContate),
       compras: [],
       criadoEm: now,
       atualizadoEm: now
@@ -857,13 +858,19 @@ const routes = {
   'clientes-tabela': renderClientesTabela,
   'clientes-pagina': renderClientePagina,
   os: renderOS,
-  contato: renderContato,
-  gerencia: renderGerencia,
+  'contatos-executar': renderContatosExecutar,
+  'contatos-listas': renderContatosListas,
+  'contatos-pos-venda': renderContatosPosVenda,
+  'contatos-ofertas': renderContatosOfertas,
+  'gerencia-config': renderGerenciaConfig,
+  'gerencia-mensagens': renderGerenciaMensagens,
   configuracoes: renderConfig
 };
 const CLIENTES_SUBROUTES = new Set(['clientes-visao-geral','clientes-cadastro','clientes-tabela','clientes-pagina']);
 const CALENDARIO_SUBROUTES = new Set(['calendario','calendario-folgas','calendario-visualizador']);
-const SUBMENU_ROUTES = { clientes: CLIENTES_SUBROUTES, calendario: CALENDARIO_SUBROUTES };
+const CONTATOS_SUBROUTES = new Set(['contatos-executar','contatos-listas','contatos-pos-venda','contatos-ofertas']);
+const GERENCIA_SUBROUTES = new Set(['gerencia-config','gerencia-mensagens']);
+const SUBMENU_ROUTES = { clientes: CLIENTES_SUBROUTES, calendario: CALENDARIO_SUBROUTES, contatos: CONTATOS_SUBROUTES, gerencia: GERENCIA_SUBROUTES };
 
 function routeMatchesRoot(root, route){
   const set = SUBMENU_ROUTES[root];
@@ -974,7 +981,7 @@ function collapseAllSubmenus(exceptRoot){
   });
   hideNavTooltip();
 }
-const routeAliases = { clientes: 'clientes-visao-geral' };
+const routeAliases = { clientes: 'clientes-visao-geral', contatos: 'contatos-executar', contato: 'contatos-executar', gerencia: 'gerencia-config' };
 let currentRoute = 'dashboard';
 
 function resolveRoute(name){
@@ -1000,8 +1007,12 @@ function renderRoute(name){
     'clientes-tabela': 'Clientes · Tabela de Clientes',
     'clientes-pagina': 'Clientes · Página do Cliente',
     os: 'Ordem de Serviço',
-    contato: 'Contato a ser executado',
-    gerencia: 'Gerencia',
+    'contatos-executar': 'Contatos · Contatos a Executar',
+    'contatos-listas': 'Contatos · Listas de Contatos',
+    'contatos-pos-venda': 'Contatos · Pós Venda',
+    'contatos-ofertas': 'Contatos · Ofertas',
+    'gerencia-config': 'Gerencia · Configurações do Perfil',
+    'gerencia-mensagens': 'Gerencia · Mensagens para Clientes',
     configuracoes: 'Configurações'
   };
   const pageTitle = titles[currentRoute] || titles[routeAliases[currentRoute]] || currentRoute;
@@ -1031,7 +1042,8 @@ function renderRoute(name){
   if(currentRoute === 'clientes-pagina') initClientePagina();
   if(currentRoute === 'calendario') initCalendarioPage();
   if(currentRoute === 'os') initOSPage();
-  if(currentRoute === 'gerencia') initGerenciaPage();
+  if(currentRoute === 'gerencia-config') initGerenciaConfigPage();
+  if(currentRoute === 'gerencia-mensagens') initGerenciaMensagensPage();
   if(currentRoute === 'configuracoes') initConfiguracoesPage();
   updateProfileUI();
 }
@@ -1478,11 +1490,35 @@ function dashboardPage() {
   `</section>`;
 }
 
-function renderContato() {
-  return renderCardGrid('Contato');
+function renderContatosPlaceholder(title, slug){
+  return `
+  <section class="contatos-page contatos-${slug}">
+    <div class="card-grid">
+      <div class="card" data-card-id="contatos-${slug}" data-colspan="12">
+        <div class="card-header"><div class="card-head">${title}</div></div>
+        <div class="card-body"><div class="empty-state">Conteúdo em preparação.</div></div>
+      </div>
+    </div>
+  </section>`;
 }
 
-function renderGerencia() {
+function renderContatosExecutar(){
+  return renderContatosPlaceholder('Contatos a Executar','executar');
+}
+
+function renderContatosListas(){
+  return renderContatosPlaceholder('Listas de Contatos','listas');
+}
+
+function renderContatosPosVenda(){
+  return renderContatosPlaceholder('Pós Venda','pos-venda');
+}
+
+function renderContatosOfertas(){
+  return renderContatosPlaceholder('Ofertas','ofertas');
+}
+
+function renderGerenciaConfig() {
   return `
   <div class="card-grid">
     <div class="card" data-card-id="loja" data-colspan="6" data-rowspan="2">
@@ -1543,6 +1579,26 @@ function renderConfig() {
     <div class="card empty-state" data-card-id="ph3"></div>
     <div class="card empty-state" data-card-id="ph4"></div>
   </div>`;
+}
+
+function renderGerenciaMensagens(){
+  return `
+  <section id="gerenciaMensagens" class="gerencia-mensagens">
+    <div class="mensagens-tabs" role="tablist">
+      <button type="button" class="mensagem-tab is-active" data-tab="pos-venda">Pós Venda</button>
+      <button type="button" class="mensagem-tab" data-tab="ofertas">Ofertas</button>
+    </div>
+    <div class="card-grid mensagens-grid">
+      <div class="card mensagens-card" data-colspan="12" data-tab-content="pos-venda">
+        <div class="card-header"><div class="card-head">Pós Venda</div></div>
+        <div class="card-body"><div class="empty-state">Conteúdo em preparação.</div></div>
+      </div>
+      <div class="card mensagens-card" data-colspan="12" data-tab-content="ofertas" hidden>
+        <div class="card-header"><div class="card-head">Ofertas</div></div>
+        <div class="card-body"><div class="empty-state">Conteúdo em preparação.</div></div>
+      </div>
+    </div>
+  </section>`;
 }
 
 // ===== Helpers =====
@@ -1616,6 +1672,71 @@ const FOLLOWUP_PERIODS=['3m','6m','12m'];
 const FOLLOWUP_OFFSETS={ '3m':90, '6m':180, '12m':365 };
 const FOLLOWUP_LABELS={ '3m':'3 meses','6m':'6 meses','12m':'12 meses' };
 
+function escapeHtml(str=''){
+  return String(str)
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;')
+    .replace(/'/g,'&#39;');
+}
+
+const CLIENT_STATUS={
+  POS_VENDA:{ key:'pos-venda', label:'PÓS VENDA' },
+  LISTA_OFERTAS:{ key:'lista-ofertas', label:'LISTA DE OFERTAS' },
+  NAO_CONTATE:{ key:'nao-contate', label:'NÃO CONTATE' }
+};
+
+const DAY_IN_MS=24*60*60*1000;
+
+function toSafeDate(value){
+  if(!value) return null;
+  if(value instanceof Date){
+    return isNaN(value.getTime())?null:value;
+  }
+  if(typeof value==='string' && value.includes('/')){
+    const parsed=parseDDMMYYYY(value);
+    return isNaN(parsed.getTime())?null:parsed;
+  }
+  const date=new Date(value);
+  return isNaN(date.getTime())?null:date;
+}
+
+function compraTemFollowupPendente(compra){
+  if(!compra) return false;
+  const followUps=compra.followUps || {};
+  return FOLLOWUP_PERIODS.some(period=>!followUps[period]?.done);
+}
+
+function getClientStatus(cliente){
+  if(!cliente) return CLIENT_STATUS.LISTA_OFERTAS;
+  if(cliente.naoContate) return CLIENT_STATUS.NAO_CONTATE;
+  const compras=cliente.compras || [];
+  if(!compras.length) return CLIENT_STATUS.LISTA_OFERTAS;
+  const now=Date.now();
+  const hasPending=compras.some(compra=>{
+    const date=toSafeDate(compra?.dataCompra || compra?.dataISO);
+    if(!date) return false;
+    const diff=(now-date.getTime())/DAY_IN_MS;
+    if(diff>365) return false;
+    return compraTemFollowupPendente(compra);
+  });
+  return hasPending ? CLIENT_STATUS.POS_VENDA : CLIENT_STATUS.LISTA_OFERTAS;
+}
+
+function renderClientStatusBadge(cliente){
+  const status=getClientStatus(cliente);
+  if(!status) return '';
+  return `<span class="client-status-badge client-status-${status.key}" aria-label="${status.label}">${status.label}</span>`;
+}
+
+function renderClientNameInline(cliente){
+  const rawName=cliente?.nome;
+  const name=escapeHtml(rawName || 'Cliente');
+  const badge=renderClientStatusBadge(cliente);
+  return `<span class="client-name-with-status">${badge}<span class="client-name-text">${name}</span></span>`;
+}
+
 function buildFollowupBadges(cp){
   const followUps=cp?.followUps || {};
   const badges=FOLLOWUP_PERIODS.map(period=>{
@@ -1679,6 +1800,14 @@ function clienteFormTemplate({ includeObservacoes=false, includePurchaseSection=
                 <button type="button" class="chip" data-value="BIFOCAL" aria-pressed="false">BIFOCAL</button>
                 <button type="button" class="chip" data-value="SOLAR" aria-pressed="false">SOLAR</button>
               </div>
+            </div>
+            <div class="form-field col-span-4">
+              <span class="field-label">Preferência de contato</span>
+              <label class="contact-pref">
+                <input type="checkbox" id="cliente-nao-contate" class="switch">
+                <span>Não contatar</span>
+              </label>
+              <small class="field-hint">Marque quando o cliente optar por não receber contato.</small>
             </div>
             ${includeObservacoes ? '<div class="form-field col-span-12"><label for="cliente-observacoes">Observações</label><textarea id="cliente-observacoes" name="observacoes" class="textarea" rows="4"></textarea></div>' : ''}
           </div>
@@ -1777,6 +1906,11 @@ function initClienteForm(form, { cliente=null, includePurchaseSection=true }={})
     });
   }
 
+  const naoContateInput=form.querySelector('#cliente-nao-contate');
+  if(naoContateInput){
+    naoContateInput.checked=!!cliente?.naoContate;
+  }
+
   const generoDiv=form.querySelector('#cliente-genero');
   if(generoDiv){
     const generoButtons=Array.from(generoDiv.querySelectorAll('button'));
@@ -1835,6 +1969,8 @@ function initClienteForm(form, { cliente=null, includePurchaseSection=true }={})
       if(dataNascimento) dataNascimento.value='';
       if(cpfInput) cpfInput.value='';
       if(obsInput) obsInput.value='';
+      const naoContate=form.querySelector('#cliente-nao-contate');
+      if(naoContate) naoContate.checked=false;
       form.querySelectorAll('#cliente-interesses button').forEach(btn=>btn.setAttribute('aria-pressed','false'));
       form.querySelectorAll('#cliente-genero .seg-btn').forEach(btn=>btn.setAttribute('aria-pressed','false'));
       if(includePurchaseSection){
@@ -2766,7 +2902,7 @@ function initClientesVisaoGeral() {
         tr.dataset.id = c.id;
         const compra = getUltimaCompra(c.compras);
         tr.innerHTML = `
-            <td>${c.nome}</td>
+            <td>${renderClientNameInline(c)}</td>
             <td>${formatTelefone(c.telefone)}</td>
             <td>${compra ? formatDateDDMMYYYY(compra.dataCompra) : '-'}</td>`;
         if (selecionado === c.id) {
@@ -2804,7 +2940,7 @@ function initClientesVisaoGeral() {
       detail.innerHTML = `
         <div class="mini-card client-overview">
           <div class="overview-header">
-            <h2>${c.nome}</h2>
+            <h2>${renderClientNameInline(c)}</h2>
             <div class="actions">
               <button class="btn btn-outline btn-cliente-page" type="button">Página do Cliente</button>
               <button class="btn-icon adjust btn-edit-detalhe" aria-label="Editar Cliente" title="Editar Cliente">${iconEdit}</button>
@@ -2817,6 +2953,7 @@ function initClientesVisaoGeral() {
           <div class="info-label">CPF</div><div class="info-value">${c.cpf ? formatCpf(c.cpf) : '-'}</div>
           <div class="info-label">Gênero</div><div class="info-value">${c.genero || '-'}</div>
           <div class="info-label">Interesses</div><div class="info-value">${((c.interesses||c.usos) && (c.interesses||c.usos).length)?(c.interesses||c.usos).join(', '):'-'}</div>
+          <div class="info-label">Preferência de contato</div><div class="info-value">${c.naoContate ? 'Não contatar' : 'Aceita contato'}</div>
         </div>
       </div>
         <div class="mini-card">
@@ -3047,13 +3184,14 @@ function initClientesTabela(){
     return `
       <div class="client-detail-modal">
         <div class="mini-card client-overview">
-          <h2>${cliente.nome}</h2>
+          <h2>${renderClientNameInline(cliente)}</h2>
           <div class="dados-pessoais info-grid">
             <div class="info-label">Telefone</div><div class="info-value">${telefone}</div>
             <div class="info-label">Nascimento</div><div class="info-value">${nascimento||'-'}</div>
             <div class="info-label">CPF</div><div class="info-value">${cpf}</div>
             <div class="info-label">Gênero</div><div class="info-value">${genero}</div>
             <div class="info-label">Interesses</div><div class="info-value">${interesses}</div>
+            <div class="info-label">Preferência de contato</div><div class="info-value">${cliente.naoContate ? 'Não contatar' : 'Aceita contato'}</div>
           </div>
         </div>
         <div class="mini-card">
@@ -3103,7 +3241,7 @@ function initClientesTabela(){
     if(cancelBtn.getAttribute('data-action')) cancelBtn.removeAttribute('data-action');
     cancelBtn.setAttribute('type','button');
     dialog.classList.add('modal-cliente-detalhe');
-    title.textContent=cliente.nome;
+    title.innerHTML=renderClientNameInline(cliente);
     body.innerHTML=buildClientDetailModalHTML(cliente);
     const originalClose=modal.close.bind(modal);
     modal.close=()=>{
@@ -3259,7 +3397,7 @@ function initClientesTabela(){
         }).join('');
         return `<tr data-id="${c.id}"${isSelected?' class="row-selected"':''} tabindex="0">`
           +`<td class="select-cell select-col"><input type="checkbox" class="client-select-row" data-id="${c.id}" ${isSelected?'checked':''} aria-label="Selecionar cliente"></td>`
-          +`<td data-field="nome">${c.nome}</td>`
+          +`<td data-field="nome">${renderClientNameInline(c)}</td>`
           +`<td data-field="telefone">${telefone}</td>`
           +`<td data-field="cpf">${cpf}</td>`
           +`<td data-field="genero">${genero}</td>`
@@ -3415,7 +3553,7 @@ function initClientePagina(){
   }
 
   function updateHeader(){
-    if(titleEl) titleEl.textContent=cliente.nome || 'Cliente';
+    if(titleEl) titleEl.innerHTML=renderClientNameInline(cliente);
     if(subtitleEl){
       const parts=[];
       const compras=cliente.compras||[];
@@ -3455,6 +3593,7 @@ function initClientePagina(){
         <div><dt>Email</dt><dd>${email}</dd></div>
         <div><dt>Endereço</dt><dd>${endereco}</dd></div>
         <div><dt>Interesses</dt><dd>${interesses}</dd></div>
+        <div><dt>Preferência de contato</dt><dd>${cliente.naoContate ? 'Não contatar' : 'Aceita contato'}</dd></div>
       </dl>
       ${observacoes}`;
   }
@@ -3756,38 +3895,27 @@ document.addEventListener('click', (e)=>{
   if(dashMenu && !dashMenu.hidden && !dashMenu.contains(e.target) && e.target !== dashBtn) closeDashMenu();
 });
 
-function initGerenciaPage(){
-  const main=document.getElementById('app-main');
-  if(main) main.innerHTML='';
-  const modal=document.getElementById('app-modal');
-  const title=document.getElementById('modal-title');
-  const body=modal.querySelector('.modal-body');
-  function openPrompt(){
-    const saveBtn = modal.querySelector('#modal-save');
-    saveBtn.removeAttribute('data-action');
-    saveBtn.setAttribute('type','submit');
-    title.textContent='Senha';
-    body.innerHTML=`<form id="gerencia-form"><div class="form-field col-span-12"><label for="gerencia-pass">Senha</label><input id="gerencia-pass" type="password" class="text-input" required></div></form>`;
-    saveBtn.setAttribute('form','gerencia-form');
-    modal.open();
-    body.querySelector('#gerencia-form').addEventListener('submit',e=>{
-      e.preventDefault();
-      const val=body.querySelector('#gerencia-pass').value;
-      if(val==='12345'){
-        modal.close();
-        if(main){
-          main.innerHTML=renderGerencia();
-          cards.apply(main);
-          cards.loading(main);
-          initLojaConfig();
-          initConfiguracoesPage();
-        }
-      } else {
-        alert('Senha inválida');
-      }
+function initGerenciaConfigPage(){
+  initLojaConfig();
+  initConfiguracoesPage();
+}
+
+function initGerenciaMensagensPage(){
+  const container=document.getElementById('gerenciaMensagens');
+  if(!container) return;
+  const tabs=Array.from(container.querySelectorAll('.mensagem-tab'));
+  const panels=new Map(Array.from(container.querySelectorAll('[data-tab-content]')).map(panel=>[panel.dataset.tabContent,panel]));
+  function activate(tab){
+    const target=tab || tabs[0]?.dataset.tab;
+    tabs.forEach(btn=>{
+      btn.classList.toggle('is-active', btn.dataset.tab===target);
+    });
+    panels.forEach((panel,key)=>{
+      panel.hidden=key!==target;
     });
   }
-  openPrompt();
+  tabs.forEach(btn=>btn.addEventListener('click',()=>activate(btn.dataset.tab)));
+  activate(container.querySelector('.mensagem-tab.is-active')?.dataset.tab);
 }
 
 function initConfiguracoesPage(){
@@ -3962,6 +4090,9 @@ function readClientForm(){
     genero: document.querySelector('#cliente-genero .seg-btn[aria-pressed="true"]')?.dataset.value || '',
     interesses: getSelectedInteressesFromForm()
   };
+
+  const naoContateEl=document.getElementById('cliente-nao-contate');
+  if(naoContateEl) formData.naoContate=naoContateEl.checked;
 
   const obsEl = document.getElementById('cliente-observacoes');
   if(obsEl) formData.observacoes = obsEl.value.trim();
