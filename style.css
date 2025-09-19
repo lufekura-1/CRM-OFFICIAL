@@ -46,6 +46,10 @@
   --space-md: 16px;
   --space-lg: 24px;
   --sidebar-item-height: 44px; /* Ajuste: altura fixa para itens do menu lateral */
+  /* Floating menu tokens */
+  --menu-popover-min-width: 220px;
+  --menu-popover-max-width: 320px;
+  --menu-popover-max-height: 360px;
   /* White balloon tokens */
   --balloon-bg: var(--surface);
   --balloon-border: var(--color-border);
@@ -1877,7 +1881,7 @@ input[name="telefone"] { width:18ch; }
 .nav-submenu {
   list-style: none;
   margin: 0;
-  padding: 12px 0;
+  padding: var(--space-sm) 0;
   display: none;
   flex-direction: column;
   row-gap: 4px;
@@ -1888,9 +1892,10 @@ input[name="telefone"] { width:18ch; }
   position: fixed;
   left: calc(var(--sidebar-collapsed-w) + 8px);
   top: 0;
-  min-width: 320px;
-  width: min(400px, calc(100vw - var(--sidebar-collapsed-w) - 32px));
-  max-height: min(70vh, calc(100vh - 32px));
+  min-width: var(--menu-popover-min-width);
+  width: clamp(var(--menu-popover-min-width), 26vw, var(--menu-popover-max-width));
+  max-width: min(var(--menu-popover-max-width), calc(100vw - var(--sidebar-collapsed-w) - 32px));
+  max-height: min(var(--menu-popover-max-height), calc(100vh - 48px));
   overflow-y: auto;
   z-index: 1400;
   box-sizing: border-box;
