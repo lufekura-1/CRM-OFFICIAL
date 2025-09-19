@@ -544,6 +544,13 @@ const state = {
   setActivePerfil(p) { window.setActivePerfil(p); }
 };
 
+function navigateToClientPage(clienteId){
+  if(!clienteId) return;
+  state.setClienteSelecionado(clienteId);
+  location.hash = '#/clientes-pagina';
+}
+window.navigateToClientPage = navigateToClientPage;
+
 function applyPerfilGates(){
   const isAdmin = getPerfil()==='Administrador';
   const navConfig=document.querySelector('.nav-config');
@@ -848,12 +855,13 @@ const routes = {
   'clientes-visao-geral': renderClientesVisaoGeral,
   'clientes-cadastro': renderClientesCadastro,
   'clientes-tabela': renderClientesTabela,
+  'clientes-pagina': renderClientePagina,
   os: renderOS,
   contato: renderContato,
   gerencia: renderGerencia,
   configuracoes: renderConfig
 };
-const CLIENTES_SUBROUTES = new Set(['clientes-visao-geral','clientes-cadastro','clientes-tabela']);
+const CLIENTES_SUBROUTES = new Set(['clientes-visao-geral','clientes-cadastro','clientes-tabela','clientes-pagina']);
 const CALENDARIO_SUBROUTES = new Set(['calendario','calendario-folgas','calendario-visualizador']);
 const SUBMENU_ROUTES = { clientes: CLIENTES_SUBROUTES, calendario: CALENDARIO_SUBROUTES };
 
@@ -990,6 +998,7 @@ function renderRoute(name){
     'clientes-visao-geral': 'Clientes · Visão Geral',
     'clientes-cadastro': 'Clientes · Cadastro',
     'clientes-tabela': 'Clientes · Tabela de Clientes',
+    'clientes-pagina': 'Clientes · Página do Cliente',
     os: 'Ordem de Serviço',
     contato: 'Contato a ser executado',
     gerencia: 'Gerencia',
@@ -1019,6 +1028,7 @@ function renderRoute(name){
   if(currentRoute === 'clientes-visao-geral') initClientesVisaoGeral();
   if(currentRoute === 'clientes-cadastro') initClientesCadastro();
   if(currentRoute === 'clientes-tabela') initClientesTabela();
+  if(currentRoute === 'clientes-pagina') initClientePagina();
   if(currentRoute === 'calendario') initCalendarioPage();
   if(currentRoute === 'os') initOSPage();
   if(currentRoute === 'gerencia') initGerenciaPage();
@@ -1369,6 +1379,44 @@ function renderClientesTabela(){
   </div>`;
 }
 
+function renderClientePagina(){
+  return `
+  <section id="clientePage" class="cliente-page">
+    <div class="cliente-page-topbar">
+      <button type="button" class="cliente-back-button" data-action="cliente-voltar" aria-label="Voltar para Tabela de Clientes">${iconArrowLeft}</button>
+      <div class="cliente-page-topbar-info">
+        <h2 id="clientePageTitle">Página do Cliente</h2>
+        <p id="clientePageSubtitle" class="cliente-page-subtitle"></p>
+      </div>
+      <div class="cliente-page-topbar-actions">
+        <button type="button" class="btn btn-primary" data-action="cliente-editar" disabled>Editar cliente</button>
+      </div>
+    </div>
+    <div class="cliente-page-empty">
+      <div class="empty-state">Selecione um cliente na Tabela de Clientes para visualizar os detalhes.</div>
+    </div>
+    <div class="cliente-page-sections" hidden>
+      <section class="cliente-section cliente-section--dados">
+        <header class="cliente-section-header"><h3>Dados Pessoais</h3></header>
+        <div class="cliente-section-body" id="clienteDadosPessoais"></div>
+      </section>
+      <section class="cliente-section cliente-section--compras">
+        <header class="cliente-section-header">
+          <h3>Histórico de Compras</h3>
+          <div class="cliente-section-actions">
+            <button type="button" class="btn btn-primary" data-action="cliente-nova-compra" disabled>Adicionar nova compra</button>
+          </div>
+        </header>
+        <div class="cliente-section-body" id="clienteHistoricoCompras"></div>
+      </section>
+      <section class="cliente-section cliente-section--contatos">
+        <header class="cliente-section-header"><h3>Contatos</h3></header>
+        <div class="cliente-section-body" id="clienteHistoricoContatos"></div>
+      </section>
+    </div>
+  </section>`;
+}
+
 const GARANTIA_KEYS = {
   optica: 'garantia.optica',
   joia: 'garantia.joalheria',
@@ -1562,6 +1610,46 @@ const iconSearch='<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
 const iconPlus='<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>';
 const iconEdit='<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>';
 const iconTrash='<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>';
+const iconArrowLeft='<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/><line x1="9" y1="12" x2="21" y2="12"/></svg>';
+
+const FOLLOWUP_PERIODS=['3m','6m','12m'];
+const FOLLOWUP_OFFSETS={ '3m':90, '6m':180, '12m':365 };
+const FOLLOWUP_LABELS={ '3m':'3 meses','6m':'6 meses','12m':'12 meses' };
+
+function buildFollowupBadges(cp){
+  const followUps=cp?.followUps || {};
+  const badges=FOLLOWUP_PERIODS.map(period=>{
+    const info=followUps[period];
+    const done=!!info?.done;
+    const doneDate=done && info?.doneAt ? formatDateDDMMYYYY(info.doneAt) : '';
+    const tooltip=done ? (doneDate ? `Realizado em ${doneDate}` : 'Realizado') : 'Pendente';
+    return `<span class="followup-badge ${done?'is-done':'is-pending'}" title="${tooltip}">${FOLLOWUP_LABELS[period]||period}</span>`;
+  }).join('');
+  return `<div class="followup-badges">${badges}</div>`;
+}
+
+function buildRxTable(cp){
+  const rx=cp?.receituario;
+  if(!rx) return '';
+  const fields=['esferico','cilindrico','eixo','dnp','adicao'];
+  const hasData=fields.some(key=>{
+    const oe=rx.oe?.[key];
+    const od=rx.od?.[key];
+    return (oe && String(oe).trim()!=='') || (od && String(od).trim()!=='');
+  });
+  if(!hasData) return '';
+  const makeRow=side=>fields.map(key=>rx[side]?.[key]||'').map(val=>`<td>${val||''}</td>`).join('');
+  return `
+      <div class="rx-table-wrapper">
+        <table class="rx-table">
+          <thead><tr><th></th><th>Esférico</th><th>Cilíndrico</th><th>Eixo</th><th>DNP</th><th>Adição</th></tr></thead>
+          <tbody>
+            <tr><td>OE</td>${makeRow('oe')}</tr>
+            <tr><td>OD</td>${makeRow('od')}</tr>
+          </tbody>
+        </table>
+      </div>`;
+}
 
 function clienteFormTemplate({ includeObservacoes=false, includePurchaseSection=true, includeActions=false, actionLabel='Salvar Cliente' }={}){
   return `
@@ -1766,6 +1854,11 @@ function initClienteForm(form, { cliente=null, includePurchaseSection=true }={})
 
 function openClienteModal(id, onSave) {
   const modal = document.getElementById('app-modal');
+  const pageBtn = modal.querySelector('.modal-header .modal-client-page-btn');
+  if(pageBtn){
+    pageBtn.hidden = true;
+    pageBtn.onclick = null;
+  }
   const saveBtn = modal.querySelector('#modal-save');
   saveBtn.removeAttribute('data-action');
   saveBtn.setAttribute('type','submit');
@@ -1791,6 +1884,11 @@ function openClienteModal(id, onSave) {
 
 function openCompraModal(clienteId, compraId, onSave) {
   const modal = document.getElementById('app-modal');
+  const pageBtn = modal.querySelector('.modal-header .modal-client-page-btn');
+  if(pageBtn){
+    pageBtn.hidden = true;
+    pageBtn.onclick = null;
+  }
   const saveBtn = modal.querySelector('#modal-save');
   saveBtn.removeAttribute('data-action');
   saveBtn.setAttribute('type','submit');
@@ -2708,6 +2806,7 @@ function initClientesVisaoGeral() {
           <div class="overview-header">
             <h2>${c.nome}</h2>
             <div class="actions">
+              <button class="btn btn-outline btn-cliente-page" type="button">Página do Cliente</button>
               <button class="btn-icon adjust btn-edit-detalhe" aria-label="Editar Cliente" title="Editar Cliente">${iconEdit}</button>
               <button class="btn-icon delete btn-delete-detalhe" aria-label="Excluir Cliente" title="Excluir Cliente">${iconTrash}</button>
             </div>
@@ -2745,19 +2844,7 @@ function initClientesVisaoGeral() {
               ${cp.nfe?`<div class="info-label">NFE/NFC-e</div><div class="info-value">${cp.nfe}</div>`:''}
               ${cp.tiposCompra?.length?`<div class="info-label">Tipos</div><div class="info-value">${cp.tiposCompra.map(t=>`<span class='tag'>${t}</span>`).join(' ')}</div>`:''}
             </div>
-            <div class="receituario">
-              <div class="rx-table-wrapper">
-                <table class="rx-table">
-                  <thead>
-                    <tr><th></th><th>Esférico</th><th>Cilíndrico</th><th>Eixo</th><th>DNP</th><th>Adição</th></tr>
-                  </thead>
-                  <tbody>
-                    <tr><td>OE</td><td>${cp.receituario?.oe?.esferico || ''}</td><td>${cp.receituario?.oe?.cilindrico || ''}</td><td>${cp.receituario?.oe?.eixo || ''}</td><td>${cp.receituario?.oe?.dnp || ''}</td><td>${cp.receituario?.oe?.adicao || ''}</td></tr>
-                    <tr><td>OD</td><td>${cp.receituario?.od?.esferico || ''}</td><td>${cp.receituario?.od?.cilindrico || ''}</td><td>${cp.receituario?.od?.eixo || ''}</td><td>${cp.receituario?.od?.dnp || ''}</td><td>${cp.receituario?.od?.adicao || ''}</td></tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
+            <div class="receituario">${buildRxTable(cp)}</div>
             <div class="opcoes">
               <h4>Contato efetuado</h4>
               <label><input type="checkbox" class="switch" data-period="3m" ${cp.followUps?.['3m']?.done ? 'checked' : ''}> 3 meses</label>
@@ -2814,6 +2901,7 @@ function initClientesVisaoGeral() {
       }
 
       detail.querySelector('.btn-edit-detalhe').addEventListener('click', () => openClienteModal(c.id, sid => { state.setClienteSelecionado(sid); updateTable(); renderDetail(); }));
+      detail.querySelector('.btn-cliente-page').addEventListener('click', () => navigateToClientPage(c.id));
       detail.querySelector('.btn-delete-detalhe').addEventListener('click', () => {
         if (!confirm('Excluir cliente?')) return;
         const currentRow = tbody.querySelector(`tr[data-id="${c.id}"]`);
@@ -2925,44 +3013,6 @@ function initClientesTabela(){
   const selectedIds=new Set();
   let currentPageIds=[];
   const selectAllCheckbox=document.getElementById('clientSelectAll');
-  const CONTACT_PERIODS=['3m','6m','12m'];
-  const CONTACT_LABELS={ '3m':'3 meses','6m':'6 meses','12m':'12 meses' };
-
-  function renderFollowupBadges(cp){
-    const followUps=cp.followUps||{};
-    const badges=CONTACT_PERIODS.map(period=>{
-      const info=followUps[period];
-      const done=!!info?.done;
-      const doneDate=done && info?.doneAt ? formatDateDDMMYYYY(info.doneAt) : '';
-      const tooltip=done ? (doneDate ? `Realizado em ${doneDate}` : 'Realizado') : 'Pendente';
-      return `<span class="followup-badge ${done?'is-done':'is-pending'}" title="${tooltip}">${CONTACT_LABELS[period]||period}</span>`;
-    }).join('');
-    return `<div class="followup-badges">${badges}</div>`;
-  }
-
-  function renderRxTable(cp){
-    const rx=cp.receituario;
-    if(!rx) return '';
-    const fields=['esferico','cilindrico','eixo','dnp','adicao'];
-    const hasData=fields.some(key=>{
-      const oe=rx.oe?.[key];
-      const od=rx.od?.[key];
-      return (oe && String(oe).trim()!=='') || (od && String(od).trim()!=='');
-    });
-    if(!hasData) return '';
-    const makeRow=(side)=>fields.map(key=>rx[side]?.[key]||'').map(val=>`<td>${val||''}</td>`).join('');
-    return `
-      <div class="rx-table-wrapper">
-        <table class="rx-table">
-          <thead><tr><th></th><th>Esférico</th><th>Cilíndrico</th><th>Eixo</th><th>DNP</th><th>Adição</th></tr></thead>
-          <tbody>
-            <tr><td>OE</td>${makeRow('oe')}</tr>
-            <tr><td>OD</td>${makeRow('od')}</tr>
-          </tbody>
-        </table>
-      </div>`;
-  }
-
   function buildPurchaseCard(cp){
     const data=cp.dataCompra ? formatDateDDMMYYYY(cp.dataCompra) : '';
     const valor=cp.valor!=null || cp.valorLente!=null ? formatCurrency(cp.valor ?? cp.valorLente) : '-';
@@ -2980,8 +3030,8 @@ function initClientesTabela(){
           ${nfe}
           ${tipos?`<div class="info-label">Tipos</div><div class="info-value">${tipos}</div>`:''}
         </div>
-        ${renderFollowupBadges(cp)}
-        ${renderRxTable(cp)}
+        ${buildFollowupBadges(cp)}
+        ${buildRxTable(cp)}
         ${observacoes}
       </article>`;
   }
@@ -3022,6 +3072,19 @@ function initClientesTabela(){
     const saveBtn=modal.querySelector('#modal-save');
     const cancelBtn=modal.querySelector('[data-modal-close]');
     const dialog=modal.querySelector('.modal-dialog');
+    const header=modal.querySelector('.modal-header');
+    let pageBtn=header?.querySelector('.modal-client-page-btn');
+    if(!pageBtn && header){
+      pageBtn=document.createElement('button');
+      pageBtn.type='button';
+      pageBtn.className='btn btn-outline modal-client-page-btn';
+      pageBtn.textContent='PÁGINA DO CLIENTE';
+      header.insertBefore(pageBtn, header.firstChild);
+    }
+    if(pageBtn){
+      pageBtn.hidden=false;
+      pageBtn.onclick=()=>{ modal.close(); navigateToClientPage(cliente.id); };
+    }
     const prev={
       saveDisplay: saveBtn.style.display,
       saveForm: saveBtn.getAttribute('form'),
@@ -3029,7 +3092,8 @@ function initClientesTabela(){
       saveType: saveBtn.getAttribute('type'),
       cancelText: cancelBtn.textContent,
       cancelAction: cancelBtn.getAttribute('data-action'),
-      cancelType: cancelBtn.getAttribute('type')
+      cancelType: cancelBtn.getAttribute('type'),
+      pageBtnHidden: pageBtn?.hidden ?? true
     };
     saveBtn.style.display='none';
     if(saveBtn.getAttribute('form')) saveBtn.removeAttribute('form');
@@ -3051,6 +3115,10 @@ function initClientesTabela(){
       if(prev.cancelAction) cancelBtn.setAttribute('data-action', prev.cancelAction); else cancelBtn.removeAttribute('data-action');
       if(prev.cancelType) cancelBtn.setAttribute('type', prev.cancelType); else cancelBtn.setAttribute('type','button');
       dialog.classList.remove('modal-cliente-detalhe');
+      if(pageBtn){
+        pageBtn.hidden=prev.pageBtnHidden;
+        pageBtn.onclick=null;
+      }
       modal.close=originalClose;
       originalClose();
     };
@@ -3184,7 +3252,7 @@ function initClientesTabela(){
         const valorExibicao=ultimaCompra ? formatCurrency(derived.valorUltima) : '-';
         const comprasCount=derived.comprasCount;
         const isSelected=selectedIds.has(c.id);
-        const contactDots=CONTACT_PERIODS.map(stage=>{
+        const contactDots=FOLLOWUP_PERIODS.map(stage=>{
           const info=getContactStageInfo(c, stage, followupLookup);
           const dotClass=getContactDotClass(info, todayISO);
           return `<span class="contact-dot ${dotClass}"></span>`;
@@ -3285,6 +3353,233 @@ function initClientesTabela(){
 
   updateSortIndicators();
   updateTable();
+}
+
+function initClientePagina(){
+  db.initComSeeds();
+  const container=document.getElementById('clientePage');
+  if(!container) return;
+
+  const backBtn=container.querySelector('[data-action="cliente-voltar"]');
+  if(backBtn && !backBtn.dataset.bound){
+    backBtn.addEventListener('click',()=>{ location.hash='#/clientes-tabela'; });
+    backBtn.dataset.bound='true';
+  }
+
+  const emptyState=container.querySelector('.cliente-page-empty');
+  const sections=container.querySelector('.cliente-page-sections');
+  const titleEl=container.querySelector('#clientePageTitle');
+  const subtitleEl=container.querySelector('#clientePageSubtitle');
+  const editBtn=container.querySelector('[data-action="cliente-editar"]');
+  const novaCompraBtn=container.querySelector('[data-action="cliente-nova-compra"]');
+  const dadosBody=container.querySelector('#clienteDadosPessoais');
+  const comprasBody=container.querySelector('#clienteHistoricoCompras');
+  const contatosBody=container.querySelector('#clienteHistoricoContatos');
+
+  const setEmpty=()=>{
+    if(titleEl) titleEl.textContent='Página do Cliente';
+    if(subtitleEl) subtitleEl.textContent='Selecione um cliente na Tabela de Clientes.';
+    if(emptyState) emptyState.hidden=false;
+    if(sections) sections.hidden=true;
+    if(editBtn){ editBtn.disabled=true; editBtn.onclick=null; }
+    if(novaCompraBtn){ novaCompraBtn.disabled=true; novaCompraBtn.onclick=null; }
+    if(dadosBody) dadosBody.innerHTML='';
+    if(comprasBody) comprasBody.innerHTML='';
+    if(contatosBody) contatosBody.innerHTML='';
+  };
+
+  let clienteId=state.getClienteSelecionadoId();
+  if(!clienteId){ setEmpty(); return; }
+  let cliente=db.buscarPorId(clienteId);
+  if(!cliente){ setEmpty(); return; }
+  state.setClienteSelecionado(cliente.id);
+
+  function ensureActions(){
+    if(editBtn){
+      editBtn.disabled=false;
+      editBtn.onclick=()=>openClienteModal(cliente.id, id=>{
+        state.setClienteSelecionado(id);
+        refreshCliente();
+        window.renderClientsTable?.();
+        window.renderClientDetail?.();
+      });
+    }
+    if(novaCompraBtn){
+      novaCompraBtn.disabled=false;
+      novaCompraBtn.onclick=()=>openCompraModal(cliente.id, null, ()=>{
+        refreshCliente();
+        window.renderClientsTable?.();
+        window.renderClientDetail?.();
+      });
+    }
+  }
+
+  function updateHeader(){
+    if(titleEl) titleEl.textContent=cliente.nome || 'Cliente';
+    if(subtitleEl){
+      const parts=[];
+      const compras=cliente.compras||[];
+      if(compras.length){
+        const sorted=[...compras].sort((a,b)=>(b.dataCompra||'').localeCompare(a.dataCompra||''));
+        const ultima=sorted[0];
+        const ultimaData=ultima?.dataCompra ? formatDateDDMMYYYY(ultima.dataCompra) : '';
+        parts.push(`${compras.length} ${compras.length===1?'compra':'compras'}`);
+        if(ultimaData) parts.push(`Última compra ${ultimaData}`);
+      }
+      if(cliente.atualizadoEm){
+        const atualizado=formatDateDDMMYYYY(cliente.atualizadoEm);
+        if(atualizado) parts.push(`Atualizado em ${atualizado}`);
+      }
+      subtitleEl.textContent=parts.join(' · ');
+    }
+    if(emptyState) emptyState.hidden=true;
+    if(sections) sections.hidden=false;
+  }
+
+  function renderDados(){
+    if(!dadosBody) return;
+    const telefone=cliente.telefone ? formatTelefone(cliente.telefone) : '-';
+    const nascimento=cliente.dataNascimento ? formatDateDDMMYYYY(cliente.dataNascimento) : '-';
+    const cpf=cliente.cpf ? formatCpf(cliente.cpf) : '-';
+    const genero=cliente.genero || '-';
+    const email=cliente.email || '-';
+    const endereco=cliente.endereco || '-';
+    const interesses=((cliente.interesses||cliente.usos)||[]).join(', ') || '-';
+    const observacoes=cliente.observacoes ? `<div class="cliente-data-observacoes"><span>Observações</span><p>${cliente.observacoes}</p></div>` : '';
+    dadosBody.innerHTML=`
+      <dl class="cliente-data-grid">
+        <div><dt>Telefone</dt><dd>${telefone}</dd></div>
+        <div><dt>Data de nascimento</dt><dd>${nascimento}</dd></div>
+        <div><dt>CPF</dt><dd>${cpf}</dd></div>
+        <div><dt>Gênero</dt><dd>${genero}</dd></div>
+        <div><dt>Email</dt><dd>${email}</dd></div>
+        <div><dt>Endereço</dt><dd>${endereco}</dd></div>
+        <div><dt>Interesses</dt><dd>${interesses}</dd></div>
+      </dl>
+      ${observacoes}`;
+  }
+
+  function renderCompras(){
+    if(!comprasBody) return;
+    const compras=[...(cliente.compras||[])].sort((a,b)=>(b.dataCompra||'').localeCompare(a.dataCompra||''));
+    if(!compras.length){
+      comprasBody.innerHTML='<div class="empty-state">Sem compras registradas.</div>';
+      return;
+    }
+    comprasBody.innerHTML=compras.map((cp,idx)=>{
+      const dataCompra=cp.dataCompra ? formatDateDDMMYYYY(cp.dataCompra) : 'Compra';
+      const valor=cp.valor!=null || cp.valorLente!=null ? formatCurrency(cp.valor ?? cp.valorLente) : '-';
+      const material=cp.armacaoMaterial ? `<span class="tag">${cp.armacaoMaterial}</span>` : '';
+      const tipos=cp.tiposCompra?.length ? cp.tiposCompra.map(t=>`<span class="tag">${t}</span>`).join(' ') : '';
+      const observacoes=cp.observacoes ? `<div class="cliente-compra-observacoes"><span>Observações</span><p>${cp.observacoes}</p></div>` : '';
+      return `<details class="cliente-compra" data-purchase-id="${cp.id}"${idx===0?' open':''}>
+        <summary>
+          <span class="compra-summary-title">${dataCompra}</span>
+          <span class="compra-summary-meta">${valor}</span>
+        </summary>
+        <div class="cliente-compra-body">
+          <div class="cliente-compra-info">
+            <div class="info-line"><span class="info-label">Armação</span><span class="info-value">${cp.armacao || '-'}${material?` ${material}`:''}</span></div>
+            <div class="info-line"><span class="info-label">Lente</span><span class="info-value">${cp.lente || '-'}</span></div>
+            <div class="info-line"><span class="info-label">Valor</span><span class="info-value">${valor}</span></div>
+            ${cp.nfe?`<div class="info-line"><span class="info-label">NFE/NFC-e</span><span class="info-value">${cp.nfe}</span></div>`:''}
+            ${tipos?`<div class="info-line"><span class="info-label">Tipos</span><span class="info-value">${tipos}</span></div>`:''}
+          </div>
+          <div class="cliente-compra-followups">${buildFollowupBadges(cp)}</div>
+          ${buildRxTable(cp)}
+          ${observacoes}
+          <div class="cliente-compra-actions">
+            <button type="button" class="btn btn-outline" data-action="cliente-editar-compra" data-purchase-id="${cp.id}">Editar</button>
+          </div>
+        </div>
+      </details>`;
+    }).join('');
+    comprasBody.querySelectorAll('[data-action="cliente-editar-compra"]').forEach(btn=>{
+      btn.addEventListener('click',e=>{
+        e.preventDefault();
+        const purchaseId=btn.dataset.purchaseId;
+        if(!purchaseId) return;
+        openCompraModal(cliente.id, purchaseId, ()=>{
+          refreshCliente();
+          window.renderClientsTable?.();
+          window.renderClientDetail?.();
+        });
+      });
+    });
+  }
+
+  function renderContatos(){
+    if(!contatosBody) return;
+    const rows=[];
+    (cliente.compras||[]).forEach(compra=>{
+      const compraData=compra.dataCompra ? formatDateDDMMYYYY(compra.dataCompra) : '-';
+      const baseDate=parseDDMMYYYY(compra.dataCompra);
+      FOLLOWUP_PERIODS.forEach(period=>{
+        const offset=FOLLOWUP_OFFSETS[period];
+        let due=null;
+        if(baseDate && !isNaN(baseDate.getTime())) due=addDaysUTC(baseDate, offset);
+        const dueISO=due ? due.toISOString().split('T')[0] : '';
+        const dueLabel=due ? formatDateDDMMYYYY(due) : '-';
+        const done=!!compra.followUps?.[period]?.done;
+        rows.push({ compraId: compra.id, period, compraData, dueLabel, dueISO, done });
+      });
+    });
+    rows.sort((a,b)=>{
+      if(a.dueISO && b.dueISO) return a.dueISO.localeCompare(b.dueISO);
+      if(a.dueISO) return -1;
+      if(b.dueISO) return 1;
+      return 0;
+    });
+    if(!rows.length){
+      contatosBody.innerHTML='<div class="empty-state">Nenhum contato programado.</div>';
+      return;
+    }
+    contatosBody.innerHTML=`
+      <table class="table cliente-contatos-table">
+        <thead><tr><th>Data da compra</th><th>Data do contato</th><th>Executado</th></tr></thead>
+        <tbody>
+          ${rows.map(row=>{
+            const label=FOLLOWUP_LABELS[row.period]||row.period;
+            return `<tr data-purchase-id="${row.compraId}" data-period="${row.period}">
+              <td>${row.compraData}</td>
+              <td><div class="contato-date">${row.dueLabel}</div><small>${label}</small></td>
+              <td class="contato-status"><label class="contato-switch"><input type="checkbox" ${row.done?'checked':''} aria-label="Contato ${label} realizado"><span></span></label></td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>`;
+    contatosBody.querySelectorAll('input[type="checkbox"]').forEach(cb=>{
+      cb.addEventListener('change',()=>{
+        const tr=cb.closest('tr');
+        const purchaseId=tr?.dataset.purchaseId;
+        const period=tr?.dataset.period;
+        if(!purchaseId || !period) return;
+        const latest=db.buscarPorId(cliente.id);
+        if(!latest) return;
+        const target=latest.compras?.find(c=>c.id===purchaseId);
+        if(!target) return;
+        const followUps={ ...target.followUps, [period]: { ...(target.followUps?.[period]||{}), done: cb.checked, doneAt: cb.checked ? new Date().toISOString() : null } };
+        db.atualizarCompra(cliente.id, purchaseId, { followUps }, { skipReload:true, skipDashboard:true });
+        renderCalendarMonth?.();
+        renderDashboard?.();
+        refreshCliente();
+      });
+    });
+  }
+
+  function refreshCliente(){
+    cliente=db.buscarPorId(cliente.id) || cliente;
+    if(!cliente){ setEmpty(); return; }
+    state.setClienteSelecionado(cliente.id);
+    ensureActions();
+    updateHeader();
+    renderDados();
+    renderCompras();
+    renderContatos();
+  }
+
+  ensureActions();
+  refreshCliente();
 }
 
 
