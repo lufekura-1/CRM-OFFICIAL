@@ -1898,7 +1898,7 @@ input[name="telefone"] { width:18ch; }
   max-width: min(var(--menu-popover-max-width), calc(100vw - var(--sidebar-collapsed-w) - 32px));
   max-height: min(var(--menu-popover-max-height), calc(100vh - 48px));
   overflow-y: auto;
-  z-index: 2000;
+  z-index: 12000;
   box-sizing: border-box;
 }
 .nav-submenu::before {
