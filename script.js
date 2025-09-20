@@ -236,26 +236,32 @@ function upsertEvent(list, ev){
 }
 
 function scheduleFollowUpsForPurchase(cliente, compra){
-  let cal = getCalendar();
-// Remove quaisquer eventos de compra existentes desta compra (independente de cor)
-cal = cal.filter(ev => !(
-  (ev.meta?.purchaseId === compra.id || ev.meta?.compraId === compra.id) &&
-  ev.meta?.kind === 'purchase'
-));
+  if(!cliente || !compra) return;
+  if(cliente.naoContate){
+    removeFollowUpEvents(cliente.id, compra.id);
+    return;
+  }
+  let cal=getCalendar();
+  // Remove quaisquer eventos de compra existentes desta compra (independente de cor)
+  cal=cal.filter(ev => !(
+    (ev.meta?.purchaseId===compra.id || ev.meta?.compraId===compra.id) &&
+    ev.meta?.kind==='purchase'
+  ));
 
-// ID base para novos eventos desta compra
-const baseId = `${currentProfile()}:${cliente.id}:${compra.id}:0`;
+  // ID base para novos eventos desta compra
+  const baseId=`${currentProfile()}:${cliente.id}:${compra.id}:0`;
 
-  const baseDate = parseDDMMYYYY(compra.dataCompra);
+  const baseDate=parseDDMMYYYY(compra.dataCompra);
   if(isNaN(baseDate)) return;
 
   for (const d of [90,180,365]){
-    const stage = d===90?'3m':d===180?'6m':'12m';
-    const id = `${currentProfile()}:${cliente.id}:${compra.id}:${d}`;
-    const dt = addDaysUTC(baseDate, d);
-    const done = !!compra.followUps?.[stage]?.done;
+    const stage=d===90?'3m':d===180?'6m':'12m';
+    const id=`${currentProfile()}:${cliente.id}:${compra.id}:${d}`;
+    const dt=addDaysUTC(baseDate, d);
+    const done=!!compra.followUps?.[stage]?.done;
     upsertEvent(cal, {
-      id, date: fmtYMD(dt),
+      id,
+      date: fmtYMD(dt),
       title: `${cliente.nome} (${d===90?'3 meses':d===180?'6 meses':'12 meses'})`,
       color: 'followup',
       meta: {
@@ -298,7 +304,12 @@ const baseId = `${currentProfile()}:${cliente.id}:${compra.id}:0`;
 })();
 
 function scheduleFollowUpsOnClientSave(cliente){
-  (cliente.compras||[]).forEach(c => scheduleFollowUpsForPurchase(cliente, c));
+  if(!cliente) return;
+  if(cliente.naoContate){
+    removeFollowUpEvents(cliente.id);
+    return;
+  }
+  (cliente.compras||[]).forEach(c=>scheduleFollowUpsForPurchase(cliente, c));
 }
 
 function migrateToProfiles(){
@@ -593,11 +604,13 @@ function isNomeBloqueado(n){
 
 
 function removeFollowUpEvents(clienteId,compraId){
+  if(!clienteId && !compraId) return;
   let eventos=getJSON(calKey(),[]);
   eventos=eventos.filter(e=>{
-    if(e.meta?.type==='followup' && e.meta?.clienteId===clienteId){
-      if(!compraId || e.meta?.compraId===compraId) return false;
-    }
+    if(e.meta?.type!=='followup') return true;
+    const matchesCliente=!clienteId || e.meta?.clienteId===clienteId || e.meta?.clientId===clienteId;
+    const matchesCompra=!compraId || e.meta?.compraId===compraId || e.meta?.purchaseId===compraId;
+    if(matchesCliente && matchesCompra) return false;
     return true;
   });
   setJSON(calKey(),eventos);
