@@ -941,20 +941,15 @@ const routes = {
   'clientes-tabela': renderClientesTabela,
   'clientes-pagina': renderClientePagina,
   os: renderOS,
-  'contatos-executar': renderContatosExecutar,
-  'contatos-listas': renderContatosListas,
-  'contatos-pos-venda': renderContatosPosVenda,
-  'contatos-ofertas': renderContatosOfertas,
-  'contatos-historico': renderContatosHistorico,
+  contatos: renderContatosPage,
   'gerencia-config': renderGerenciaConfig,
   'gerencia-mensagens': renderGerenciaMensagens,
   configuracoes: renderConfig
 };
 const CLIENTES_SUBROUTES = new Set(['clientes-visao-geral','clientes-cadastro','clientes-tabela','clientes-pagina']);
 const CALENDARIO_SUBROUTES = new Set(['calendario','calendario-folgas','calendario-visualizador']);
-const CONTATOS_SUBROUTES = new Set(['contatos-executar','contatos-listas','contatos-pos-venda','contatos-ofertas','contatos-historico']);
 const GERENCIA_SUBROUTES = new Set(['gerencia-config','gerencia-mensagens']);
-const SUBMENU_ROUTES = { clientes: CLIENTES_SUBROUTES, calendario: CALENDARIO_SUBROUTES, contatos: CONTATOS_SUBROUTES, gerencia: GERENCIA_SUBROUTES };
+const SUBMENU_ROUTES = { clientes: CLIENTES_SUBROUTES, calendario: CALENDARIO_SUBROUTES, gerencia: GERENCIA_SUBROUTES };
 
 function routeMatchesRoot(root, route){
   const set = SUBMENU_ROUTES[root];
@@ -1065,7 +1060,7 @@ function collapseAllSubmenus(exceptRoot){
   });
   hideNavTooltip();
 }
-const routeAliases = { clientes: 'clientes-visao-geral', contatos: 'contatos-executar', contato: 'contatos-executar', gerencia: 'gerencia-config' };
+const routeAliases = { clientes: 'clientes-visao-geral', contatos: 'contatos', contato: 'contatos', gerencia: 'gerencia-config' };
 let currentRoute = 'dashboard';
 
 function resolveRoute(name){
@@ -1093,12 +1088,8 @@ function renderRoute(name){
     'clientes-cadastro': 'Clientes · Cadastro',
     'clientes-tabela': 'Clientes · Tabela de Clientes',
     'clientes-pagina': 'Clientes · Página do Cliente',
+    contatos: 'Contatos',
     os: 'Ordem de Serviço',
-    'contatos-executar': 'Contatos · Contatos a Executar',
-    'contatos-listas': 'Contatos · Listas de Contatos',
-    'contatos-pos-venda': 'Contatos · Pós Venda',
-    'contatos-ofertas': 'Contatos · Ofertas',
-    'contatos-historico': 'Contatos · Histórico',
     'gerencia-config': 'Gerencia · Configurações',
     'gerencia-mensagens': 'Gerencia · Mensagens',
     configuracoes: 'Configurações'
@@ -1130,7 +1121,7 @@ function renderRoute(name){
   if(currentRoute === 'clientes-pagina') initClientePagina();
   if(currentRoute === 'calendario') initCalendarioPage();
   if(currentRoute === 'os') initOSPage();
-  if(currentRoute === 'contatos-historico') initContatosHistoricoPage();
+  if(currentRoute === 'contatos') initContatosPage();
   if(currentRoute === 'gerencia-config') initGerenciaConfigPage();
   if(currentRoute === 'gerencia-mensagens') initGerenciaMensagensPage();
   if(currentRoute === 'configuracoes') initConfiguracoesPage();
@@ -1277,7 +1268,7 @@ function renderCalendario() {
           <div id="calendar" class="calendar">
             <div class="cal-toolbar">
               <div class="cal-actions">
-                <button class="btn btn-cal-eventos">Adicionar Evento</button>
+                <button class="btn btn-cal-eventos">Adicionar Lembrete</button>
               </div>
               <div class="cal-nav">
                 <button class="btn cal-prev" aria-label="Mês anterior">&#8249;</button>
@@ -1583,76 +1574,193 @@ function dashboardPage() {
   `</section>`;
 }
 
-function renderContatosPlaceholder(title, slug){
-  return `
-  <section class="contatos-page contatos-${slug}">
-    <div class="card-grid">
-      <div class="card" data-card-id="contatos-${slug}" data-colspan="12">
-        <div class="card-header"><div class="card-head">${title}</div></div>
-        <div class="card-body"><div class="empty-state">Conteúdo em preparação.</div></div>
-      </div>
-    </div>
-  </section>`;
-}
-
-function renderContatosExecutar(){
-  return renderContatosPlaceholder('Contatos a Executar','executar');
-}
-
-function renderContatosListas(){
-  return renderContatosPlaceholder('Listas de Contatos','listas');
-}
-
-function renderContatosPosVenda(){
-  return renderContatosPlaceholder('Pós Venda','pos-venda');
-}
-
-function renderContatosOfertas(){
-  return renderContatosPlaceholder('Ofertas','ofertas');
-}
-
-const CONTATOS_HISTORICO_DATA={
-  'pos-venda':[
-    { cliente:'Ana Souza', ultimaCompra:'12/01/2024', ultimoContato:'15/02/2024', responsavel:'Carla Mendes', status:'Concluído' },
-    { cliente:'Bruno Lima', ultimaCompra:'28/02/2024', ultimoContato:'05/03/2024', responsavel:'Paulo Sérgio', status:'Em acompanhamento' },
-    { cliente:'Camila Rocha', ultimaCompra:'09/03/2024', ultimoContato:'20/03/2024', responsavel:'Lívia Prado', status:'Pendente' }
+const CONTATOS_EXECUTAR_DATA={
+  semana:[
+    { id:'exec-ana', nome:'Ana Souza', interesse:'Coleção verão 2024', canal:'WhatsApp', responsavel:'Carla Mendes', prazo:'Hoje', marcador:'Retorno' },
+    { id:'exec-julia', nome:'Júlia Prado', interesse:'Grupo jóias', canal:'Ligação', responsavel:'Equipe Luxo', prazo:'Amanhã', marcador:'Agendado' }
   ],
-  ofertas:[
-    { cliente:'Daniel Alves', ultimaCompra:'18/01/2024', ultimoContato:'10/02/2024', responsavel:'Roberta Dias', status:'Oferta enviada' },
-    { cliente:'Eduarda Nunes', ultimaCompra:'22/02/2024', ultimoContato:'02/03/2024', responsavel:'Marcos Paulo', status:'Aguardando retorno' },
-    { cliente:'Felipe Barbosa', ultimaCompra:'30/03/2024', ultimoContato:'08/04/2024', responsavel:'Sofia Martins', status:'Oferta convertida' }
+  atrasados:[
+    { id:'exec-bruno', nome:'Bruno Lima', interesse:'Linha esportiva', canal:'E-mail', responsavel:'Marcos Paulo', prazo:'05/04', atraso:'3 dias' },
+    { id:'exec-felipe', nome:'Felipe Barbosa', interesse:'Club premium', canal:'WhatsApp', responsavel:'Sofia Martins', prazo:'28/03', atraso:'11 dias' }
+  ],
+  concluidos:[
+    { id:'exec-camila', nome:'Camila Rocha', interesse:'Grupo jóias', canal:'WhatsApp', responsavel:'Roberta Dias', prazo:'08/04', marcador:'Concluído' },
+    { id:'exec-helena', nome:'Helena Silva', interesse:'Coleção solar', canal:'Ligação', responsavel:'Equipe Pós-venda', prazo:'09/04', marcador:'Concluído' }
   ]
 };
 
-function renderHistoricoTable(rows){
-  if(!rows?.length){
-    return '<div class="empty-state">Nenhum registro disponível.</div>';
-  }
-  return `<table class="historico-table">`
-    +'<thead><tr><th>Cliente</th><th>Última compra</th><th>Último contato</th><th>Responsável</th><th>Status</th></tr></thead>'
-    +'<tbody>'
-    +rows.map(row=>`<tr><td>${escapeHtml(row.cliente)}</td><td>${escapeHtml(row.ultimaCompra)}</td><td>${escapeHtml(row.ultimoContato)}</td><td>${escapeHtml(row.responsavel)}</td><td>${escapeHtml(row.status)}</td></tr>`).join('')
-    +'</tbody></table>';
-}
+const CONTATOS_OFERTAS_DATA=[
+  { id:'oferta-daniel', nome:'Daniel Alves', interesse:'Coleção Essencial', interesseKey:'colecao_essencial', grupo:'Grupo jóias', grupoKey:'grupo_joias', responsavel:'Marcos Paulo', canal:'WhatsApp', status:'O.F' },
+  { id:'oferta-eduarda', nome:'Eduarda Nunes', interesse:'Linha Solar', interesseKey:'linha_solar', grupo:'Grupo verão', grupoKey:'grupo_verao', responsavel:'Sofia Martins', canal:'Ligação', status:'O.F' },
+  { id:'oferta-fernando', nome:'Fernando Duarte', interesse:'Grupo jóias', interesseKey:'grupo_joias', grupo:'Grupo jóias', grupoKey:'grupo_joias', responsavel:'Equipe Luxo', canal:'E-mail', status:'O.F' }
+];
 
-function renderContatosHistorico(){
-  const posVendaTable=renderHistoricoTable(CONTATOS_HISTORICO_DATA['pos-venda']);
-  const ofertasTable=renderHistoricoTable(CONTATOS_HISTORICO_DATA.ofertas);
+const CONTATOS_POS_VENDA_DATA=[
+  { id:'pv-ana', nome:'Ana Souza', interesse:'Programa fidelidade', interesseKey:'fidelidade', grupo:'Clientes premium', grupoKey:'clientes_premium', responsavel:'Carla Mendes', canal:'WhatsApp', status:'P.V' },
+  { id:'pv-bruno', nome:'Bruno Lima', interesse:'Grupo jóias', interesseKey:'grupo_joias', grupo:'Grupo jóias', grupoKey:'grupo_joias', responsavel:'Equipe Luxo', canal:'Ligação', status:'P.V' },
+  { id:'pv-camila', nome:'Camila Rocha', interesse:'Cuidados pós venda', interesseKey:'pos_venda', grupo:'Clientes recorrentes', grupoKey:'clientes_recorrentes', responsavel:'Equipe Pós-venda', canal:'WhatsApp', status:'P.V' }
+];
+
+const CONTATOS_HISTORICO_REGISTROS=[
+  { id:'hist-001', nome:'Ana Souza', tipo:'Pós-venda', estado:'Concluído', estadoKey:'concluido', dataISO:'2024-03-15', dataLabel:'15/03/2024', responsavel:'Carla Mendes', origem:'Contato 3 meses' },
+  { id:'hist-002', nome:'Bruno Lima', tipo:'Oferta', estado:'Em andamento', estadoKey:'em_andamento', dataISO:'2024-03-28', dataLabel:'28/03/2024', responsavel:'Marcos Paulo', origem:'Apresentação coleção' },
+  { id:'hist-003', nome:'Camila Rocha', tipo:'Pós-venda', estado:'Pendente', estadoKey:'pendente', dataISO:'2024-04-05', dataLabel:'05/04/2024', responsavel:'Equipe Pós-venda', origem:'Confirmação montagem' },
+  { id:'hist-004', nome:'Eduarda Nunes', tipo:'Oferta', estado:'Concluído', estadoKey:'concluido', dataISO:'2024-04-08', dataLabel:'08/04/2024', responsavel:'Sofia Martins', origem:'Fechamento coleção solar' }
+];
+
+function renderContatosPage(){
+  const kanbanColumns=[
+    { key:'semana', titulo:'Abertos (Semana)', descricao:'Contatos a ser executado nessa semana', itens:CONTATOS_EXECUTAR_DATA.semana },
+    { key:'atrasados', titulo:'Atrasados', descricao:'Todo tempo', itens:CONTATOS_EXECUTAR_DATA.atrasados },
+    { key:'concluidos', titulo:'Concluídos (Semana)', descricao:'Contatos concluídos nesta semana', itens:CONTATOS_EXECUTAR_DATA.concluidos }
+  ];
+  const renderChip=item=>{
+    const badge=item.marcador ? `<span class="contato-chip__stage">${escapeHtml(item.marcador)}</span>` : '';
+    const atraso=item.atraso ? `<span class="contato-chip__delay">Em atraso: ${escapeHtml(item.atraso)}</span>` : '';
+    return `<article class="contato-chip" data-id="${escapeHtml(item.id)}">
+      <div class="contato-chip__header"><strong class="contato-chip__name">${escapeHtml(item.nome)}</strong>${badge}</div>
+      <div class="contato-chip__meta"><span>${escapeHtml(item.interesse)}</span><span>Resp.: ${escapeHtml(item.responsavel)}</span></div>
+      <div class="contato-chip__footer"><span>Prazo: ${escapeHtml(item.prazo)}</span><span>${escapeHtml(item.canal)}</span>${atraso}</div>
+    </article>`;
+  };
+  const buildSelectOptions=(list,keyProp,labelProp)=>{
+    const map=new Map();
+    list.forEach(item=>{
+      const key=item[keyProp]||'';
+      const label=item[labelProp]||'';
+      if(key && !map.has(key)) map.set(key,label);
+    });
+    return Array.from(map.entries()).map(([value,label])=>`<option value="${escapeHtml(value)}">${escapeHtml(label)}</option>`).join('');
+  };
+  const renderListRows=list=>list.map(item=>`
+    <tr data-grupo="${escapeHtml(item.grupoKey||'')}" data-interesse="${escapeHtml(item.interesseKey||'')}">
+      <td><label class="contatos-checkbox"><input type="checkbox" data-item="${escapeHtml(item.id)}"><span>${escapeHtml(item.nome)}</span></label></td>
+      <td>${escapeHtml(item.interesse)}</td>
+      <td><span class="contatos-status">${escapeHtml(item.status)}</span></td>
+      <td>${escapeHtml(item.responsavel)}</td>
+      <td>${escapeHtml(item.canal)}</td>
+    </tr>`).join('');
+  const renderListPanel=(tab,list,{titulo,descricao})=>{
+    const groupOptions=buildSelectOptions(list,'grupoKey','grupo');
+    const interestOptions=buildSelectOptions(list,'interesseKey','interesse');
+    return `
+    <section class="contatos-panel contatos-panel--${tab}" data-tab-panel="${tab}" role="tabpanel" aria-labelledby="contatosTab-${tab}" hidden>
+      <div class="card-grid">
+        <div class="card" data-colspan="12">
+          <div class="card-header">
+            <div class="card-head">${titulo}</div>
+            <div class="card-subtitle">${descricao}</div>
+          </div>
+          <div class="card-body">
+            <div class="contatos-list-toolbar">
+              <label class="contatos-select-all"><input type="checkbox" data-action="select-all"><span>Selecionar todos</span></label>
+              <div class="contatos-filters">
+                <label>Grupo
+                  <select data-filter="grupo">
+                    <option value="">Todos os grupos</option>
+                    ${groupOptions}
+                  </select>
+                </label>
+                <label>Interesse
+                  <select data-filter="interesse">
+                    <option value="">Todos os interesses</option>
+                    ${interestOptions}
+                  </select>
+                </label>
+              </div>
+            </div>
+            <table class="contatos-table">
+              <thead><tr><th>Contato</th><th>Interesse</th><th>Estado</th><th>Responsável</th><th>Canal</th></tr></thead>
+              <tbody>${renderListRows(list)}</tbody>
+            </table>
+            <div class="contatos-list-empty empty-state" data-empty-message hidden>Nenhum contato encontrado.</div>
+          </div>
+        </div>
+      </div>
+    </section>`;
+  };
+  const historicoRows=CONTATOS_HISTORICO_REGISTROS.map(item=>`
+    <tr data-estado="${escapeHtml(item.estadoKey)}" data-date="${escapeHtml(item.dataISO)}">
+      <td>${escapeHtml(item.nome)}</td>
+      <td>${escapeHtml(item.tipo)}</td>
+      <td>${escapeHtml(item.estado)}</td>
+      <td>${escapeHtml(item.dataLabel)}</td>
+      <td>${escapeHtml(item.responsavel)}</td>
+      <td>${escapeHtml(item.origem)}</td>
+    </tr>`).join('');
+  const estadoOptions=(()=>{
+    const map=new Map();
+    CONTATOS_HISTORICO_REGISTROS.forEach(item=>{
+      if(item.estadoKey && !map.has(item.estadoKey)) map.set(item.estadoKey,item.estado);
+    });
+    return Array.from(map.entries()).map(([value,label])=>`<option value="${escapeHtml(value)}">${escapeHtml(label)}</option>`).join('');
+  })();
   return `
-  <section id="contatosHistorico" class="contatos-historico">
-    <div class="historico-tabs" role="tablist">
-      <button type="button" class="historico-tab is-active" data-tab="pos-venda">Pós Venda</button>
-      <button type="button" class="historico-tab" data-tab="ofertas">Ofertas</button>
+  <section id="contatosPage" class="contatos-page">
+    <div class="contatos-tabs" role="tablist" aria-label="Navegação de contatos">
+      <button type="button" id="contatosTab-executar" class="contatos-tab is-active" role="tab" aria-selected="true" data-tab="executar">Contatos a Executar</button>
+      <button type="button" id="contatosTab-ofertas" class="contatos-tab" role="tab" aria-selected="false" data-tab="ofertas">Ofertas</button>
+      <button type="button" id="contatosTab-pos-venda" class="contatos-tab" role="tab" aria-selected="false" data-tab="pos-venda">Pós Venda</button>
+      <button type="button" id="contatosTab-historico" class="contatos-tab" role="tab" aria-selected="false" data-tab="historico">Histórico</button>
     </div>
-    <div class="card-grid historico-grid">
-      <div class="card historico-card" data-colspan="12" data-tab-content="pos-venda">
-        <div class="card-header"><div class="card-head">Histórico de Pós Venda</div></div>
-        <div class="card-body">${posVendaTable}</div>
-      </div>
-      <div class="card historico-card" data-colspan="12" data-tab-content="ofertas" hidden>
-        <div class="card-header"><div class="card-head">Histórico de Ofertas</div></div>
-        <div class="card-body">${ofertasTable}</div>
-      </div>
+    <div class="contatos-panels">
+      <section class="contatos-panel contatos-panel--executar" data-tab-panel="executar" role="tabpanel" aria-labelledby="contatosTab-executar">
+        <div class="card-grid">
+          <div class="card" data-colspan="12">
+            <div class="card-header">
+              <div class="card-head">Contatos a ser executado</div>
+              <div class="card-subtitle">Organize os contatos por estágio e priorize a semana.</div>
+            </div>
+            <div class="card-body">
+              <div class="contatos-kanban">
+                ${kanbanColumns.map(col=>`
+                  <div class="contatos-kanban-column" data-column="${col.key}">
+                    <header class="contatos-kanban-header">
+                      <h3>${escapeHtml(col.titulo)}</h3>
+                      <p>${escapeHtml(col.descricao)}</p>
+                    </header>
+                    <div class="contatos-kanban-list">
+                      ${col.itens?.length ? col.itens.map(renderChip).join('') : '<div class="empty-state">Nenhum contato listado.</div>'}
+                    </div>
+                  </div>`).join('')}
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+      ${renderListPanel('ofertas', CONTATOS_OFERTAS_DATA, { titulo:'Ofertas', descricao:'Lista com os contatos em estado de O.F' })}
+      ${renderListPanel('pos-venda', CONTATOS_POS_VENDA_DATA, { titulo:'Pós Venda', descricao:'Clientes em acompanhamento de pós venda (P.V)' })}
+      <section class="contatos-panel contatos-panel--historico" data-tab-panel="historico" role="tabpanel" aria-labelledby="contatosTab-historico" hidden>
+        <div class="card-grid">
+          <div class="card" data-colspan="12">
+            <div class="card-header">
+              <div class="card-head">Histórico de contatos e ofertas</div>
+              <div class="card-subtitle">Consulte todas as interações realizadas.</div>
+            </div>
+            <div class="card-body">
+              <div class="contatos-historico-filters">
+                <label>Estado
+                  <select data-filter="estado">
+                    <option value="">Todos os estados</option>
+                    ${estadoOptions}
+                  </select>
+                </label>
+                <label>De
+                  <input type="date" data-filter="from">
+                </label>
+                <label>Até
+                  <input type="date" data-filter="to">
+                </label>
+              </div>
+              <table class="contatos-table contatos-historico-table">
+                <thead><tr><th>Contato</th><th>Tipo</th><th>Estado</th><th>Data</th><th>Responsável</th><th>Resumo</th></tr></thead>
+                <tbody>${historicoRows}</tbody>
+              </table>
+              <div class="contatos-historico-empty empty-state" data-empty-message hidden>Nenhum registro encontrado.</div>
+            </div>
+          </div>
+        </div>
+      </section>
     </div>
   </section>`;
 }
@@ -2432,20 +2540,10 @@ function initCalendarioPage() {
   function addVacationMarkers({nome,inicioISO,fimISO}){
     if(!inicioISO || !fimISO) return;
     const baseName=(nome||'Férias').trim() || 'Férias';
-    broadcastAdminEventToAll({
-      id:uuid(),
-      titulo:`${baseName} · Início`,
-      dataISO:inicioISO,
-      observacao:'Início das férias',
-      efetuado:false
-    });
-    broadcastAdminEventToAll({
-      id:uuid(),
-      titulo:`${baseName} · Retorno`,
-      dataISO:fimISO,
-      observacao:'Retorno das férias',
-      efetuado:false
-    });
+    const inicioNome=`${baseName} · Início`;
+    const retornoNome=`${baseName} · Retorno`;
+    createFolgaAcrossProfiles({ nome: inicioNome, dataISO: inicioISO, periodo:'dia_todo' });
+    createFolgaAcrossProfiles({ nome: retornoNome, dataISO: fimISO, periodo:'dia_todo' });
   }
   btnAddEvento?.addEventListener('click',()=>openEventoModal());
   btnMenuEventos?.addEventListener('click',e=>{ e.preventDefault(); openEventosOverviewModal(); });
@@ -2615,7 +2713,7 @@ function initCalendarioPage() {
           quickBtn.type='button';
           quickBtn.className='day-add';
           quickBtn.textContent='+';
-          quickBtn.setAttribute('aria-label','Adicionar evento');
+          quickBtn.setAttribute('aria-label','Adicionar lembrete');
           quickBtn.addEventListener('click',e=>{ e.stopPropagation(); openEventoModal(dateISO); });
         }
         cell.appendChild(quickBtn);
@@ -2891,22 +2989,36 @@ function initCalendarioPage() {
     title.textContent='Eventos';
     saveBtn.style.display='none';
     if(cancelBtn) cancelBtn.textContent='Fechar';
-    body.innerHTML=`<div class="calendar-modal calendar-modal--eventos"><div class="calendar-modal__header"><button type="button" class="btn btn-primary modal-add-evento">Adicionar evento</button></div><div class="calendar-modal__content"></div></div>`;
+    body.innerHTML=`<div class="calendar-modal calendar-modal--eventos"><div class="calendar-modal__header"><div class="calendar-modal__tabs" role="tablist" aria-label="Eventos e contatos"><button type="button" class="calendar-tab is-active" role="tab" aria-selected="true" data-tab="lembretes">Lembretes</button><button type="button" class="calendar-tab" role="tab" aria-selected="false" data-tab="contatos">Contatos</button></div><button type="button" class="btn btn-primary modal-add-evento">Adicionar Lembrete</button></div><div class="calendar-modal__content" data-active-tab="lembretes"></div></div>`;
     const listContainer=body.querySelector('.calendar-modal__content');
-    const getEventosAgrupados=()=>{
+    const tabs=Array.from(body.querySelectorAll('.calendar-tab'));
+    const addButton=body.querySelector('.modal-add-evento');
+    const emptyMessages={ lembretes:'Nenhum lembrete cadastrado.', contatos:'Nenhum contato programado.' };
+    const sortEventos=(list)=>list.sort((a,b)=>{
+      const ta=(a.titulo||a.title||'');
+      const tb=(b.titulo||b.title||'');
+      return ta.localeCompare(tb);
+    });
+    const filterEventosByTab=tab=>eventos.filter(ev=>{
+      if(ev.tipo==='desfalque') return false;
+      const isFollowup=ev.meta?.type==='followup' || ev.color==='followup';
+      return tab==='contatos' ? isFollowup : !isFollowup;
+    });
+    const getEventosAgrupados=tab=>{
       const map=new Map();
-      eventos.filter(ev=>ev.tipo!=='desfalque').forEach(ev=>{
+      filterEventosByTab(tab).forEach(ev=>{
         const iso=(ev.date||ev.dataISO||'').slice(0,10);
         if(!iso) return;
         if(!map.has(iso)) map.set(iso,[]);
         map.get(iso).push(ev);
       });
-      return Array.from(map.entries()).sort((a,b)=>a[0].localeCompare(b[0])).map(([iso,list])=>[iso,list.sort((a,b)=>{ const ta=(a.titulo||a.title||''); const tb=(b.titulo||b.title||''); return ta.localeCompare(tb); })]);
+      return Array.from(map.entries()).sort((a,b)=>a[0].localeCompare(b[0])).map(([iso,list])=>[iso,sortEventos(list)]);
     };
+    let activeTab='lembretes';
     function renderLista(){
-      const grupos=getEventosAgrupados();
+      const grupos=getEventosAgrupados(activeTab);
       if(!grupos.length){
-        listContainer.innerHTML='<div class="empty-state">Nenhum evento cadastrado.</div>';
+        listContainer.innerHTML=`<div class="empty-state">${emptyMessages[activeTab]}</div>`;
         return;
       }
       listContainer.innerHTML=grupos.map(([iso,list])=>{
@@ -2936,8 +3048,20 @@ function initCalendarioPage() {
         });
       });
     }
-    renderLista();
-    body.querySelector('.modal-add-evento')?.addEventListener('click',()=>{
+    function setActiveTab(tab){
+      activeTab=tab;
+      tabs.forEach(btn=>{
+        const isActive=btn.dataset.tab===tab;
+        btn.classList.toggle('is-active', isActive);
+        btn.setAttribute('aria-selected', isActive?'true':'false');
+      });
+      if(addButton) addButton.hidden = tab!=='lembretes';
+      listContainer.dataset.activeTab=tab;
+      renderLista();
+    }
+    tabs.forEach(btn=>btn.addEventListener('click',()=>setActiveTab(btn.dataset.tab)));
+    setActiveTab('lembretes');
+    addButton?.addEventListener('click',()=>{
       modal.close();
       setTimeout(()=>openEventoModal(),120);
     });
@@ -4464,22 +4588,114 @@ document.addEventListener('click', (e)=>{
   if(dashMenu && !dashMenu.hidden && !dashMenu.contains(e.target) && e.target !== dashBtn) closeDashMenu();
 });
 
-function initContatosHistoricoPage(){
-  const container=document.getElementById('contatosHistorico');
+function initContatosPage(){
+  const container=document.getElementById('contatosPage');
   if(!container) return;
-  const tabs=Array.from(container.querySelectorAll('.historico-tab'));
-  const panels=new Map(Array.from(container.querySelectorAll('[data-tab-content]')).map(panel=>[panel.dataset.tabContent,panel]));
+  const tabs=Array.from(container.querySelectorAll('.contatos-tab'));
+  const panels=new Map(Array.from(container.querySelectorAll('[data-tab-panel]')).map(panel=>[panel.dataset.tabPanel,panel]));
   function activate(tab){
     const target=tab || tabs[0]?.dataset.tab;
     tabs.forEach(btn=>{
-      btn.classList.toggle('is-active', btn.dataset.tab===target);
+      const isActive=btn.dataset.tab===target;
+      btn.classList.toggle('is-active', isActive);
+      btn.setAttribute('aria-selected', isActive?'true':'false');
     });
     panels.forEach((panel,key)=>{
-      panel.hidden=key!==target;
+      const isVisible=key===target;
+      panel.hidden=!isVisible;
+      panel.setAttribute('aria-hidden', isVisible?'false':'true');
     });
   }
   tabs.forEach(btn=>btn.addEventListener('click',()=>activate(btn.dataset.tab)));
-  activate(container.querySelector('.historico-tab.is-active')?.dataset.tab);
+  activate(container.querySelector('.contatos-tab.is-active')?.dataset.tab);
+  panels.forEach((panel,key)=>{
+    if(key==='ofertas' || key==='pos-venda') setupListPanel(panel);
+    if(key==='historico') setupHistoricoPanel(panel);
+  });
+
+  function setupListPanel(panel){
+    const selectAll=panel.querySelector('[data-action="select-all"]');
+    const checkboxes=Array.from(panel.querySelectorAll('tbody input[type="checkbox"]'));
+    const groupSelect=panel.querySelector('[data-filter="grupo"]');
+    const interestSelect=panel.querySelector('[data-filter="interesse"]');
+    const rows=Array.from(panel.querySelectorAll('tbody tr'));
+    const empty=panel.querySelector('[data-empty-message]');
+    function applyFilters(){
+      const groupValue=groupSelect?.value||'';
+      const interestValue=interestSelect?.value||'';
+      let visibleCount=0;
+      rows.forEach(row=>{
+        const matchesGroup=!groupValue || row.dataset.grupo===groupValue;
+        const matchesInterest=!interestValue || row.dataset.interesse===interestValue;
+        const isVisible=matchesGroup && matchesInterest;
+        row.hidden=!isVisible;
+        if(isVisible) visibleCount++;
+      });
+      if(empty) empty.hidden=visibleCount!==0;
+    }
+    function syncSelectAll(){
+      if(!selectAll) return;
+      const visibleCheckboxes=checkboxes.filter(cb=>!cb.closest('tr')?.hidden);
+      if(!visibleCheckboxes.length){
+        selectAll.checked=false;
+        selectAll.indeterminate=false;
+        return;
+      }
+      const checkedCount=visibleCheckboxes.filter(cb=>cb.checked).length;
+      if(checkedCount===0){
+        selectAll.checked=false;
+        selectAll.indeterminate=false;
+      }else if(checkedCount===visibleCheckboxes.length){
+        selectAll.checked=true;
+        selectAll.indeterminate=false;
+      }else{
+        selectAll.checked=false;
+        selectAll.indeterminate=true;
+      }
+    }
+    selectAll?.addEventListener('change',()=>{
+      const shouldCheck=selectAll.checked;
+      rows.forEach(row=>{
+        if(row.hidden) return;
+        const input=row.querySelector('input[type="checkbox"]');
+        if(input) input.checked=shouldCheck;
+      });
+      syncSelectAll();
+    });
+    checkboxes.forEach(cb=>cb.addEventListener('change',syncSelectAll));
+    groupSelect?.addEventListener('change',()=>{ applyFilters(); syncSelectAll(); });
+    interestSelect?.addEventListener('change',()=>{ applyFilters(); syncSelectAll(); });
+    applyFilters();
+    syncSelectAll();
+  }
+
+  function setupHistoricoPanel(panel){
+    const estadoSelect=panel.querySelector('[data-filter="estado"]');
+    const fromInput=panel.querySelector('[data-filter="from"]');
+    const toInput=panel.querySelector('[data-filter="to"]');
+    const rows=Array.from(panel.querySelectorAll('tbody tr'));
+    const empty=panel.querySelector('[data-empty-message]');
+    function apply(){
+      const estadoValue=estadoSelect?.value||'';
+      const fromValue=fromInput?.value||'';
+      const toValue=toInput?.value||'';
+      let visibleCount=0;
+      rows.forEach(row=>{
+        const matchesEstado=!estadoValue || row.dataset.estado===estadoValue;
+        const date=row.dataset.date||'';
+        const matchesFrom=!fromValue || date>=fromValue;
+        const matchesTo=!toValue || date<=toValue;
+        const isVisible=matchesEstado && matchesFrom && matchesTo;
+        row.hidden=!isVisible;
+        if(isVisible) visibleCount++;
+      });
+      if(empty) empty.hidden=visibleCount!==0;
+    }
+    estadoSelect?.addEventListener('change',apply);
+    fromInput?.addEventListener('change',apply);
+    toInput?.addEventListener('change',apply);
+    apply();
+  }
 }
 
 function initGerenciaConfigPage(){
