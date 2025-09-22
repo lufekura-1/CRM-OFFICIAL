@@ -2287,7 +2287,9 @@ function initCalendarioPage() {
   const monthSelect = wrapper.querySelector('.cal-mes-select');
   const yearSelect = wrapper.querySelector('.cal-ano');
   const btnHoje = wrapper.querySelector('.cal-hoje');
-  const btnEventos = calendarPage?.querySelector('.btn-cal-eventos');
+  const btnAddEvento = calendarPage?.querySelector('.btn-cal-eventos');
+  const btnMenuEventos = calendarPage?.querySelector('.btn-eventos');
+  const btnMenuFolgas = calendarPage?.querySelector('.btn-folgas');
   const btnDesf = calendarPage?.querySelector('.btn-cal-desfalques');
   const btnPrev = wrapper.querySelector('.cal-prev');
   const btnNext = wrapper.querySelector('.cal-next');
@@ -2304,13 +2306,150 @@ function initCalendarioPage() {
   const eventosKey = calKey();
   let eventos = getJSON(calKey(), []).filter(e=>!isNomeBloqueado(e.titulo));
   setJSON(calKey(), eventos);
+  function reloadEventos(){
+    eventos = getJSON(calKey(), []).filter(e=>!isNomeBloqueado(e.titulo));
+  }
   function saveEventos(){ setJSON(calKey(), eventos); }
   function eventPriority(ev){
     if(ev.origem==='admin' && ev.tipo==='desfalque') return 0;
     if(ev.meta?.type==='followup') return 1;
     return 2;
   }
-  btnEventos?.addEventListener('click',()=>openEventoModal());
+  const WEEKDAY_NAMES_FULL=['Domingo','Segunda-Feira','Terça-Feira','Quarta-Feira','Quinta-Feira','Sexta-Feira','Sábado'];
+  function formatDateWithWeekday(dateISO){
+    if(!dateISO) return '';
+    const date=new Date(dateISO);
+    if(Number.isNaN(date.getTime())) return formatDateDDMMYYYY(dateISO);
+    const weekday=WEEKDAY_NAMES_FULL[date.getDay()]||'';
+    return `${formatDateDDMMYYYY(dateISO)} - ${weekday}`;
+  }
+  function folgaKey(ev){
+    if(!ev) return '';
+    if(ev.adminGroupId) return `group:${ev.adminGroupId}`;
+    const periodo=ev.periodo||'';
+    return `legacy:${ev.nome||''}:${ev.dataISO||''}:${periodo}`;
+  }
+  function folgaMatches(target, base){
+    if(!target || !base) return false;
+    return folgaKey(target) === folgaKey(base);
+  }
+  function getFolgasList(){
+    return eventos
+      .filter(e=>e.tipo==='desfalque')
+      .slice()
+      .sort((a,b)=>{
+        const da=(a.dataISO||'');
+        const db=(b.dataISO||'');
+        if(da===db) return (a.nome||'').localeCompare(b.nome||'');
+        return da.localeCompare(db);
+      });
+  }
+  function createFolgaAcrossProfiles({nome,dataISO,periodo}){
+    if(!nome||!dataISO) return;
+    const createdAt=new Date().toISOString();
+    const groupId=uuid();
+    const base={
+      tipo:'desfalque',
+      origem:'admin',
+      adminGroupId:groupId,
+      nome,
+      periodo,
+      dataISO,
+      criadoPor:getPerfil(),
+      criadoEm:createdAt,
+      titulo:nome,
+      observacao:periodo==='dia_todo'?'Dia todo':'Manhã'
+    };
+    PERFIS.forEach(profile=>{
+      const arr=getJSONForPerfil(profile,'calendar',[]);
+      const alreadyExists=arr.some(item=>item.tipo==='desfalque' && item.dataISO===dataISO && (item.nome||'')===nome && (item.periodo||'')===(periodo||''));
+      if(alreadyExists) return;
+      arr.push({...base,id:uuid()});
+      setJSONForPerfil(profile,'calendar',arr);
+    });
+    reloadEventos();
+    render();
+  }
+  function updateFolgaAcrossProfiles(baseEvent, updates){
+    if(!baseEvent) return null;
+    const groupId=updates?.adminGroupId || baseEvent.adminGroupId || uuid();
+    const merged={...updates};
+    merged.adminGroupId=groupId;
+    if(merged.nome) merged.titulo=merged.nome;
+    if(merged.periodo) merged.observacao=merged.periodo==='dia_todo'?'Dia todo':'Manhã';
+    PERFIS.forEach(profile=>{
+      let arr=getJSONForPerfil(profile,'calendar',[]);
+      let changed=false;
+      arr=arr.map(item=>{
+        if(item.tipo==='desfalque' && folgaMatches(item, baseEvent)){
+          changed=true;
+          const next={...item,...merged};
+          if(!next.adminGroupId) next.adminGroupId=groupId;
+          if(merged.nome) next.titulo=merged.nome;
+          if(merged.periodo) next.observacao=merged.periodo==='dia_todo'?'Dia todo':'Manhã';
+          return next;
+        }
+        return item;
+      });
+      if(changed) setJSONForPerfil(profile,'calendar',arr);
+    });
+    reloadEventos();
+    render();
+    return groupId;
+  }
+  function deleteFolgaAcrossProfiles(baseEvent){
+    if(!baseEvent) return;
+    PERFIS.forEach(profile=>{
+      const arr=getJSONForPerfil(profile,'calendar',[]);
+      const filtered=arr.filter(item=>!(item.tipo==='desfalque' && folgaMatches(item, baseEvent)));
+      if(filtered.length!==arr.length) setJSONForPerfil(profile,'calendar',filtered);
+    });
+    reloadEventos();
+    render();
+  }
+  function broadcastAdminEventToAll(payload){
+    const isAdminProfile=getPerfil()==='Administrador';
+    const groupId=payload.adminGroupId || uuid();
+    const base={...payload, adminGroupId:groupId, origem:'admin'};
+    if(isAdminProfile){
+      const idx=eventos.findIndex(ev=>ev.adminGroupId===groupId);
+      if(idx>-1) eventos[idx]={...eventos[idx], ...base};
+      else eventos.push({...base, id:uuid()});
+      saveEventos();
+    }
+    PERFIS.forEach(profile=>{
+      if(profile===getPerfil()) return;
+      const arr=getJSONForPerfil(profile,'calendar',[]);
+      const index=arr.findIndex(ev=>ev.adminGroupId===groupId);
+      const entry={...base, id:index>-1?arr[index].id:uuid()};
+      if(index>-1) arr[index]=entry;
+      else arr.push(entry);
+      setJSONForPerfil(profile,'calendar',arr);
+    });
+    reloadEventos();
+    render();
+  }
+  function addVacationMarkers({nome,inicioISO,fimISO}){
+    if(!inicioISO || !fimISO) return;
+    const baseName=(nome||'Férias').trim() || 'Férias';
+    broadcastAdminEventToAll({
+      id:uuid(),
+      titulo:`${baseName} · Início`,
+      dataISO:inicioISO,
+      observacao:'Início das férias',
+      efetuado:false
+    });
+    broadcastAdminEventToAll({
+      id:uuid(),
+      titulo:`${baseName} · Retorno`,
+      dataISO:fimISO,
+      observacao:'Retorno das férias',
+      efetuado:false
+    });
+  }
+  btnAddEvento?.addEventListener('click',()=>openEventoModal());
+  btnMenuEventos?.addEventListener('click',e=>{ e.preventDefault(); openEventosOverviewModal(); });
+  btnMenuFolgas?.addEventListener('click',e=>{ e.preventDefault(); openFolgasModal(); });
   if(getPerfil()==='Administrador' && btnDesf){
     btnDesf.style.display='inline-block';
     btnDesf.addEventListener('click',()=>openDesfalqueModal());
@@ -2527,7 +2666,10 @@ function initCalendarioPage() {
         num.textContent=prevLast - (start - i) + 1;
         head.appendChild(num);
         cell.classList.add('day--outside','is-out-month');
+        const body=document.createElement('div');
+        body.className='day-body';
         cell.appendChild(head);
+        cell.appendChild(body);
         cell.classList.add('is-empty');
       }else if(dayNum<=daysIn){
         const head=document.createElement('div');
@@ -2544,7 +2686,10 @@ function initCalendarioPage() {
           badge.textContent='HOJE';
           head.appendChild(badge);
         }
+        const body=document.createElement('div');
+        body.className='day-body';
         cell.appendChild(head);
+        cell.appendChild(body);
         compras.filter(c=>c.dataISO===dateISO).forEach(cmp=>{
           const item=document.createElement('div');
           item.className='calendar-item';
@@ -2557,7 +2702,7 @@ function initCalendarioPage() {
           chip.tabIndex=0;
           setupCalendarChipEvents(chip,()=>showCompraPopover(chip,cmp));
           item.appendChild(chip);
-          cell.appendChild(item);
+          body.appendChild(item);
         });
         eventos.filter(e=> (e.date ? e.date.slice(0,10) : e.dataISO) === dateISO)
                .sort((a,b)=>eventPriority(a)-eventPriority(b))
@@ -2602,9 +2747,9 @@ function initCalendarioPage() {
             setupCalendarChipEvents(chip,()=>showEventoPopover(chip,ev));
             item.appendChild(chip);
           }
-          cell.appendChild(item);
+          body.appendChild(item);
         });
-        if(!cell.querySelector('.calendar-item')){
+        if(!body.querySelector('.calendar-item')){
           cell.classList.add('is-empty');
         }
         setupDayCell(cell,dateISO);
@@ -2616,7 +2761,10 @@ function initCalendarioPage() {
         num.textContent=dayNum - daysIn;
         head.appendChild(num);
         cell.classList.add('day--outside','is-out-month');
+        const body=document.createElement('div');
+        body.className='day-body';
         cell.appendChild(head);
+        cell.appendChild(body);
         cell.classList.add('is-empty');
       }
       grid.appendChild(cell);
@@ -2648,14 +2796,17 @@ function initCalendarioPage() {
         badge.textContent='HOJE';
         head.appendChild(badge);
       }
+      const body=document.createElement('div');
+      body.className='day-body';
       cell.appendChild(head);
+      cell.appendChild(body);
       compras.filter(c=>c.dataISO===dateISO).forEach(cmp=>{
         const card=document.createElement('div');
         card.className='calendar-card compra';
         card.innerHTML=`<strong>${cmp.clienteNome}</strong>${cmp.clienteDados?.telefone?`<p>${formatTelefone(cmp.clienteDados.telefone)}</p>`:''}`;
         card.tabIndex=0;
         setupCalendarChipEvents(card,()=>showCompraPopover(card,cmp));
-        cell.appendChild(card);
+        body.appendChild(card);
       });
       eventos.filter(e=> (e.date ? e.date.slice(0,10) : e.dataISO) === dateISO)
              .sort((a,b)=>eventPriority(a)-eventPriority(b))
@@ -2714,9 +2865,9 @@ function initCalendarioPage() {
           card.tabIndex=0;
           setupCalendarChipEvents(card,()=>showEventoPopover(card,ev));
         }
-        cell.appendChild(card);
+        body.appendChild(card);
       });
-      if(!cell.querySelector('.calendar-item, .calendar-card')){
+      if(!body.querySelector('.calendar-item, .calendar-card')){
         cell.classList.add('is-empty');
       }
       setupDayCell(cell,dateISO);
@@ -2731,9 +2882,267 @@ function initCalendarioPage() {
   btnPrevWeek.addEventListener('click',()=>onChangeWeek(-1));
   btnNextWeek.addEventListener('click',()=>onChangeWeek(1));
   segBtns.forEach(btn=>{ btn.addEventListener('click',()=>{ modo=btn.dataset.modo; segBtns.forEach(b=>b.setAttribute('aria-pressed', b===btn?'true':'false')); render(); }); });
+  function openEventosOverviewModal(){
+    const modal=document.getElementById('app-modal');
+    const title=document.getElementById('modal-title');
+    const body=modal.querySelector('.modal-body');
+    const saveBtn=modal.querySelector('#modal-save');
+    const cancelBtn=modal.querySelector('[data-modal-close]');
+    title.textContent='Eventos';
+    saveBtn.style.display='none';
+    if(cancelBtn) cancelBtn.textContent='Fechar';
+    body.innerHTML=`<div class="calendar-modal calendar-modal--eventos"><div class="calendar-modal__header"><button type="button" class="btn btn-primary modal-add-evento">Adicionar evento</button></div><div class="calendar-modal__content"></div></div>`;
+    const listContainer=body.querySelector('.calendar-modal__content');
+    const getEventosAgrupados=()=>{
+      const map=new Map();
+      eventos.filter(ev=>ev.tipo!=='desfalque').forEach(ev=>{
+        const iso=(ev.date||ev.dataISO||'').slice(0,10);
+        if(!iso) return;
+        if(!map.has(iso)) map.set(iso,[]);
+        map.get(iso).push(ev);
+      });
+      return Array.from(map.entries()).sort((a,b)=>a[0].localeCompare(b[0])).map(([iso,list])=>[iso,list.sort((a,b)=>{ const ta=(a.titulo||a.title||''); const tb=(b.titulo||b.title||''); return ta.localeCompare(tb); })]);
+    };
+    function renderLista(){
+      const grupos=getEventosAgrupados();
+      if(!grupos.length){
+        listContainer.innerHTML='<div class="empty-state">Nenhum evento cadastrado.</div>';
+        return;
+      }
+      listContainer.innerHTML=grupos.map(([iso,list])=>{
+        const header=formatDateWithWeekday(iso);
+        const items=list.map(ev=>{
+          const done=ev.meta?.done ?? ev.efetuado ?? false;
+          const contexto=ev.meta?.type==='followup' || ev.color==='followup' ? getFollowupContext(ev) : null;
+          const titulo=contexto?.shortName || ev.titulo || ev.title || 'Evento';
+          const subtitulo=contexto?.stageLong || contexto?.stageLabel || '';
+          const obs=ev.observacao || '';
+          const statusLabel=done?'Concluído':'Pendente';
+          const extra=ev.meta?.kind==='os'?'OS':(ev.meta?.type==='followup'?'Follow-up':ev.tipo||'');
+          return `<li class="evento-item" data-event-id="${ev.id}"><div class="evento-info"><strong>${escapeHtml(titulo)}</strong>${subtitulo?`<span class="evento-subtitle">${escapeHtml(subtitulo)}</span>`:''}${extra?`<span class="evento-tag">${escapeHtml(extra)}</span>`:''}${obs?`<p class="evento-note">${escapeHtml(obs)}</p>`:''}</div><div class="evento-actions"><button type="button" class="evento-toggle ${done?'is-active':''}" data-action="toggle-event" data-event-id="${ev.id}" aria-pressed="${done}">${statusLabel}</button></div></li>`;
+        }).join('');
+        return `<section class="evento-group"><header class="evento-group__header">${escapeHtml(header)}</header><ul class="evento-group__list">${items}</ul></section>`;
+      }).join('');
+      listContainer.querySelectorAll('[data-action="toggle-event"]').forEach(btn=>{
+        btn.addEventListener('click',()=>{
+          const evId=btn.dataset.eventId;
+          const ev=eventos.find(item=>item.id===evId);
+          if(!ev) return;
+          const nextState=!(ev.meta?.done ?? ev.efetuado ?? false);
+          if(ev.meta?.kind==='os') onToggleOSEvent(ev,nextState);
+          else if(ev.meta?.type==='followup' || ev.color==='followup') onToggleFollowUp(ev,nextState);
+          else onToggleEfetuado(ev.id,nextState);
+          renderLista();
+        });
+      });
+    }
+    renderLista();
+    body.querySelector('.modal-add-evento')?.addEventListener('click',()=>{
+      modal.close();
+      setTimeout(()=>openEventoModal(),120);
+    });
+    modal.open();
+  }
+  function openFolgasModal(){
+    const modal=document.getElementById('app-modal');
+    const title=document.getElementById('modal-title');
+    const body=modal.querySelector('.modal-body');
+    const saveBtn=modal.querySelector('#modal-save');
+    const cancelBtn=modal.querySelector('[data-modal-close]');
+    const isAdmin=getPerfil()==='Administrador';
+    title.textContent='Folgas';
+    saveBtn.style.display='none';
+    if(cancelBtn) cancelBtn.textContent='Fechar';
+    body.innerHTML=`<div class="calendar-modal calendar-modal--folgas"><div class="calendar-modal__header"><div class="folgas-month-nav"><button type="button" class="btn-icon folgas-prev" aria-label="Mês anterior">&#8249;</button><h3 class="folgas-month-title"></h3><button type="button" class="btn-icon folgas-next" aria-label="Próximo mês">&#8250;</button></div>${isAdmin?`<div class="folgas-admin-buttons"><button type="button" class="btn btn-secondary" data-action="folga-nova">Nova folga</button><button type="button" class="btn btn-accent" data-action="folga-ferias-toggle">Férias</button></div>`:''}</div><div class="calendar-modal__content"><div class="folgas-calendar"><div class="folgas-weekdays"></div><div class="folgas-cells"></div></div>${isAdmin?`<div class="folgas-manage"><form id="folgaForm" class="folga-form"><div class="form-row"><label>Nome</label><input name="nome" class="text-input" required></div><div class="form-row"><label>Data</label><input type="date" name="data" class="date-input" required></div><div class="form-row"><label>Período</label><select name="periodo" class="select-input"><option value="manha">Manhã</option><option value="dia_todo">Dia todo</option></select></div><div class="folgas-form-actions"><button type="submit" class="btn btn-primary">Salvar</button><button type="button" class="btn" data-action="folga-clear">Limpar</button><button type="button" class="btn btn-danger" data-action="folga-remover" style="display:none">Excluir</button></div></form><div class="folgas-ferias" hidden><div class="folgas-ferias-grid"><label>Nome</label><input type="text" class="text-input" data-ferias-field="nome" placeholder="Equipe"><label>Início</label><input type="date" class="date-input" data-ferias-field="inicio"><label>Fim</label><input type="date" class="date-input" data-ferias-field="fim"><button type="button" class="btn btn-accent" data-action="folga-ferias-add">Adicionar férias</button></div></div></div>`:''}</div></div>`;
+    const monthTitle=body.querySelector('.folgas-month-title');
+    const weekdaysRow=body.querySelector('.folgas-weekdays');
+    const cellsContainer=body.querySelector('.folgas-cells');
+    const prevBtn=body.querySelector('.folgas-prev');
+    const nextBtn=body.querySelector('.folgas-next');
+    const form=isAdmin ? body.querySelector('#folgaForm') : null;
+    const clearBtn=form?.querySelector('[data-action="folga-clear"]');
+    const removeBtn=form?.querySelector('[data-action="folga-remover"]');
+    const newBtn=body.querySelector('[data-action="folga-nova"]');
+    const feriasPanel=body.querySelector('.folgas-ferias');
+    const feriasToggle=body.querySelector('[data-action="folga-ferias-toggle"]');
+    const feriasSubmit=body.querySelector('[data-action="folga-ferias-add"]');
+    const feriasNome=body.querySelector('[data-ferias-field="nome"]');
+    const feriasInicio=body.querySelector('[data-ferias-field="inicio"]');
+    const feriasFim=body.querySelector('[data-ferias-field="fim"]');
+    if(weekdaysRow){
+      ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'].forEach(lbl=>{
+        const span=document.createElement('span');
+        span.textContent=lbl;
+        weekdaysRow.appendChild(span);
+      });
+    }
+    let currentMonth=new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+    let editingFolga=null;
+    let selectedDateISO=new Date().toISOString().slice(0,10);
+    function renderFolgasCalendario(){
+      if(!cellsContainer || !monthTitle) return;
+      monthTitle.textContent=currentMonth.toLocaleDateString('pt-BR',{month:'long', year:'numeric'});
+      const year=currentMonth.getFullYear();
+      const month=currentMonth.getMonth();
+      const first=new Date(year,month,1);
+      const start=first.getDay();
+      const daysIn=new Date(year,month+1,0).getDate();
+      const prevLast=new Date(year,month,0).getDate();
+      const total=Math.ceil((start+daysIn)/7)*7;
+      const folgas=getFolgasList();
+      const editingKey=editingFolga?folgaKey(editingFolga):'';
+      cellsContainer.innerHTML='';
+      for(let i=0;i<total;i++){
+        const cell=document.createElement('div');
+        cell.className='folga-cell';
+        const bodyWrap=document.createElement('div');
+        bodyWrap.className='folga-cell-body';
+        let label='';
+        let dateISO='';
+        if(i<start){
+          cell.classList.add('is-out');
+          label=String(prevLast - (start - i) + 1);
+        }else if(i-start<daysIn){
+          const day=i-start+1;
+          label=String(day);
+          dateISO=`${year}-${String(month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+          if(dateISO===selectedDateISO) cell.classList.add('is-selected');
+          const dayFolgas=folgas.filter(f=>f.dataISO===dateISO);
+          if(dayFolgas.length) cell.classList.add('has-folga');
+          dayFolgas.forEach(folga=>{
+            const chip=document.createElement('button');
+            chip.type='button';
+            chip.className='folga-chip';
+            chip.dataset.eventId=folga.id;
+            const key=folgaKey(folga);
+            if(editingKey && key===editingKey) chip.classList.add('is-selected');
+            chip.textContent=`${folga.nome}${folga.periodo==='dia_todo'?' · Dia todo':' · Manhã'}`;
+            if(isAdmin){
+              chip.addEventListener('click',ev=>{
+                ev.stopPropagation();
+                editingFolga=folga;
+                selectedDateISO=folga.dataISO;
+                if(form){
+                  form.nome.value=folga.nome||'';
+                  form.data.value=folga.dataISO||'';
+                  form.periodo.value=folga.periodo||'manha';
+                  if(removeBtn) removeBtn.style.display='';
+                }
+                renderFolgasCalendario();
+              });
+            }
+            bodyWrap.appendChild(chip);
+          });
+          if(isAdmin){
+            cell.addEventListener('click',ev=>{
+              if(ev.target.closest('.folga-chip')) return;
+              selectedDateISO=dateISO;
+              editingFolga=null;
+              if(form){
+                form.nome.value='';
+                form.data.value=dateISO;
+                form.periodo.value='manha';
+                if(removeBtn) removeBtn.style.display='none';
+              }
+              renderFolgasCalendario();
+            });
+          }
+        }else{
+          cell.classList.add('is-out');
+          label=String(i-start-daysIn+1);
+        }
+        const head=document.createElement('div');
+        head.className='folga-cell-head';
+        head.textContent=label;
+        cell.appendChild(head);
+        cell.appendChild(bodyWrap);
+        cellsContainer.appendChild(cell);
+      }
+    }
+    if(isAdmin && form){
+      form.addEventListener('submit',e=>{
+        e.preventDefault();
+        const nome=form.nome.value.trim();
+        const dataISO=form.data.value;
+        const periodo=form.periodo.value;
+        if(!nome||!dataISO){ form.reportValidity(); return; }
+        if(editingFolga){
+          const groupId=updateFolgaAcrossProfiles(editingFolga,{nome,dataISO,periodo});
+          reloadEventos();
+          const updated=getFolgasList().find(f=> (f.adminGroupId && f.adminGroupId===groupId) || (!f.adminGroupId && f.nome===nome && f.dataISO===dataISO && (f.periodo||'')===periodo));
+          editingFolga=updated||null;
+          selectedDateISO=dataISO;
+        }else{
+          createFolgaAcrossProfiles({nome,dataISO,periodo});
+          reloadEventos();
+          editingFolga=getFolgasList().find(f=>f.nome===nome && f.dataISO===dataISO && (f.periodo||'')===periodo) || null;
+          selectedDateISO=dataISO;
+        }
+        if(editingFolga && removeBtn) removeBtn.style.display='';
+        renderFolgasCalendario();
+      });
+      clearBtn?.addEventListener('click',()=>{
+        editingFolga=null;
+        if(form){
+          form.nome.value='';
+          form.data.value=selectedDateISO;
+          form.periodo.value='manha';
+        }
+        if(removeBtn) removeBtn.style.display='none';
+        renderFolgasCalendario();
+      });
+      removeBtn?.addEventListener('click',()=>{
+        if(!editingFolga) return;
+        if(!confirm('Remover folga selecionada?')) return;
+        deleteFolgaAcrossProfiles(editingFolga);
+        editingFolga=null;
+        if(form){
+          form.nome.value='';
+          form.data.value=selectedDateISO;
+          form.periodo.value='manha';
+        }
+        if(removeBtn) removeBtn.style.display='none';
+        renderFolgasCalendario();
+      });
+    }
+    prevBtn?.addEventListener('click',()=>{ currentMonth.setMonth(currentMonth.getMonth()-1); renderFolgasCalendario(); });
+    nextBtn?.addEventListener('click',()=>{ currentMonth.setMonth(currentMonth.getMonth()+1); renderFolgasCalendario(); });
+    newBtn?.addEventListener('click',()=>{
+      editingFolga=null;
+      selectedDateISO=new Date().toISOString().slice(0,10);
+      if(form){
+        form.nome.value='';
+        form.data.value=selectedDateISO;
+        form.periodo.value='manha';
+      }
+      if(removeBtn) removeBtn.style.display='none';
+      renderFolgasCalendario();
+    });
+    feriasToggle?.addEventListener('click',()=>{
+      if(!feriasPanel) return;
+      if(feriasPanel.hasAttribute('hidden')) feriasPanel.removeAttribute('hidden');
+      else feriasPanel.setAttribute('hidden','');
+    });
+    feriasSubmit?.addEventListener('click',()=>{
+      const nome=(feriasNome?.value||'').trim();
+      const inicio=feriasInicio?.value||'';
+      const fim=feriasFim?.value||'';
+      if(!inicio || !fim){ ui.toast('Informe as datas de início e fim.'); return; }
+      addVacationMarkers({nome,inicioISO:inicio,fimISO:fim});
+      renderFolgasCalendario();
+    });
+    renderFolgasCalendario();
+    modal.open();
+  }
   function openEventoModal(dataISO, ev){
     const modal=document.getElementById('app-modal');
     const saveBtn = modal.querySelector('#modal-save');
+    const cancelBtn = modal.querySelector('[data-modal-close]');
+    saveBtn.style.display='';
+    if(cancelBtn) cancelBtn.textContent='Cancelar';
+    const cancelBtn = modal.querySelector('[data-modal-close]');
+    saveBtn.style.display='';
+    if(cancelBtn) cancelBtn.textContent='Cancelar';
     saveBtn.removeAttribute('data-action');
     saveBtn.setAttribute('type','submit');
     const title=document.getElementById('modal-title');
@@ -2803,14 +3212,9 @@ function initCalendarioPage() {
       const dataISO=form['d-data'].value;
       if(!nome||!dataISO){ form.reportValidity(); return; }
       const periodo=form['d-periodo'].checked?'dia_todo':'manha';
-      const ev={id:uuid(),tipo:'desfalque',origem:'admin',nome,periodo,dataISO,criadoPor:'Administrador',criadoEm:new Date().toISOString(),titulo:nome,observacao:periodo==='dia_todo'?'Dia todo':'Manhã'};
-      PERFIS.forEach(p=>{
-        const arr=getJSONForPerfil(p,'calendar',[]);
-        if(!arr.some(e=>e.dataISO===dataISO && e.nome===nome && e.tipo==='desfalque')){ arr.push({...ev,id:uuid()}); setJSONForPerfil(p,'calendar',arr); }
-      });
-      eventos=getJSON(calKey(),[]);
+      createFolgaAcrossProfiles({nome,dataISO,periodo});
+      reloadEventos();
       modal.close();
-      render();
     });
   }
   function showEventoPopover(target,ev){
