@@ -5,10 +5,27 @@ function setActivePerfil(p){ localStorage.setItem(PERFIL_KEY, p); }
 const prefix = () => `perfil:${activeProfile()}:`;
 const getJSON = (k,d) => { try{ return JSON.parse(localStorage.getItem(k)) ?? d } catch { return d }};
 const setJSON = (k,v) => localStorage.setItem(k, JSON.stringify(v));
+function clone(value){
+  if(value==null || typeof value!=='object') return value;
+  if(typeof structuredClone==='function'){
+    try{ return structuredClone(value); }
+    catch{ /* fallback below */ }
+  }
+  try{
+    return JSON.parse(JSON.stringify(value));
+  }catch{
+    if(Array.isArray(value)) return value.slice();
+    return { ...value };
+  }
+}
 function getJSONForPerfil(perfil,key,fallback){
   const raw = localStorage.getItem(`perfil:${perfil}:${key}`);
-  try { return raw ? JSON.parse(raw) : structuredClone(fallback); }
-  catch { return structuredClone(fallback); }
+  try {
+    return raw ? JSON.parse(raw) : clone(fallback);
+  }
+  catch {
+    return clone(fallback);
+  }
 }
 function setJSONForPerfil(perfil,key,val){ localStorage.setItem(`perfil:${perfil}:${key}`, JSON.stringify(val)); }
 
@@ -690,8 +707,9 @@ function removeFollowUpEvents(clienteId,compraId){
 
   const db = {
     _get() {
-      const data = getJSON(prefix()+'clientes', []);
-    const filtered = data.filter(c => !CLIENTES_REMOVIDOS.includes(c.nome) && !isNomeBloqueado(c.nome));
+      const raw = getJSON(prefix()+'clientes', []);
+      const data = Array.isArray(raw) ? raw : [];
+      const filtered = data.filter(c => !CLIENTES_REMOVIDOS.includes(c.nome) && !isNomeBloqueado(c.nome));
       if (filtered.length !== data.length) setJSON(prefix()+'clientes', filtered);
       return filtered;
     },
@@ -1565,15 +1583,18 @@ function renderOS() {
 }
 
 function dashboardPage() {
-  const boardCells=Array.from({length:10}).map(()=>'<span class="dashboard-board__cell"></span>').join('');
+  const boardCells=Array.from({length:10}).map(()=>'<span class="dashboard-board__cell" aria-hidden="true"></span>').join('');
   return `<section id="dashboard">`+
-    `<div class="dash-toolbar">`+
-      `<div class="dash-heading">Dashboard</div>`+
-      `<button id="dashAddBtn" class="dash-add">Adicionar widget</button>`+
-    `</div>`+
-    `<div class="dashboard-layout">`+
-      `<div class="dashboard-board" aria-hidden="true">${boardCells}</div>`+
-      `<div id="dashboardGrid" class="dashboard-grid"></div>`+
+    `<div class="dashboard-surface">`+
+      `<header class="dashboard-surface__header">`+
+        `<button id="dashAddBtn" class="btn btn-secondary dash-add" type="button">Adicionar widget</button>`+
+      `</header>`+
+      `<div class="dashboard-surface__body">`+
+        `<div class="dashboard-board">`+
+          `<div class="dashboard-board__backdrop">${boardCells}</div>`+
+          `<div class="dashboard-board__grid" id="dashboardGrid"></div>`+
+        `</div>`+
+      `</div>`+
     `</div>`+
   `</section>`;
 }
@@ -2569,6 +2590,31 @@ function initCalendarioPage() {
         return da.localeCompare(db);
       });
   }
+  function createFolgaForProfile(profile,{nome,dataISO,periodo},options={}){
+    if(!profile || !nome || !dataISO) return;
+    const arr=getJSONForPerfil(profile,'calendar',[]);
+    const alreadyExists=arr.some(item=>item.tipo==='desfalque' && (item.nome||'')===nome && (item.dataISO||'')===dataISO && (item.periodo||'')===(periodo||''));
+    if(alreadyExists) return;
+    const createdAt=options.createdAt || new Date().toISOString();
+    const origin=options.origin || 'perfil';
+    const base={
+      id:uuid(),
+      tipo:'desfalque',
+      nome,
+      titulo:nome,
+      periodo,
+      observacao:periodo==='dia_todo'?'Dia todo':'Manhã',
+      dataISO,
+      origem:origin,
+      criadoPor:options.createdBy || getPerfil(),
+      criadoEm:createdAt
+    };
+    if(origin==='admin' && options.groupId){
+      base.adminGroupId=options.groupId;
+    }
+    arr.push(base);
+    setJSONForPerfil(profile,'calendar',arr);
+  }
   function createFolgaAcrossProfiles({nome,dataISO,periodo}){
     if(!nome||!dataISO) return;
     const createdAt=new Date().toISOString();
@@ -2586,11 +2632,7 @@ function initCalendarioPage() {
       observacao:periodo==='dia_todo'?'Dia todo':'Manhã'
     };
     PERFIS.forEach(profile=>{
-      const arr=getJSONForPerfil(profile,'calendar',[]);
-      const alreadyExists=arr.some(item=>item.tipo==='desfalque' && item.dataISO===dataISO && (item.nome||'')===nome && (item.periodo||'')===(periodo||''));
-      if(alreadyExists) return;
-      arr.push({...base,id:uuid()});
-      setJSONForPerfil(profile,'calendar',arr);
+      createFolgaForProfile(profile,{nome,dataISO,periodo},{origin:'admin',groupId,createdAt,createdBy:getPerfil()});
     });
     reloadEventos();
     render();
@@ -2659,8 +2701,11 @@ function initCalendarioPage() {
     const baseName=(nome||'Férias').trim() || 'Férias';
     const inicioNome=`${baseName} · Início`;
     const retornoNome=`${baseName} · Retorno`;
-    createFolgaAcrossProfiles({ nome: inicioNome, dataISO: inicioISO, periodo:'dia_todo' });
-    createFolgaAcrossProfiles({ nome: retornoNome, dataISO: fimISO, periodo:'dia_todo' });
+    const profile=getPerfil();
+    createFolgaForProfile(profile,{ nome: inicioNome, dataISO: inicioISO, periodo:'dia_todo' });
+    createFolgaForProfile(profile,{ nome: retornoNome, dataISO: fimISO, periodo:'dia_todo' });
+    reloadEventos();
+    render();
   }
   btnAddEvento?.addEventListener('click',()=>openEventoModal());
   btnMenuEventos?.addEventListener('click',e=>{ e.preventDefault(); openEventosOverviewModal(); });
@@ -3106,7 +3151,7 @@ function initCalendarioPage() {
     title.textContent='Eventos';
     saveBtn.style.display='none';
     if(cancelBtn) cancelBtn.textContent='Fechar';
-    body.innerHTML=`<div class="calendar-modal calendar-modal--eventos"><div class="calendar-modal__header"><div class="calendar-modal__tabs" role="tablist" aria-label="Eventos e contatos"><button type="button" class="calendar-tab is-active" role="tab" aria-selected="true" data-tab="lembretes">Lembretes</button><button type="button" class="calendar-tab" role="tab" aria-selected="false" data-tab="contatos">Contatos</button></div><button type="button" class="btn btn-primary modal-add-evento">Adicionar Lembrete</button></div><div class="calendar-modal__content" data-active-tab="lembretes"></div></div>`;
+    body.innerHTML=`<div class="calendar-modal calendar-modal--eventos"><div class="calendar-modal__header"><div class="calendar-modal__tabs" role="tablist" aria-label="Eventos e contatos"><button type="button" class="calendar-tab is-active" role="tab" aria-selected="true" data-tab="lembretes">Lembretes</button><button type="button" class="calendar-tab" role="tab" aria-selected="false" data-tab="contatos">Contatos</button></div><button type="button" class="btn btn-accent modal-add-evento">Adicionar Lembrete</button></div><div class="calendar-modal__content" data-active-tab="lembretes"></div></div>`;
     const listContainer=body.querySelector('.calendar-modal__content');
     const tabs=Array.from(body.querySelectorAll('.calendar-tab'));
     const addButton=body.querySelector('.modal-add-evento');
@@ -3194,7 +3239,7 @@ function initCalendarioPage() {
     title.textContent='Folgas';
     saveBtn.style.display='none';
     if(cancelBtn) cancelBtn.textContent='Fechar';
-    body.innerHTML=`<div class="calendar-modal calendar-modal--folgas"><div class="calendar-modal__header"><div class="folgas-month-nav"><button type="button" class="btn-icon folgas-prev" aria-label="Mês anterior">&#8249;</button><h3 class="folgas-month-title"></h3><button type="button" class="btn-icon folgas-next" aria-label="Próximo mês">&#8250;</button></div>${isAdmin?`<div class="folgas-admin-buttons"><button type="button" class="btn btn-secondary" data-action="folga-nova">Nova folga</button><button type="button" class="btn btn-accent" data-action="folga-ferias-toggle">Férias</button></div>`:''}</div><div class="calendar-modal__content"><div class="folgas-calendar"><div class="folgas-weekdays"></div><div class="folgas-cells"></div></div>${isAdmin?`<div class="folgas-manage"><form id="folgaForm" class="folga-form"><div class="form-row"><label>Nome</label><input name="nome" class="text-input" required></div><div class="form-row"><label>Data</label><input type="date" name="data" class="date-input" required></div><div class="form-row"><label>Período</label><select name="periodo" class="select-input"><option value="manha">Manhã</option><option value="dia_todo">Dia todo</option></select></div><div class="folgas-form-actions"><button type="submit" class="btn btn-primary">Salvar</button><button type="button" class="btn" data-action="folga-clear">Limpar</button><button type="button" class="btn btn-danger" data-action="folga-remover" style="display:none">Excluir</button></div></form><div class="folgas-ferias" hidden><div class="folgas-ferias-grid"><label>Nome</label><input type="text" class="text-input" data-ferias-field="nome" placeholder="Equipe"><label>Início</label><input type="date" class="date-input" data-ferias-field="inicio"><label>Fim</label><input type="date" class="date-input" data-ferias-field="fim"><button type="button" class="btn btn-accent" data-action="folga-ferias-add">Adicionar férias</button></div></div></div>`:''}</div></div>`;
+    body.innerHTML=`<div class="calendar-modal calendar-modal--folgas"><div class="calendar-modal__header"><div class="folgas-month-nav"><button type="button" class="btn-icon folgas-prev" aria-label="Mês anterior">&#8249;</button><h3 class="folgas-month-title"></h3><button type="button" class="btn-icon folgas-next" aria-label="Próximo mês">&#8250;</button></div>${isAdmin?`<div class="folgas-admin-buttons"><button type="button" class="btn btn-primary" data-action="folga-nova">Nova folga</button><button type="button" class="btn btn-secondary" data-action="folga-ferias-toggle">Férias</button></div>`:''}</div><div class="calendar-modal__content"><div class="folgas-layout"><div class="folgas-calendar"><div class="folgas-weekdays"></div><div class="folgas-cells"></div></div>${isAdmin?`<div class="folgas-manage"><form id="folgaForm" class="folga-form"><h3 class="folga-form__title">Cadastrar folga</h3><div class="folga-form__grid"><label class="form-field"><span>Nome</span><input name="nome" class="text-input" required></label><label class="form-field"><span>Data</span><input type="date" name="data" class="date-input" required></label><label class="form-field"><span>Período</span><select name="periodo" class="select-input"><option value="manha">Manhã</option><option value="dia_todo">Dia todo</option></select></label></div><div class="folgas-form-actions"><button type="submit" class="btn btn-primary">Salvar</button><button type="button" class="btn btn-secondary" data-action="folga-clear">Limpar</button><button type="button" class="btn btn-danger" data-action="folga-remover" style="display:none">Excluir</button></div></form><div class="folgas-ferias" hidden><h3 class="folgas-ferias__title">Registrar férias</h3><p class="folgas-ferias__note">Cadastre aqui períodos longos de ausência para um único funcionário. Essas marcações ficam apenas neste perfil.</p><div class="folgas-ferias-grid"><label class="form-field"><span>Funcionário</span><input type="text" class="text-input" data-ferias-field="nome" placeholder="Nome do funcionário"></label><label class="form-field"><span>Início</span><input type="date" class="date-input" data-ferias-field="inicio"></label><label class="form-field"><span>Fim</span><input type="date" class="date-input" data-ferias-field="fim"></label></div><div class="folgas-ferias-actions"><button type="button" class="btn btn-primary" data-action="folga-ferias-add">Adicionar férias</button></div></div></div>`:''}</div></div></div>`;
     const monthTitle=body.querySelector('.folgas-month-title');
     const weekdaysRow=body.querySelector('.folgas-weekdays');
     const cellsContainer=body.querySelector('.folgas-cells');
@@ -3731,7 +3776,7 @@ function initClientesVisaoGeral() {
           <div class="overview-header">
             <h2>${renderClientNameInline(c)}</h2>
             <div class="actions">
-              <button class="btn btn-outline btn-cliente-page" type="button">Página do Cliente</button>
+              <button class="btn btn-primary btn-cliente-page" type="button">Página do Cliente</button>
               <button class="btn-icon adjust btn-edit-detalhe" aria-label="Editar Cliente" title="Editar Cliente">${iconEdit}</button>
               <button class="btn-icon delete btn-delete-detalhe" aria-label="Excluir Cliente" title="Excluir Cliente">${iconTrash}</button>
             </div>
@@ -4606,12 +4651,10 @@ function renderWidgetContent(card, cardInner, slot){
   if(slot.id === 'widget.clientsCount'){
     title.textContent = 'Quantidade de clientes';
     value.textContent = String(getClients().length);
-// Adiciona o status de sucesso no container do card.
-// Preferimos o elemento 'card' se existir; senão, caímos no pai do 'cardInner'.
-const cardContainer = card || cardInner?.parentElement;
-if (cardContainer) {
-  cardContainer.classList.add('card-success');
-}
+    const cardContainer = card || cardInner?.parentElement;
+    if(cardContainer){
+      cardContainer.classList.add('card-success');
+    }
   } else if(slot.id === 'widget.followupsToday'){
     title.textContent = 'Contatos para Hoje';
     value.textContent = String(getFollowupsStats().todayCount);
