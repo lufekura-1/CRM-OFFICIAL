@@ -3140,9 +3140,6 @@ function initCalendarioPage() {
     const cancelBtn = modal.querySelector('[data-modal-close]');
     saveBtn.style.display='';
     if(cancelBtn) cancelBtn.textContent='Cancelar';
-    const cancelBtn = modal.querySelector('[data-modal-close]');
-    saveBtn.style.display='';
-    if(cancelBtn) cancelBtn.textContent='Cancelar';
     saveBtn.removeAttribute('data-action');
     saveBtn.setAttribute('type','submit');
     const title=document.getElementById('modal-title');
