@@ -60,6 +60,76 @@ function setClients(arr, profile=currentProfile()){ setJSON(`${profile}:clients`
 function getCalendar(profile=currentProfile()){ return getJSON(`${profile}:calendar`, getJSON(`perfil:${profile}:calendar`, [])); }
 function setCalendar(arr, profile=currentProfile()){ setJSON(`${profile}:calendar`, arr); setJSON(`perfil:${profile}:calendar`, arr); }
 
+function adminEventDestinations(ev){
+  if(!Array.isArray(ev?.destinos) || ev.destinos.length===0){
+    return PERFIS.filter(p=>p!=='Administrador');
+  }
+  return ev.destinos;
+}
+
+function syncAdminCalendarEvents(){
+  const adminProfile='Administrador';
+  const adminEvents=getJSON(`perfil:${adminProfile}:calendar`, []);
+  const adminGroupIds=new Set(adminEvents.filter(ev=>ev?.adminGroupId).map(ev=>ev.adminGroupId));
+  const adminDesfalqueKeys=new Set(adminEvents
+    .filter(ev=>ev?.tipo==='desfalque' && ev.origem==='admin')
+    .map(ev=>`${ev.nome}|${ev.dataISO}|${ev.periodo||''}`));
+  PERFIS.filter(p=>p!==adminProfile).forEach(profile=>{
+    let events=getJSONForPerfil(profile,'calendar',[]);
+    const allowedGroupIds=new Set();
+    const allowedDesfalques=new Set();
+    let changed=false;
+    adminEvents.forEach(ev=>{
+      if(ev?.tipo==='desfalque' && ev.origem==='admin'){
+        const key=`${ev.nome}|${ev.dataISO}|${ev.periodo||''}`;
+        allowedDesfalques.add(key);
+        if(!events.some(e=>e.tipo==='desfalque' && e.origem==='admin' && e.nome===ev.nome && e.dataISO===ev.dataISO)){
+          events.push({...ev, id:uuid()});
+          changed=true;
+        }
+        return;
+      }
+      if(ev?.origem!=='admin') return;
+      const destinos=adminEventDestinations(ev);
+      if(destinos.includes(profile)){
+        if(ev.adminGroupId){
+          allowedGroupIds.add(ev.adminGroupId);
+          if(!events.some(e=>e.origem==='admin' && e.adminGroupId===ev.adminGroupId)){
+            events.push({...ev, id:uuid()});
+            changed=true;
+          }
+        }else{
+          const key=`${ev.titulo}|${ev.dataISO}`;
+          allowedGroupIds.add(key);
+          if(!events.some(e=>e.origem==='admin' && `${e.titulo}|${e.dataISO}`===key)){
+            events.push({...ev, id:uuid()});
+            changed=true;
+          }
+        }
+      }
+    });
+    const filtered=events.filter(ev=>{
+      if(ev.origem!=='admin') return true;
+      if(ev.tipo==='desfalque'){
+        const key=`${ev.nome}|${ev.dataISO}|${ev.periodo||''}`;
+        return adminDesfalqueKeys.has(key) && allowedDesfalques.has(key);
+      }
+      if(ev.adminGroupId){
+        return adminGroupIds.has(ev.adminGroupId) && allowedGroupIds.has(ev.adminGroupId);
+      }
+      const key=`${ev.titulo}|${ev.dataISO}`;
+      return allowedGroupIds.has(key);
+    });
+    if(filtered.length!==events.length){
+      changed=true;
+    }
+    if(changed){
+      events=filtered;
+      setCalendar(events, profile);
+    }
+  });
+}
+
 function getProfileInfo(profile=currentProfile()){
   return getJSON(`perfil:${profile}:info`, { nome:'', telefone:'', endereco:'', instagram:'', logo:'' });
 }
@@ -1005,6 +1075,9 @@ function resolveRoute(name){
 
 function renderRoute(name){
   currentRoute = resolveRoute(name);
+  if(document.body){
+    document.body.setAttribute('data-route', currentRoute);
+  }
   const main = document.querySelector('#app-main');
   if(currentRoute !== 'calendario') calendarMonthRenderer = null;
   if(currentRoute==='gerencia') main.innerHTML='';
@@ -2204,6 +2277,7 @@ function openCompraModal(clienteId, compraId, onSave) {
 
 function initCalendarioPage() {
   db.initComSeeds();
+  syncAdminCalendarEvents();
   const wrapper = document.querySelector('.calendario-wrapper');
   if(!wrapper) return;
   const calendarPage = document.querySelector('.calendar-page');
@@ -2454,6 +2528,7 @@ function initCalendarioPage() {
         head.appendChild(num);
         cell.classList.add('day--outside','is-out-month');
         cell.appendChild(head);
+        cell.classList.add('is-empty');
       }else if(dayNum<=daysIn){
         const head=document.createElement('div');
         head.className='day-head';
@@ -2529,6 +2604,9 @@ function initCalendarioPage() {
           }
           cell.appendChild(item);
         });
+        if(!cell.querySelector('.calendar-item')){
+          cell.classList.add('is-empty');
+        }
         setupDayCell(cell,dateISO);
       }else{
         const head=document.createElement('div');
@@ -2539,6 +2617,7 @@ function initCalendarioPage() {
         head.appendChild(num);
         cell.classList.add('day--outside','is-out-month');
         cell.appendChild(head);
+        cell.classList.add('is-empty');
       }
       grid.appendChild(cell);
     }
@@ -2637,6 +2716,9 @@ function initCalendarioPage() {
         }
         cell.appendChild(card);
       });
+      if(!cell.querySelector('.calendar-item, .calendar-card')){
+        cell.classList.add('is-empty');
+      }
       setupDayCell(cell,dateISO);
       grid.appendChild(cell);
     }
@@ -4151,6 +4233,7 @@ async function limparCachesJoaoClaro(){
 }
 
 function reloadCalendario(currentDate){
+  syncAdminCalendarEvents();
   purgeOrphanEvents();
   const date = currentDate ?? window.currentDate ?? new Date();
   if(currentRoute==='calendario'){
