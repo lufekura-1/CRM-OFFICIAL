@@ -1565,63 +1565,181 @@ function renderOS() {
 }
 
 function dashboardPage() {
+  const boardCells=Array.from({length:10}).map(()=>'<span class="dashboard-board__cell"></span>').join('');
   return `<section id="dashboard">`+
     `<div class="dash-toolbar">`+
       `<div class="dash-heading">Dashboard</div>`+
       `<button id="dashAddBtn" class="dash-add">Adicionar widget</button>`+
     `</div>`+
-    `<div id="dashboardGrid" class="dashboard-grid"></div>`+
+    `<div class="dashboard-layout">`+
+      `<div class="dashboard-board" aria-hidden="true">${boardCells}</div>`+
+      `<div id="dashboardGrid" class="dashboard-grid"></div>`+
+    `</div>`+
   `</section>`;
 }
 
-const CONTATOS_EXECUTAR_DATA={
-  semana:[
-    { id:'exec-ana', nome:'Ana Souza', interesse:'Coleção verão 2024', canal:'WhatsApp', responsavel:'Carla Mendes', prazo:'Hoje', marcador:'Retorno' },
-    { id:'exec-julia', nome:'Júlia Prado', interesse:'Grupo jóias', canal:'Ligação', responsavel:'Equipe Luxo', prazo:'Amanhã', marcador:'Agendado' }
-  ],
-  atrasados:[
-    { id:'exec-bruno', nome:'Bruno Lima', interesse:'Linha esportiva', canal:'E-mail', responsavel:'Marcos Paulo', prazo:'05/04', atraso:'3 dias' },
-    { id:'exec-felipe', nome:'Felipe Barbosa', interesse:'Club premium', canal:'WhatsApp', responsavel:'Sofia Martins', prazo:'28/03', atraso:'11 dias' }
-  ],
-  concluidos:[
-    { id:'exec-camila', nome:'Camila Rocha', interesse:'Grupo jóias', canal:'WhatsApp', responsavel:'Roberta Dias', prazo:'08/04', marcador:'Concluído' },
-    { id:'exec-helena', nome:'Helena Silva', interesse:'Coleção solar', canal:'Ligação', responsavel:'Equipe Pós-venda', prazo:'09/04', marcador:'Concluído' }
-  ]
-};
-
-const CONTATOS_OFERTAS_DATA=[
-  { id:'oferta-daniel', nome:'Daniel Alves', interesse:'Coleção Essencial', interesseKey:'colecao_essencial', grupo:'Grupo jóias', grupoKey:'grupo_joias', responsavel:'Marcos Paulo', canal:'WhatsApp', status:'O.F' },
-  { id:'oferta-eduarda', nome:'Eduarda Nunes', interesse:'Linha Solar', interesseKey:'linha_solar', grupo:'Grupo verão', grupoKey:'grupo_verao', responsavel:'Sofia Martins', canal:'Ligação', status:'O.F' },
-  { id:'oferta-fernando', nome:'Fernando Duarte', interesse:'Grupo jóias', interesseKey:'grupo_joias', grupo:'Grupo jóias', grupoKey:'grupo_joias', responsavel:'Equipe Luxo', canal:'E-mail', status:'O.F' }
-];
-
-const CONTATOS_POS_VENDA_DATA=[
-  { id:'pv-ana', nome:'Ana Souza', interesse:'Programa fidelidade', interesseKey:'fidelidade', grupo:'Clientes premium', grupoKey:'clientes_premium', responsavel:'Carla Mendes', canal:'WhatsApp', status:'P.V' },
-  { id:'pv-bruno', nome:'Bruno Lima', interesse:'Grupo jóias', interesseKey:'grupo_joias', grupo:'Grupo jóias', grupoKey:'grupo_joias', responsavel:'Equipe Luxo', canal:'Ligação', status:'P.V' },
-  { id:'pv-camila', nome:'Camila Rocha', interesse:'Cuidados pós venda', interesseKey:'pos_venda', grupo:'Clientes recorrentes', grupoKey:'clientes_recorrentes', responsavel:'Equipe Pós-venda', canal:'WhatsApp', status:'P.V' }
-];
-
-const CONTATOS_HISTORICO_REGISTROS=[
-  { id:'hist-001', nome:'Ana Souza', tipo:'Pós-venda', estado:'Concluído', estadoKey:'concluido', dataISO:'2024-03-15', dataLabel:'15/03/2024', responsavel:'Carla Mendes', origem:'Contato 3 meses' },
-  { id:'hist-002', nome:'Bruno Lima', tipo:'Oferta', estado:'Em andamento', estadoKey:'em_andamento', dataISO:'2024-03-28', dataLabel:'28/03/2024', responsavel:'Marcos Paulo', origem:'Apresentação coleção' },
-  { id:'hist-003', nome:'Camila Rocha', tipo:'Pós-venda', estado:'Pendente', estadoKey:'pendente', dataISO:'2024-04-05', dataLabel:'05/04/2024', responsavel:'Equipe Pós-venda', origem:'Confirmação montagem' },
-  { id:'hist-004', nome:'Eduarda Nunes', tipo:'Oferta', estado:'Concluído', estadoKey:'concluido', dataISO:'2024-04-08', dataLabel:'08/04/2024', responsavel:'Sofia Martins', origem:'Fechamento coleção solar' }
-];
-
 function renderContatosPage(){
+  db.initComSeeds();
+  const normalizeKey=value=>{
+    const base=normalizar(value||'').replace(/[^a-z0-9]+/g,'_');
+    const cleaned=base.replace(/^_+|_+$/g,'');
+    return cleaned || 'geral';
+  };
+  const startOfDay=date=>{
+    const d=new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    d.setHours(0,0,0,0);
+    return d;
+  };
+  const today=new Date();
+  const todayStart=startOfDay(today);
+  const startOfWeek=new Date(todayStart);
+  startOfWeek.setDate(startOfWeek.getDate()-((startOfWeek.getDay()+6)%7));
+  const endOfWeek=new Date(startOfWeek);
+  endOfWeek.setDate(endOfWeek.getDate()+6);
+  endOfWeek.setHours(23,59,59,999);
+  const msPerDay=24*60*60*1000;
+  const isSameDay=(a,b)=>a.getFullYear()===b.getFullYear() && a.getMonth()===b.getMonth() && a.getDate()===b.getDate();
+  function buildFollowups(){
+    const clients=db.listarClientes();
+    const map=new Map(clients.map(c=>[c.id,c]));
+    const eventos=getJSON(calKey(), []).filter(ev=>ev.meta?.type==='followup');
+    const items=[];
+    eventos.forEach(ev=>{
+      const stage=resolveFollowupStage(ev);
+      if(!stage) return;
+      const clienteId=ev.meta?.clienteId ?? ev.meta?.clientId;
+      const cliente=map.get(clienteId);
+      if(!cliente) return;
+      const compraId=ev.meta?.compraId ?? ev.meta?.purchaseId;
+      const compra=(cliente.compras||[]).find(c=>c.id===compraId);
+      const rawDate=String(ev.date || ev.dataISO || '').slice(0,10);
+      if(!rawDate) return;
+      const dueDate=new Date(rawDate);
+      if(Number.isNaN(dueDate.getTime())) return;
+      dueDate.setHours(0,0,0,0);
+      const followInfo=compra?.followUps?.[stage] || {};
+      const done=followInfo.done ?? ev.meta?.done ?? false;
+      const doneAtISO=followInfo.doneAt || null;
+      const doneAt=doneAtISO ? new Date(doneAtISO) : null;
+      if(doneAt) doneAt.setHours(0,0,0,0);
+      const telefoneDigits=(cliente.telefone||'').replace(/\D/g,'');
+      let telefone='';
+      if(telefoneDigits.length>=10) telefone=formatTelefone(telefoneDigits);
+      else if(cliente.telefone) telefone=cliente.telefone;
+      const interestLabel=(cliente.interesses?.[0]) || (compra?.lente || (compra?.tiposCompra?.[0] || 'Contato'));
+      const groupLabel=(compra?.tiposCompra?.[0]) || interestLabel;
+      const compraDataISO=compra?.dataCompra || '';
+      const compraDataLabel=compraDataISO ? formatDateDDMMYYYY(compraDataISO) : '';
+      items.push({
+        id:ev.id,
+        clienteId,
+        clienteNome:cliente.nome || 'Cliente',
+        telefone,
+        interestLabel,
+        groupLabel,
+        interestKey:normalizeKey(interestLabel),
+        groupKey:normalizeKey(groupLabel),
+        stage,
+        stageBadge:FOLLOWUP_STAGE_LABELS[stage] || stage.toUpperCase(),
+        stageText:FOLLOWUP_STAGE_TEXT[stage] || stage,
+        dueISO:rawDate,
+        dueDate,
+        dueLabel:formatDateDDMMYYYY(rawDate),
+        done,
+        doneAt,
+        compraDataLabel,
+        perfilLabel:getPerfil()
+      });
+    });
+    return items;
+  }
+  const followups=buildFollowups();
+  function toChip(entry,{useDoneDate=false}={}){
+    const referenceDate=useDoneDate && entry.doneAt ? entry.doneAt : entry.dueDate;
+    const prazoLabel=referenceDate ? (isSameDay(referenceDate,todayStart)?'Hoje':formatDateDDMMYYYY(referenceDate)) : entry.dueLabel;
+    const atrasoDays=!entry.done && referenceDate < todayStart ? Math.ceil((todayStart-referenceDate)/msPerDay) : 0;
+    return {
+      id:entry.id,
+      nome:entry.clienteNome,
+      marcador:entry.stageBadge,
+      interesse:entry.interestLabel,
+      responsavel:entry.perfilLabel ? `Unidade: ${entry.perfilLabel}` : '',
+      prazo:prazoLabel,
+      canal:entry.telefone ? `Tel.: ${entry.telefone}` : 'Sem telefone',
+      atraso:atrasoDays>0 ? `${atrasoDays} dia${atrasoDays>1?'s':''}` : '',
+      status:useDoneDate || entry.done ? 'Concluído' : ''
+    };
+  }
+  const semanaItens=followups
+    .filter(entry=>!entry.done && entry.dueDate>=todayStart && entry.dueDate<=endOfWeek)
+    .sort((a,b)=>a.dueDate-b.dueDate)
+    .map(entry=>toChip(entry));
+  const atrasadosItens=followups
+    .filter(entry=>!entry.done && entry.dueDate<todayStart)
+    .sort((a,b)=>a.dueDate-b.dueDate)
+    .map(entry=>toChip(entry));
+  const concluidosItens=followups
+    .filter(entry=>entry.done && entry.doneAt && entry.doneAt>=startOfWeek && entry.doneAt<=endOfWeek)
+    .sort((a,b)=>b.doneAt-a.doneAt)
+    .map(entry=>toChip(entry,{useDoneDate:true}));
   const kanbanColumns=[
-    { key:'semana', titulo:'Abertos (Semana)', descricao:'Contatos a ser executado nessa semana', itens:CONTATOS_EXECUTAR_DATA.semana },
-    { key:'atrasados', titulo:'Atrasados', descricao:'Todo tempo', itens:CONTATOS_EXECUTAR_DATA.atrasados },
-    { key:'concluidos', titulo:'Concluídos (Semana)', descricao:'Contatos concluídos nesta semana', itens:CONTATOS_EXECUTAR_DATA.concluidos }
+    { key:'semana', titulo:'Abertos (Semana)', descricao:'Contatos planejados para esta semana.', itens:semanaItens },
+    { key:'atrasados', titulo:'Atrasados', descricao:'Contatos com prazo vencido.', itens:atrasadosItens },
+    { key:'concluidos', titulo:'Concluídos (Semana)', descricao:'Contatos realizados nesta semana.', itens:concluidosItens }
   ];
+  const ofertasList=followups
+    .filter(entry=>entry.stage==='3m')
+    .sort((a,b)=>a.dueDate-b.dueDate)
+    .map(entry=>({
+      id:entry.id,
+      nome:entry.clienteNome,
+      interesse:entry.interestLabel,
+      interesseKey:entry.interestKey,
+      grupo:entry.groupLabel,
+      grupoKey:entry.groupKey,
+      responsavel:`Unidade ${entry.perfilLabel}`,
+      canal:entry.telefone || 'Sem telefone',
+      status:entry.done ? 'Concluído' : 'Pendente'
+    }));
+  const posVendaList=followups
+    .filter(entry=>entry.stage==='6m' || entry.stage==='12m')
+    .sort((a,b)=>a.dueDate-b.dueDate)
+    .map(entry=>({
+      id:entry.id,
+      nome:entry.clienteNome,
+      interesse:entry.interestLabel,
+      interesseKey:entry.interestKey,
+      grupo:entry.groupLabel,
+      grupoKey:entry.groupKey,
+      responsavel:`Unidade ${entry.perfilLabel}`,
+      canal:entry.telefone || 'Sem telefone',
+      status:entry.done ? 'Concluído' : 'Pendente'
+    }));
+  const historicoRegistros=followups
+    .map(entry=>{
+      const dateISO=entry.doneAt ? entry.doneAt.toISOString().slice(0,10) : entry.dueISO;
+      return {
+        id:entry.id,
+        nome:entry.clienteNome,
+        tipo:`Contato ${entry.stageText}`,
+        estado:entry.done ? 'Concluído' : 'Pendente',
+        estadoKey:entry.done ? 'concluido' : 'pendente',
+        dataISO:dateISO,
+        dataLabel:formatDateDDMMYYYY(dateISO),
+        responsavel:`Unidade ${entry.perfilLabel}`,
+        origem:entry.compraDataLabel ? `Compra em ${entry.compraDataLabel}` : 'Agenda de acompanhamento'
+      };
+    })
+    .sort((a,b)=>b.dataISO.localeCompare(a.dataISO));
   const renderChip=item=>{
     const badge=item.marcador ? `<span class="contato-chip__stage">${escapeHtml(item.marcador)}</span>` : '';
+    const status=item.status ? `<span class="contato-chip__status">${escapeHtml(item.status)}</span>` : '';
     const atraso=item.atraso ? `<span class="contato-chip__delay">Em atraso: ${escapeHtml(item.atraso)}</span>` : '';
-    return `<article class="contato-chip" data-id="${escapeHtml(item.id)}">
-      <div class="contato-chip__header"><strong class="contato-chip__name">${escapeHtml(item.nome)}</strong>${badge}</div>
-      <div class="contato-chip__meta"><span>${escapeHtml(item.interesse)}</span><span>Resp.: ${escapeHtml(item.responsavel)}</span></div>
-      <div class="contato-chip__footer"><span>Prazo: ${escapeHtml(item.prazo)}</span><span>${escapeHtml(item.canal)}</span>${atraso}</div>
-    </article>`;
+    return `<article class="contato-chip" data-id="${escapeHtml(item.id)}">`
+      +`<div class="contato-chip__header"><strong class="contato-chip__name">${escapeHtml(item.nome)}</strong>${badge}${status}</div>`
+      +`<div class="contato-chip__meta"><span>${escapeHtml(item.interesse)}</span>${item.responsavel?`<span>${escapeHtml(item.responsavel)}</span>`:''}</div>`
+      +`<div class="contato-chip__footer"><span>Prazo: ${escapeHtml(item.prazo)}</span><span>${escapeHtml(item.canal)}</span>${atraso}</div>`
+    +`</article>`;
   };
   const buildSelectOptions=(list,keyProp,labelProp)=>{
     const map=new Map();
@@ -1679,7 +1797,7 @@ function renderContatosPage(){
       </div>
     </section>`;
   };
-  const historicoRows=CONTATOS_HISTORICO_REGISTROS.map(item=>`
+  const historicoRows=historicoRegistros.map(item=>`
     <tr data-estado="${escapeHtml(item.estadoKey)}" data-date="${escapeHtml(item.dataISO)}">
       <td>${escapeHtml(item.nome)}</td>
       <td>${escapeHtml(item.tipo)}</td>
@@ -1690,7 +1808,7 @@ function renderContatosPage(){
     </tr>`).join('');
   const estadoOptions=(()=>{
     const map=new Map();
-    CONTATOS_HISTORICO_REGISTROS.forEach(item=>{
+    historicoRegistros.forEach(item=>{
       if(item.estadoKey && !map.has(item.estadoKey)) map.set(item.estadoKey,item.estado);
     });
     return Array.from(map.entries()).map(([value,label])=>`<option value="${escapeHtml(value)}">${escapeHtml(label)}</option>`).join('');
@@ -1728,8 +1846,8 @@ function renderContatosPage(){
           </div>
         </div>
       </section>
-      ${renderListPanel('ofertas', CONTATOS_OFERTAS_DATA, { titulo:'Ofertas', descricao:'Lista com os contatos em estado de O.F' })}
-      ${renderListPanel('pos-venda', CONTATOS_POS_VENDA_DATA, { titulo:'Pós Venda', descricao:'Clientes em acompanhamento de pós venda (P.V)' })}
+      ${renderListPanel('ofertas', ofertasList, { titulo:'Ofertas', descricao:'Contatos programados para ofertas (3 meses).' })}
+      ${renderListPanel('pos-venda', posVendaList, { titulo:'Pós Venda', descricao:'Clientes em acompanhamento pós-venda (6 e 12 meses).' })}
       <section class="contatos-panel contatos-panel--historico" data-tab-panel="historico" role="tabpanel" aria-labelledby="contatosTab-historico" hidden>
         <div class="card-grid">
           <div class="card" data-colspan="12">
@@ -1764,7 +1882,6 @@ function renderContatosPage(){
     </div>
   </section>`;
 }
-
 function renderGerenciaConfig() {
   return `
   <div class="card-grid">
@@ -3093,6 +3210,17 @@ function initCalendarioPage() {
     const feriasNome=body.querySelector('[data-ferias-field="nome"]');
     const feriasInicio=body.querySelector('[data-ferias-field="inicio"]');
     const feriasFim=body.querySelector('[data-ferias-field="fim"]');
+    function resetFolgaFormFields(options={}){
+      if(!form) return;
+      const keepDate=options.keepDate ?? false;
+      const defaultDate=keepDate && selectedDateISO ? selectedDateISO : '';
+      if(!keepDate) selectedDateISO='';
+      editingFolga=null;
+      form.nome.value='';
+      form.data.value=defaultDate;
+      form.periodo.value='manha';
+      if(removeBtn) removeBtn.style.display='none';
+    }
     if(weekdaysRow){
       ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'].forEach(lbl=>{
         const span=document.createElement('span');
@@ -3190,7 +3318,8 @@ function initCalendarioPage() {
         const dataISO=form.data.value;
         const periodo=form.periodo.value;
         if(!nome||!dataISO){ form.reportValidity(); return; }
-        if(editingFolga){
+        const isEditing=!!editingFolga;
+        if(isEditing){
           const groupId=updateFolgaAcrossProfiles(editingFolga,{nome,dataISO,periodo});
           reloadEventos();
           const updated=getFolgasList().find(f=> (f.adminGroupId && f.adminGroupId===groupId) || (!f.adminGroupId && f.nome===nome && f.dataISO===dataISO && (f.periodo||'')===periodo));
@@ -3204,42 +3333,25 @@ function initCalendarioPage() {
         }
         if(editingFolga && removeBtn) removeBtn.style.display='';
         renderFolgasCalendario();
+        if(!isEditing) resetFolgaFormFields({ keepDate:false });
       });
       clearBtn?.addEventListener('click',()=>{
-        editingFolga=null;
-        if(form){
-          form.nome.value='';
-          form.data.value=selectedDateISO;
-          form.periodo.value='manha';
-        }
-        if(removeBtn) removeBtn.style.display='none';
+        resetFolgaFormFields({ keepDate:true });
         renderFolgasCalendario();
       });
       removeBtn?.addEventListener('click',()=>{
         if(!editingFolga) return;
         if(!confirm('Remover folga selecionada?')) return;
         deleteFolgaAcrossProfiles(editingFolga);
-        editingFolga=null;
-        if(form){
-          form.nome.value='';
-          form.data.value=selectedDateISO;
-          form.periodo.value='manha';
-        }
-        if(removeBtn) removeBtn.style.display='none';
+        resetFolgaFormFields({ keepDate:true });
         renderFolgasCalendario();
       });
     }
     prevBtn?.addEventListener('click',()=>{ currentMonth.setMonth(currentMonth.getMonth()-1); renderFolgasCalendario(); });
     nextBtn?.addEventListener('click',()=>{ currentMonth.setMonth(currentMonth.getMonth()+1); renderFolgasCalendario(); });
     newBtn?.addEventListener('click',()=>{
-      editingFolga=null;
       selectedDateISO=new Date().toISOString().slice(0,10);
-      if(form){
-        form.nome.value='';
-        form.data.value=selectedDateISO;
-        form.periodo.value='manha';
-      }
-      if(removeBtn) removeBtn.style.display='none';
+      resetFolgaFormFields({ keepDate:true });
       renderFolgasCalendario();
     });
     feriasToggle?.addEventListener('click',()=>{
@@ -3254,6 +3366,9 @@ function initCalendarioPage() {
       if(!inicio || !fim){ ui.toast('Informe as datas de início e fim.'); return; }
       addVacationMarkers({nome,inicioISO:inicio,fimISO:fim});
       renderFolgasCalendario();
+      if(feriasNome) feriasNome.value='';
+      if(feriasInicio) feriasInicio.value='';
+      if(feriasFim) feriasFim.value='';
     });
     renderFolgasCalendario();
     modal.open();
