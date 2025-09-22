@@ -1095,6 +1095,224 @@ body[data-route="clientes-cadastro"] .card[data-card-id="cadastro-clientes"] .ca
 .cliente-contatos-table .contato-status { text-align:center; }
 .cliente-contatos-table .contato-switch { display:inline-flex; align-items:center; gap:var(--space-sm); cursor:pointer; }
 .cliente-contatos-table .contato-switch input { width:18px; height:18px; }
+.contatos-page {
+  display:flex;
+  flex-direction:column;
+  gap:1.5rem;
+}
+.contatos-tabs {
+  display:flex;
+  flex-wrap:wrap;
+  gap:0.6rem;
+}
+.contatos-tab {
+  border:none;
+  border-radius:999px;
+  background:#f1f5f9;
+  color:#475569;
+  font-weight:700;
+  letter-spacing:0.05em;
+  text-transform:uppercase;
+  padding:0.6rem 1.2rem;
+  cursor:pointer;
+  transition:all 0.2s ease;
+  box-shadow:inset 0 1px 2px rgba(15,23,42,0.08);
+}
+.contatos-tab:hover { background:#e2e8f0; }
+.contatos-tab.is-active {
+  background:#1f2937;
+  color:#fff;
+  box-shadow:0 12px 26px rgba(15,23,42,0.2);
+}
+.contatos-panels {
+  display:flex;
+  flex-direction:column;
+  gap:1.5rem;
+}
+.contatos-panel[hidden] { display:none; }
+.contatos-kanban {
+  display:grid;
+  gap:1rem;
+  grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
+}
+.contatos-kanban-column {
+  background:#f8fafc;
+  border-radius:16px;
+  border:1px solid rgba(15,23,42,0.06);
+  padding:1rem;
+  display:flex;
+  flex-direction:column;
+  gap:0.75rem;
+  box-shadow:0 10px 24px rgba(15,23,42,0.06);
+}
+.contatos-kanban-header h3 {
+  margin:0;
+  font-size:1rem;
+  font-weight:700;
+  color:#0f172a;
+}
+.contatos-kanban-header p {
+  margin:0;
+  font-size:0.8rem;
+  color:#64748b;
+}
+.contatos-kanban-list {
+  display:flex;
+  flex-direction:column;
+  gap:0.75rem;
+}
+.contato-chip {
+  background:#fff;
+  border-radius:14px;
+  border:1px solid rgba(15,23,42,0.06);
+  padding:0.85rem;
+  display:flex;
+  flex-direction:column;
+  gap:0.45rem;
+  box-shadow:0 6px 14px rgba(15,23,42,0.1);
+}
+.contato-chip__header {
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:0.5rem;
+}
+.contato-chip__name {
+  font-weight:700;
+  color:#0f172a;
+}
+.contato-chip__stage {
+  background:#1f2937;
+  color:#fff;
+  border-radius:999px;
+  padding:0.15rem 0.65rem;
+  font-size:0.7rem;
+  letter-spacing:0.05em;
+  text-transform:uppercase;
+}
+.contato-chip__meta,
+.contato-chip__footer {
+  display:flex;
+  flex-wrap:wrap;
+  gap:0.65rem;
+  font-size:0.8rem;
+  color:#475569;
+}
+.contato-chip__footer span { display:flex; align-items:center; }
+.contato-chip__delay { color:#b91c1c; font-weight:600; }
+.contatos-list-toolbar {
+  display:flex;
+  flex-wrap:wrap;
+  gap:1rem;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:1rem;
+}
+.contatos-select-all {
+  display:flex;
+  align-items:center;
+  gap:0.5rem;
+  font-weight:600;
+  color:#1f2937;
+}
+.contatos-select-all input { width:18px; height:18px; }
+.contatos-filters {
+  display:flex;
+  flex-wrap:wrap;
+  gap:0.85rem;
+  align-items:flex-end;
+}
+.contatos-filters label {
+  display:flex;
+  flex-direction:column;
+  gap:0.35rem;
+  font-size:0.7rem;
+  font-weight:700;
+  letter-spacing:0.05em;
+  color:#475569;
+  text-transform:uppercase;
+}
+.contatos-filters select {
+  min-width:180px;
+  padding:0.45rem 0.75rem;
+  border-radius:10px;
+  border:1px solid rgba(15,23,42,0.12);
+  background:#fff;
+  color:#1f2937;
+}
+.contatos-table {
+  width:100%;
+  border-collapse:separate;
+  border-spacing:0;
+}
+.contatos-table thead th {
+  background:#f8fafc;
+  text-align:left;
+  font-size:0.75rem;
+  letter-spacing:0.08em;
+  text-transform:uppercase;
+  color:#475569;
+  padding:0.65rem;
+  border-bottom:1px solid rgba(15,23,42,0.08);
+}
+.contatos-table tbody td {
+  padding:0.7rem;
+  border-bottom:1px solid rgba(15,23,42,0.06);
+  font-size:0.9rem;
+  color:#1f2937;
+}
+.contatos-table tbody tr:hover { background:rgba(226,232,240,0.35); }
+.contatos-table tbody tr[hidden] { display:none; }
+.contatos-checkbox {
+  display:flex;
+  align-items:center;
+  gap:0.55rem;
+  font-weight:600;
+  color:#0f172a;
+}
+.contatos-checkbox input { width:16px; height:16px; }
+.contatos-status {
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  padding:0.2rem 0.6rem;
+  border-radius:999px;
+  background:#e2e8f0;
+  font-size:0.75rem;
+  font-weight:700;
+  letter-spacing:0.05em;
+  color:#475569;
+}
+.contatos-historico-filters {
+  display:flex;
+  flex-wrap:wrap;
+  gap:1rem;
+  align-items:flex-end;
+  margin-bottom:1rem;
+}
+.contatos-historico-filters label {
+  display:flex;
+  flex-direction:column;
+  gap:0.35rem;
+  font-size:0.7rem;
+  font-weight:700;
+  letter-spacing:0.05em;
+  color:#475569;
+  text-transform:uppercase;
+}
+.contatos-historico-filters input,
+.contatos-historico-filters select {
+  padding:0.45rem 0.7rem;
+  border-radius:10px;
+  border:1px solid rgba(15,23,42,0.12);
+  background:#fff;
+  color:#1f2937;
+  min-width:150px;
+}
+.contatos-list-empty,
+.contatos-historico-empty {
+  margin-top:1rem;
+}
 
 /* ===== Client status and contact preferences ===== */
 .client-name-with-status {
@@ -1397,10 +1615,11 @@ body[data-route="clientes-cadastro"] .card[data-card-id="cadastro-clientes"] .ca
   overflow:hidden;
   text-overflow:ellipsis;
   padding:0 0.5rem;
-  letter-spacing:0.24em;
+  letter-spacing:0.18em;
   text-transform:uppercase;
   font-weight:800;
   color:#1f2937;
+  line-height:1.05;
 }
 .cal-toolbar button, .cal-toolbar select, .cal-toolbar input { font:inherit; height:auto; }
 .cal-toolbar .btn { padding:0.5rem 1.25rem; border-radius:12px; }
@@ -1788,6 +2007,30 @@ body[data-route="clientes-cadastro"] .card[data-card-id="cadastro-clientes"] .ca
   justify-content:space-between;
   flex-wrap:wrap;
   gap:0.75rem;
+}
+.calendar-modal__tabs {
+  display:flex;
+  flex-wrap:wrap;
+  gap:0.5rem;
+  align-items:center;
+}
+.calendar-tab {
+  border:none;
+  border-radius:999px;
+  background:#e2e8f0;
+  color:#1f2937;
+  font-weight:600;
+  padding:0.45rem 0.95rem;
+  cursor:pointer;
+  transition:all 0.2s ease;
+}
+.calendar-tab:hover {
+  transform:translateY(-1px);
+}
+.calendar-tab.is-active {
+  background:#1f2937;
+  color:#fff;
+  box-shadow:0 10px 24px rgba(15,23,42,0.18);
 }
 .calendar-modal__content {
   display:flex;
