@@ -868,7 +868,7 @@ const cards = {
 
 // ===== UI =====
 const ui = {
-  clients: { filters: { interesses: [] }, search: '' },
+  clients: { filters: { interesses: [], dateRange: { start:'', end:'' } }, search: '' },
   dashboard: { layout: null },
   os: {
     filters: { text:'', types:['reloj','joia','optica'] },
@@ -1423,20 +1423,32 @@ function renderClientesCadastro(){
 
 function renderClientesTabela(){
   return `
-  <div class="card-grid">
+  <div class="card-grid clientes-tabela-grid">
+    <div class="clientes-table-menu">
+      <button class="btn btn-primary clientes-table-menu__add" data-action="client:new" type="button">Adicionar Cliente</button>
+      <div class="search-wrap clientes-table-menu__search">
+        <span class="icon">${iconSearch}</span>
+        <input id="clientTableSearch" class="search-input" type="search" placeholder="Pesquisar clientes…" aria-label="Pesquisar clientes" />
+      </div>
+      <div class="clientes-table-menu__actions">
+        <div class="filters-wrap">
+          <button id="tagMenuBtn" type="button" class="btn-dropdown">Etiquetas ▾</button>
+        </div>
+        <div class="clientes-table-menu__date">
+          <label class="date-field">
+            <span>De</span>
+            <input id="clientTableDateStart" type="date" aria-label="Filtrar data inicial da compra">
+          </label>
+          <label class="date-field">
+            <span>Até</span>
+            <input id="clientTableDateEnd" type="date" aria-label="Filtrar data final da compra">
+          </label>
+        </div>
+      </div>
+    </div>
     <div class="card" data-card-id="tabela-clientes" data-colspan="12">
       <div class="card-header">
         <div class="card-head">Tabela de Clientes</div>
-        <div class="list-toolbar clients-toolbar">
-          <div class="search-wrap">
-            <span class="icon">${iconSearch}</span>
-            <input id="clientTableSearch" class="search-input" type="search" placeholder="Pesquisar clientes…" aria-label="Pesquisar clientes" />
-          </div>
-          <div class="filters-wrap">
-            <button id="tagMenuBtn" type="button" class="btn-dropdown">Etiquetas ▾</button>
-          </div>
-          <button class="btn-icon btn-plus add-cliente" data-action="client:new" aria-label="Adicionar" title="Adicionar">${iconPlus}</button>
-        </div>
       </div>
       <div class="card-body table-wrapper">
         <table class="table table-clients table-clients-full">
@@ -1444,6 +1456,7 @@ function renderClientesTabela(){
             <tr>
               <th class="select-col select-toggle" scope="col"><input type="checkbox" id="clientSelectAll" aria-label="Selecionar todos os clientes da página"></th>
               <th data-field="nome" class="sortable" tabindex="0" role="button" aria-sort="none">NOME<span class="sort-indicator"></span></th>
+              <th data-field="status">STATUS</th>
               <th data-field="telefone">TELEFONE</th>
               <th data-field="cpf">CPF</th>
               <th data-field="genero">GÊNERO</th>
@@ -2100,6 +2113,11 @@ function renderClientNameInline(cliente){
   const name=escapeHtml(rawName || 'Cliente');
   const badge=renderClientStatusBadge(cliente);
   return `<span class="client-name-with-status"><span class="client-name-text">${name}</span>${badge}</span>`;
+}
+
+function renderClientNameTextOnly(cliente){
+  const rawName=cliente?.nome;
+  return escapeHtml(rawName || 'Cliente');
 }
 
 function buildFollowupBadges(cp){
@@ -3928,6 +3946,8 @@ function initClientesTabela(){
   const tbody=document.getElementById('clientsFullTbody');
   const searchInput=document.getElementById('clientTableSearch');
   const tagBtn=document.getElementById('tagMenuBtn');
+  const dateStartInput=document.getElementById('clientTableDateStart');
+  const dateEndInput=document.getElementById('clientTableDateEnd');
   const pag=document.querySelector('.clients-table-pagination');
   const prevBtn=pag?.querySelector('.prev-page');
   const nextBtn=pag?.querySelector('.next-page');
@@ -4053,6 +4073,8 @@ function initClientesTabela(){
   }
 
   ui.clients.filters.interesses=getJSON(prefix()+'clients.filters.interesses', []);
+  const storedRange=getJSON(prefix()+'clients.filters.dateRange', { start:'', end:'' }) || {};
+  ui.clients.filters.dateRange={ start:storedRange.start||'', end:storedRange.end||'' };
   ui.clients.search='';
   let uiState=getJSON(prefix()+'clients.table.ui', { page:1, pageSize:25, sort:{key:'nome',dir:'asc'} });
   let sortBy=uiState.sort.key;
@@ -4060,6 +4082,8 @@ function initClientesTabela(){
   let page=uiState.page;
   let pageSize=uiState.pageSize;
   if(pageSizeSel) pageSizeSel.value=String(pageSize);
+  if(dateStartInput) dateStartInput.value=ui.clients.filters.dateRange?.start || '';
+  if(dateEndInput) dateEndInput.value=ui.clients.filters.dateRange?.end || '';
 
   function syncSelectAll(){
     if(!selectAllCheckbox) return;
@@ -4084,9 +4108,31 @@ function initClientesTabela(){
   function persist(){
     setJSON(prefix()+'clients.table.ui',{ page, pageSize, sort:{key:sortBy, dir:sortDir} });
     setJSON(prefix()+'clients.filters.interesses', ui.clients.filters.interesses);
+    setJSON(prefix()+'clients.filters.dateRange', ui.clients.filters.dateRange);
   }
 
-  function buildFollowupLookup(){
+  function getFollowupPriority(info, todayISO){
+    if(!info) return -1;
+    if(info.done) return 0;
+    if(info.dueDate && todayISO && info.dueDate < todayISO) return 2;
+    return 1;
+  }
+
+  function selectFollowupRecord(prev, candidate, todayISO){
+    if(!candidate) return prev || null;
+    const normalized={ dueDate: candidate.dueDate || '', done: !!candidate.done };
+    if(!prev) return normalized;
+    const prevPriority=getFollowupPriority(prev, todayISO);
+    const nextPriority=getFollowupPriority(normalized, todayISO);
+    if(nextPriority > prevPriority) return normalized;
+    if(nextPriority < prevPriority) return prev;
+    const prevDue=prev.dueDate || '';
+    const nextDue=normalized.dueDate || '';
+    if(nextDue > prevDue) return normalized;
+    return prev;
+  }
+
+  function buildFollowupLookup(todayISO){
     const events=getJSON(calKey(), []).filter(e=>e.meta?.type==='followup');
     const map=new Map();
     events.forEach(ev=>{
@@ -4095,30 +4141,30 @@ function initClientesTabela(){
       if(!stage || !clientId) return;
       const key=`${clientId}:${stage}`;
       const due=ev.date || ev.meta?.dueDateISO || '';
-      const existing=map.get(key);
-      if(!existing || due > existing.dueDate){
-        map.set(key,{ dueDate: due, done: !!ev.meta?.done });
-      }
+      const existing=map.get(key) || null;
+      const next={ dueDate: due, done: !!ev.meta?.done };
+      const chosen=selectFollowupRecord(existing, next, todayISO);
+      if(chosen) map.set(key, chosen);
     });
     return map;
   }
 
-  function deriveFollowupFromPurchases(cliente, stage){
+  function deriveFollowupFromPurchases(cliente, stage, todayISO){
     let record=null;
     (cliente.compras||[]).forEach(cp=>{
       const fu=cp.followUps?.[stage];
       if(!fu) return;
       const due=fu.dueDateISO || cp.dataCompra || '';
-      if(!record || due > record.dueDate){
-        record={ dueDate: due, done: !!fu.done };
-      }
+      const next={ dueDate: due, done: !!fu.done };
+      record=selectFollowupRecord(record, next, todayISO);
     });
     return record;
   }
 
-  function getContactStageInfo(cliente, stage, lookup){
+  function getContactStageInfo(cliente, stage, lookup, todayISO){
     const key=`${cliente.id}:${stage}`;
-    return lookup.get(key) || deriveFollowupFromPurchases(cliente, stage) || null;
+    const base=lookup.get(key) || null;
+    return selectFollowupRecord(base, deriveFollowupFromPurchases(cliente, stage, todayISO), todayISO);
   }
 
   function getContactDotClass(info, todayISO){
@@ -4138,10 +4184,31 @@ function initClientesTabela(){
   function updateTable(){
     const source=getClients();
     let clientes=filterClientsBySearchAndTags(source, ui.clients.search);
+    const derivedCache=new Map();
+    const getDerivedCached=c=>{
+      let cached=derivedCache.get(c.id);
+      if(!cached){
+        cached=getDerived(c);
+        derivedCache.set(c.id,cached);
+      }
+      return cached;
+    };
+    const range=ui.clients.filters.dateRange || {};
+    const startFilter=range.start || '';
+    const endFilter=range.end || '';
+    if(startFilter || endFilter){
+      clientes=clientes.filter(c=>{
+        const dataUltima=getDerivedCached(c).dataUltima || '';
+        if(!dataUltima) return false;
+        if(startFilter && dataUltima < startFilter) return false;
+        if(endFilter && dataUltima > endFilter) return false;
+        return true;
+      });
+    }
     const compareNome=(a,b)=> sortDir==='asc' ? a.nome.localeCompare(b.nome) : b.nome.localeCompare(a.nome);
     clientes.sort((a,b)=>{
-      const da=getDerived(a);
-      const db=getDerived(b);
+      const da=getDerivedCached(a);
+      const db=getDerivedCached(b);
       if(sortBy==='data'){
         if(da.dataUltima===db.dataUltima) return compareNome(a,b);
         return sortDir==='asc' ? da.dataUltima.localeCompare(db.dataUltima) : db.dataUltima.localeCompare(da.dataUltima);
@@ -4162,14 +4229,14 @@ function initClientesTabela(){
     const start=(page-1)*pageSize;
     const slice=clientes.slice(start, start+pageSize);
     currentPageIds=slice.map(c=>c.id);
-    const followupLookup=buildFollowupLookup();
     const todayISO=formatDateYYYYMMDD(new Date());
+    const followupLookup=buildFollowupLookup(todayISO);
     if(slice.length===0){
       const msg=source.length? 'Nenhum cliente encontrado com os filtros atuais' : 'Nada por aqui ainda';
-      tbody.innerHTML=`<tr><td colspan="10" class="empty-state">${msg}</td></tr>`;
+      tbody.innerHTML=`<tr><td colspan="11" class="empty-state">${msg}</td></tr>`;
     }else{
       tbody.innerHTML=slice.map(c=>{
-        const derived=getDerived(c);
+        const derived=getDerivedCached(c);
         const ultimaCompra=derived.ultimaCompra;
         const telefone=c.telefone ? formatTelefone(c.telefone) : '-';
         const cpf=c.cpf ? formatCpf(c.cpf) : '-';
@@ -4180,13 +4247,14 @@ function initClientesTabela(){
         const comprasCount=derived.comprasCount;
         const isSelected=selectedIds.has(c.id);
         const contactDots=FOLLOWUP_PERIODS.map(stage=>{
-          const info=getContactStageInfo(c, stage, followupLookup);
+          const info=getContactStageInfo(c, stage, followupLookup, todayISO);
           const dotClass=getContactDotClass(info, todayISO);
           return `<span class="contact-dot ${dotClass}"></span>`;
         }).join('');
         return `<tr data-id="${c.id}"${isSelected?' class="row-selected"':''} tabindex="0">`
           +`<td class="select-cell select-col"><input type="checkbox" class="client-select-row" data-id="${c.id}" ${isSelected?'checked':''} aria-label="Selecionar cliente"></td>`
-          +`<td data-field="nome">${renderClientNameInline(c)}</td>`
+          +`<td data-field="nome">${renderClientNameTextOnly(c)}</td>`
+          +`<td data-field="status">${renderClientStatusBadge(c) || '-'}</td>`
           +`<td data-field="telefone">${telefone}</td>`
           +`<td data-field="cpf">${cpf}</td>`
           +`<td data-field="genero">${genero}</td>`
@@ -4252,6 +4320,20 @@ function initClientesTabela(){
       e.stopPropagation();
       if(tagMenuOpen){ closeTagMenu(); } else { openTagMenu(); }
     };
+  }
+  if(dateStartInput){
+    dateStartInput.addEventListener('change',()=>{
+      ui.clients.filters.dateRange.start=dateStartInput.value;
+      page=1;
+      updateTable();
+    });
+  }
+  if(dateEndInput){
+    dateEndInput.addEventListener('change',()=>{
+      ui.clients.filters.dateRange.end=dateEndInput.value;
+      page=1;
+      updateTable();
+    });
   }
   if(prevBtn) prevBtn.addEventListener('click',()=>{ if(page>1){ page--; updateTable(); } });
   if(nextBtn) nextBtn.addEventListener('click',()=>{ page++; updateTable(); });

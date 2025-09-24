@@ -857,6 +857,18 @@ body[data-route="clientes-cadastro"] .card[data-card-id="cadastro-clientes"] .ca
 .clients-toolbar .btn-plus { height:var(--control-height); }
 .clients-toolbar .filters-wrap { position:relative; }
 .clients-toolbar .btn-dropdown { height:var(--control-height); }
+.clientes-tabela-grid { gap:0.75rem; }
+.clientes-table-menu { display:flex; align-items:center; gap:0.75rem; background:var(--color-bg); border:1px solid var(--color-border); border-radius:var(--radius-lg); padding:0.5rem 1rem; box-shadow:0 1px 2px rgba(0,0,0,0.04); flex-wrap:wrap; grid-column:span 12; }
+.clientes-table-menu__add { white-space:nowrap; }
+.clientes-table-menu__search { flex:1; min-width:200px; display:flex; align-items:center; gap:8px; }
+.clientes-table-menu__search .icon { position:static; transform:none; }
+.clientes-table-menu__search .search-input { flex:1; min-width:0; height:var(--control-height); line-height:var(--control-height); padding:0 0.75rem; border-radius:var(--radius-sm); border:1px solid var(--color-border); }
+.clientes-table-menu__actions { display:flex; align-items:center; gap:0.75rem; flex-wrap:wrap; }
+.clientes-table-menu__actions .filters-wrap { position:relative; }
+.clientes-table-menu__date { display:flex; align-items:flex-end; gap:0.75rem; flex-wrap:wrap; }
+.clientes-table-menu__date .date-field { display:flex; flex-direction:column; gap:4px; font-size:0.75rem; color:var(--color-text); opacity:0.8; }
+.clientes-table-menu__date .date-field input { height:var(--control-height); padding:0 0.5rem; border-radius:var(--radius-sm); border:1px solid var(--color-border); color:var(--color-text); background:var(--color-bg); }
+.clientes-table-menu__date .date-field span { font-weight:600; text-transform:uppercase; font-size:0.65rem; letter-spacing:0.02em; opacity:0.75; }
 .filters-portal, .clients-toolbar .filters-wrap .menu { position:fixed; z-index:9999; background:var(--color-bg); border:1px solid var(--color-border); border-radius:var(--radius-md); box-shadow:0 2px 4px rgba(0,0,0,0.1); padding:0.5rem; display:flex; flex-direction:column; gap:0.25rem; }
 .filters-portal label, .clients-toolbar .filters-wrap .menu label { display:flex; align-items:center; gap:0.5rem; }
 .filters-portal .divider, .clients-toolbar .filters-wrap .menu .divider { height:1px; background:var(--color-border); margin:4px 0; }
@@ -886,6 +898,11 @@ body[data-route="clientes-cadastro"] .card[data-card-id="cadastro-clientes"] .ca
 .table-clients-full th[data-field="nome"],
 .table-clients-full td[data-field="nome"] {
   min-width: 200px;
+}
+.table-clients-full th[data-field="status"],
+.table-clients-full td[data-field="status"] {
+  min-width: 110px;
+  text-align: center;
 }
 .table-clients-full th[data-field="telefone"],
 .table-clients-full td[data-field="telefone"],
@@ -1020,14 +1037,15 @@ body[data-route="clientes-cadastro"] .card[data-card-id="cadastro-clientes"] .ca
   .table-clients td:nth-child(3)::before { content:'Última compra: '; font-weight:600; }
   .table-clients-full td:nth-child(1)::before { content:'Selecionar: '; font-weight:600; }
   .table-clients-full td:nth-child(2)::before { content:'Nome: '; font-weight:600; }
-  .table-clients-full td:nth-child(3)::before { content:'Telefone: '; font-weight:600; }
-  .table-clients-full td:nth-child(4)::before { content:'CPF: '; font-weight:600; }
-  .table-clients-full td:nth-child(5)::before { content:'Gênero: '; font-weight:600; }
-  .table-clients-full td:nth-child(6)::before { content:'Interesses: '; font-weight:600; }
-  .table-clients-full td:nth-child(7)::before { content:'Última compra: '; font-weight:600; }
-  .table-clients-full td:nth-child(8)::before { content:'Valor última compra: '; font-weight:600; }
-  .table-clients-full td:nth-child(9)::before { content:'Contatos: '; font-weight:600; }
-  .table-clients-full td:nth-child(10)::before { content:'Compras: '; font-weight:600; }
+  .table-clients-full td:nth-child(3)::before { content:'Status: '; font-weight:600; }
+  .table-clients-full td:nth-child(4)::before { content:'Telefone: '; font-weight:600; }
+  .table-clients-full td:nth-child(5)::before { content:'CPF: '; font-weight:600; }
+  .table-clients-full td:nth-child(6)::before { content:'Gênero: '; font-weight:600; }
+  .table-clients-full td:nth-child(7)::before { content:'Interesses: '; font-weight:600; }
+  .table-clients-full td:nth-child(8)::before { content:'Última compra: '; font-weight:600; }
+  .table-clients-full td:nth-child(9)::before { content:'Valor última compra: '; font-weight:600; }
+  .table-clients-full td:nth-child(10)::before { content:'Contatos: '; font-weight:600; }
+  .table-clients-full td:nth-child(11)::before { content:'Compras: '; font-weight:600; }
   .table-clients-full td.contacts-col .contact-dots {
     justify-content:flex-start;
   }
