@@ -601,12 +601,12 @@ body[data-route="clientes-cadastro"] .card[data-card-id="cadastro-clientes"] .ca
   font-size: var(--page-menu-font-size);
   line-height: var(--page-menu-control-height);
   box-shadow: var(--balloon-shadow);
-  overflow-x: auto;
-  scrollbar-width: thin;
+  overflow-x: hidden;
+  scrollbar-width: none;
   flex-wrap: nowrap;
 }
-.page-top-menu::-webkit-scrollbar { height: 6px; }
-.page-top-menu::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.2); border-radius: 999px; }
+.page-top-menu::-webkit-scrollbar { display:none; }
+.page-top-menu::-webkit-scrollbar-thumb { display:none; }
 .page-top-menu > * {
   flex: 0 0 auto;
   display: inline-flex;
@@ -679,9 +679,8 @@ body[data-route="clientes-cadastro"] .card[data-card-id="cadastro-clientes"] .ca
 }
 .page-top-menu a.menu-link:hover { color: var(--color-primary); }
 .page-top-menu :where(button, .btn, input, select, .menu-link):focus-visible {
-  box-shadow: 0 0 0 1px var(--focus-ring-color);
-  border-color: var(--focus-ring-color);
-
+  box-shadow: none;
+  border-color: inherit;
 }
 .page-top-menu :where(button, .btn, input, select, .menu-link):focus {
   box-shadow: none;
@@ -1764,11 +1763,14 @@ body[data-route="clientes-cadastro"] .card[data-card-id="cadastro-clientes"] .ca
   display:flex;
   align-items:center;
   gap:0.75rem;
-  padding:10px 18px;
+  padding:0 18px;
   background:transparent;
   border-radius:20px;
   box-shadow:none;
   flex-wrap:nowrap;
+  min-height:50px;
+  height:50px;
+  font-size:11px;
 }
 .cal-actions {
   display:flex;
@@ -1789,6 +1791,7 @@ body[data-route="clientes-cadastro"] .card[data-card-id="cadastro-clientes"] .ca
   box-shadow:none;
   border:none;
   white-space:nowrap;
+  font-size:inherit;
 }
 .cal-controls .cal-selects { display:flex; align-items:center; gap:0.5rem; }
 .cal-controls select {
@@ -1797,7 +1800,7 @@ body[data-route="clientes-cadastro"] .card[data-card-id="cadastro-clientes"] .ca
   border-radius:12px;
   font-weight:600;
   color:#1f2937;
-  padding:0.35rem 1rem;
+  padding:0 1rem;
   min-width:100px;
   appearance:none;
   -webkit-appearance:none;
@@ -1807,6 +1810,8 @@ body[data-route="clientes-cadastro"] .card[data-card-id="cadastro-clientes"] .ca
   background-position:right 0.85rem center;
   background-size:12px;
   padding-right:2.25rem;
+  height:25px;
+  font-size:inherit;
 }
 .cal-controls select:focus {
   outline:none;
@@ -1817,7 +1822,10 @@ body[data-route="clientes-cadastro"] .card[data-card-id="cadastro-clientes"] .ca
   color:#1f2937;
   font-weight:600;
   border-radius:12px;
-  padding:0.35rem 1rem;
+  padding:0 1rem;
+  height:25px;
+  line-height:25px;
+  font-size:inherit;
 }
 .cal-controls .cal-hoje:hover { filter:brightness(0.95); }
 .cal-controls .segmented {
@@ -1827,14 +1835,18 @@ body[data-route="clientes-cadastro"] .card[data-card-id="cadastro-clientes"] .ca
   padding:0;
   border-radius:12px;
   gap:0.35rem;
+  font-size:inherit;
 }
 .cal-controls .segmented button {
-  padding:0.35rem 1.05rem;
+  padding:0 1.05rem;
   border-radius:12px;
   font-weight:700;
   border:1px solid #16a34a;
   background:#fff;
   color:#16a34a;
+  height:25px;
+  line-height:25px;
+  font-size:inherit;
 }
 .cal-controls .segmented [aria-pressed="true"] {
   background:#16a34a;
@@ -1869,16 +1881,16 @@ body[data-route="clientes-cadastro"] .card[data-card-id="cadastro-clientes"] .ca
 .followup-badge.is-pending{background:#fce8d8;color:#b15b00;}
 .modal-dialog.modal-cliente-detalhe{max-width:840px;}
 .cal-nav button {
-  width:40px;
-  height:40px;
-  border-radius:14px;
+  width:28px;
+  height:25px;
+  border-radius:10px;
   display:grid;
   place-items:center;
   padding:0;
   background:#fff;
   border:1px solid rgba(15,23,42,0.1);
   color:#1f2937;
-  font-size:1.5rem;
+  font-size:1rem;
   box-shadow:0 8px 20px rgba(15,23,42,0.08);
 }
 .cal-nav button:hover { filter:brightness(0.95); }
@@ -1897,8 +1909,16 @@ body[data-route="clientes-cadastro"] .card[data-card-id="cadastro-clientes"] .ca
   color:#1f2937;
   line-height:1.05;
 }
-.cal-toolbar button, .cal-toolbar select, .cal-toolbar input { font:inherit; height:auto; }
-.cal-toolbar .btn { padding:0.5rem 1.25rem; border-radius:12px; }
+.cal-toolbar button, .cal-toolbar select, .cal-toolbar input {
+  font:inherit;
+  height:25px;
+  line-height:25px;
+}
+.cal-toolbar .btn {
+  padding:0 1.25rem;
+  border-radius:12px;
+  font-size:inherit;
+}
 .btn-cal-eventos {
   background:#ff8a2a;
   color:#fff;
@@ -2088,16 +2108,19 @@ body[data-route="clientes-cadastro"] .card[data-card-id="cadastro-clientes"] .ca
   background:#eff2f7;
   border-radius:16px;
   border:1px solid rgba(15,23,42,0.05);
-  padding:0.75rem 0;
   letter-spacing:0.08em;
   text-transform:uppercase;
+  height:30px;
+  padding:0;
+  align-items:center;
 }
 .cal-weekdays div {
-  padding:0.25rem 0;
   text-align:center;
   font-weight:700;
-  font-size:0.75rem;
+  font-size:15px;
   color:#475569;
+  height:25px;
+  line-height:25px;
 }
 .cal-week-nav { display:none; justify-content:space-between; align-items:center; }
 .cal-week-nav button { padding:0.25rem 0.5rem; }
@@ -2106,7 +2129,7 @@ body[data-route="clientes-cadastro"] .card[data-card-id="cadastro-clientes"] .ca
   display:grid;
   grid-template-columns:repeat(7, minmax(var(--calendar-cell-min-width), 1fr));
   grid-auto-rows:minmax(80px,auto);
-  gap:0.85rem;
+  gap:0.425rem;
   width:100%;
   overflow-x:auto;
   padding-bottom:0.5rem;
