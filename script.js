@@ -508,16 +508,18 @@ function enablePhotoEdit(badge, img){
 const DEFAULT_PHOTO='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI3MiIgaGVpZ2h0PSI3MiI+PHJlY3Qgd2lkdGg9IjcyIiBoZWlnaHQ9IjcyIiBmaWxsPSIjY2NjIi8+PC9zdmc+';
 
 function updateProfileUI(){
-  const badge=document.getElementById('profileBadge');
+  const badge=document.getElementById('profilePicture');
   if(!badge) return;
   disablePhotoEdit(badge);
   const p=activeProfile();
   const photo=getUserPhoto(p);
   const src=photo.src||DEFAULT_PHOTO;
   const imgHtml=`<img src="${src}" class="profile-pic" style="object-position:${photo.x}% ${photo.y}%" data-x="${photo.x}" data-y="${photo.y}">`;
-  badge.innerHTML=imgHtml+`<div class="profile-name">${p}</div>`;
+  badge.innerHTML=imgHtml;
   badge.classList.remove('profile-admin','profile-other');
   badge.classList.add(p==='Administrador'?'profile-admin':'profile-other');
+  badge.setAttribute('aria-label',`Perfil atual: ${p}`);
+  badge.setAttribute('title',p);
   if(currentRoute==='gerencia'){
     const img=badge.querySelector('.profile-pic');
     if(img) enablePhotoEdit(badge,img);
@@ -1859,11 +1861,14 @@ function renderContatosPage(){
   })();
   return `
   <section id="contatosPage" class="contatos-page">
-    <div class="contatos-tabs" role="tablist" aria-label="Navegação de contatos">
-      <button type="button" id="contatosTab-executar" class="contatos-tab is-active" role="tab" aria-selected="true" data-tab="executar">Contatos a Executar</button>
-      <button type="button" id="contatosTab-ofertas" class="contatos-tab" role="tab" aria-selected="false" data-tab="ofertas">Ofertas</button>
-      <button type="button" id="contatosTab-pos-venda" class="contatos-tab" role="tab" aria-selected="false" data-tab="pos-venda">Pós Venda</button>
-      <button type="button" id="contatosTab-historico" class="contatos-tab" role="tab" aria-selected="false" data-tab="historico">Histórico</button>
+    <div class="page-top-menu contatos-menu balloon">
+      <div class="menu-group contatos-tabs" role="tablist" aria-label="Navegação de contatos">
+        <button type="button" id="contatosTab-executar" class="contatos-tab is-active" role="tab" aria-selected="true" data-tab="executar">Contatos a Executar</button>
+        <button type="button" id="contatosTab-ofertas" class="contatos-tab" role="tab" aria-selected="false" data-tab="ofertas">Ofertas</button>
+        <button type="button" id="contatosTab-pos-venda" class="contatos-tab" role="tab" aria-selected="false" data-tab="pos-venda">Pós Venda</button>
+        <button type="button" id="contatosTab-historico" class="contatos-tab" role="tab" aria-selected="false" data-tab="historico">Histórico</button>
+      </div>
+      <div class="menu-spacer"></div>
     </div>
     <div class="contatos-panels">
       <section class="contatos-panel contatos-panel--executar" data-tab-panel="executar" role="tabpanel" aria-labelledby="contatosTab-executar">
@@ -1992,9 +1997,12 @@ function renderConfig() {
 function renderGerenciaMensagens(){
   return `
   <section id="gerenciaMensagens" class="gerencia-mensagens">
-    <div class="mensagens-tabs" role="tablist">
-      <button type="button" class="mensagem-tab is-active" data-tab="pos-venda">Pós Venda</button>
-      <button type="button" class="mensagem-tab" data-tab="ofertas">Ofertas</button>
+    <div class="page-top-menu gerencia-mensagens-menu balloon">
+      <div class="menu-group mensagens-tabs" role="tablist" aria-label="Seletor de mensagens">
+        <button type="button" class="mensagem-tab is-active" data-tab="pos-venda">Pós Venda</button>
+        <button type="button" class="mensagem-tab" data-tab="ofertas">Ofertas</button>
+      </div>
+      <div class="menu-spacer"></div>
     </div>
     <div class="card-grid mensagens-grid">
       <div class="card mensagens-card" data-colspan="12" data-tab-content="pos-venda">
