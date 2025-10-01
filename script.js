@@ -522,6 +522,13 @@ function updateProfileUI(){
     const img=badge.querySelector('.profile-pic');
     if(img) enablePhotoEdit(badge,img);
   }
+  applyProfileSelectHighlight(document.getElementById('profileSelect'));
+}
+
+function applyProfileSelectHighlight(select){
+  if(!select) return;
+  const isAdmin=select.value==='Administrador';
+  select.classList.toggle('profile-select--admin', isAdmin);
 }
 
 let selectedPurchaseId = null;
@@ -868,7 +875,7 @@ const cards = {
 
 // ===== UI =====
 const ui = {
-  clients: { filters: { interesses: [], dateRange: { start:'', end:'' } }, search: '' },
+  clients: { filters: { interesses: [], dateRange: { start:'', end:'' }, status:'' }, search: '' },
   dashboard: { layout: null },
   os: {
     filters: { text:'', types:['reloj','joia','optica'] },
@@ -1430,16 +1437,23 @@ function renderClientesTabela(){
         <span class="icon">${iconSearch}</span>
         <input id="clientTableSearch" class="search-input" type="search" placeholder="Pesquisar clientes…" aria-label="Pesquisar clientes" />
       </div>
+      <label class="clientes-table-menu__status" for="clientTableStatus">
+        <span>Estado</span>
+        <select id="clientTableStatus" aria-label="Filtrar clientes por estado">
+          <option value="">Todos</option>
+          ${CLIENT_STATUS_FILTER_OPTIONS}
+        </select>
+      </label>
       <div class="clientes-table-menu__actions">
         <div class="filters-wrap">
           <button id="tagMenuBtn" type="button" class="btn-dropdown">Etiquetas ▾</button>
         </div>
-        <div class="clientes-table-menu__date">
-          <label class="date-field">
+        <div class="clientes-table-menu__date-range">
+          <label for="clientTableDateStart">
             <span>De</span>
             <input id="clientTableDateStart" type="date" aria-label="Filtrar data inicial da compra">
           </label>
-          <label class="date-field">
+          <label for="clientTableDateEnd">
             <span>Até</span>
             <input id="clientTableDateEnd" type="date" aria-label="Filtrar data final da compra">
           </label>
@@ -1456,7 +1470,7 @@ function renderClientesTabela(){
             <tr>
               <th class="select-col select-toggle" scope="col"><input type="checkbox" id="clientSelectAll" aria-label="Selecionar todos os clientes da página"></th>
               <th data-field="nome" class="sortable" tabindex="0" role="button" aria-sort="none">NOME<span class="sort-indicator"></span></th>
-              <th data-field="status">STATUS</th>
+              <th data-field="status" class="sortable" tabindex="0" role="button" aria-sort="none">STATUS<span class="sort-indicator"></span></th>
               <th data-field="telefone">TELEFONE</th>
               <th data-field="cpf">CPF</th>
               <th data-field="genero">GÊNERO</th>
@@ -2063,6 +2077,12 @@ const CLIENT_STATUS={
   LISTA_OFERTAS:{ key:'lista-ofertas', label:'O.F', ariaLabel:'Lista de Ofertas' },
   NAO_CONTATE:{ key:'nao-contate', label:'N.C', ariaLabel:'Não Contate' }
 };
+
+const CLIENT_STATUS_ORDER=Object.values(CLIENT_STATUS).map(status=>status.key);
+const CLIENT_STATUS_INDEX=CLIENT_STATUS_ORDER.reduce((acc,key,idx)=>{ acc[key]=idx; return acc; },{});
+const CLIENT_STATUS_FILTER_OPTIONS=Object.values(CLIENT_STATUS)
+  .map(status=>`<option value="${status.key}">${status.label}</option>`)
+  .join('');
 
 const DAY_IN_MS=24*60*60*1000;
 
@@ -3946,6 +3966,7 @@ function initClientesTabela(){
   const tbody=document.getElementById('clientsFullTbody');
   const searchInput=document.getElementById('clientTableSearch');
   const tagBtn=document.getElementById('tagMenuBtn');
+  const statusSelect=document.getElementById('clientTableStatus');
   const dateStartInput=document.getElementById('clientTableDateStart');
   const dateEndInput=document.getElementById('clientTableDateEnd');
   const pag=document.querySelector('.clients-table-pagination');
@@ -4075,6 +4096,8 @@ function initClientesTabela(){
   ui.clients.filters.interesses=getJSON(prefix()+'clients.filters.interesses', []);
   const storedRange=getJSON(prefix()+'clients.filters.dateRange', { start:'', end:'' }) || {};
   ui.clients.filters.dateRange={ start:storedRange.start||'', end:storedRange.end||'' };
+  const storedStatus=getJSON(prefix()+'clients.filters.status','');
+  ui.clients.filters.status=typeof storedStatus==='string'?storedStatus:'';
   ui.clients.search='';
   let uiState=getJSON(prefix()+'clients.table.ui', { page:1, pageSize:25, sort:{key:'nome',dir:'asc'} });
   let sortBy=uiState.sort.key;
@@ -4082,6 +4105,7 @@ function initClientesTabela(){
   let page=uiState.page;
   let pageSize=uiState.pageSize;
   if(pageSizeSel) pageSizeSel.value=String(pageSize);
+  if(statusSelect) statusSelect.value=ui.clients.filters.status;
   if(dateStartInput) dateStartInput.value=ui.clients.filters.dateRange?.start || '';
   if(dateEndInput) dateEndInput.value=ui.clients.filters.dateRange?.end || '';
 
@@ -4109,6 +4133,7 @@ function initClientesTabela(){
     setJSON(prefix()+'clients.table.ui',{ page, pageSize, sort:{key:sortBy, dir:sortDir} });
     setJSON(prefix()+'clients.filters.interesses', ui.clients.filters.interesses);
     setJSON(prefix()+'clients.filters.dateRange', ui.clients.filters.dateRange);
+    setJSON(prefix()+'clients.filters.status', ui.clients.filters.status);
   }
 
   function getFollowupPriority(info, todayISO){
@@ -4205,10 +4230,25 @@ function initClientesTabela(){
         return true;
       });
     }
+    const statusFilter=ui.clients.filters.status || '';
+    if(statusFilter){
+      clientes=clientes.filter(c=>{
+        const status=getClientStatus(c);
+        return status?.key===statusFilter;
+      });
+    }
     const compareNome=(a,b)=> sortDir==='asc' ? a.nome.localeCompare(b.nome) : b.nome.localeCompare(a.nome);
     clientes.sort((a,b)=>{
       const da=getDerivedCached(a);
       const db=getDerivedCached(b);
+      if(sortBy==='status'){
+        const sa=getClientStatus(a)?.key || '';
+        const sb=getClientStatus(b)?.key || '';
+        const orderA=CLIENT_STATUS_INDEX[sa] ?? CLIENT_STATUS_ORDER.length;
+        const orderB=CLIENT_STATUS_INDEX[sb] ?? CLIENT_STATUS_ORDER.length;
+        if(orderA===orderB) return compareNome(a,b);
+        return sortDir==='asc' ? orderA-orderB : orderB-orderA;
+      }
       if(sortBy==='data'){
         if(da.dataUltima===db.dataUltima) return compareNome(a,b);
         return sortDir==='asc' ? da.dataUltima.localeCompare(db.dataUltima) : db.dataUltima.localeCompare(da.dataUltima);
@@ -4314,6 +4354,13 @@ function initClientesTabela(){
   if(searchInput){
     searchInput.addEventListener('input',()=>{ ui.clients.search=searchInput.value; page=1; updateTable(); });
     searchInput.addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); ui.clients.search=searchInput.value; page=1; updateTable(); }});
+  }
+  if(statusSelect){
+    statusSelect.addEventListener('change',()=>{
+      ui.clients.filters.status=statusSelect.value;
+      page=1;
+      updateTable();
+    });
   }
   if(tagBtn){
     tagBtn.onclick=e=>{
@@ -6165,10 +6212,12 @@ document.addEventListener('DOMContentLoaded', async () => {
   const perfilSelect=document.getElementById('profileSelect');
   if(perfilSelect){
     perfilSelect.value=getPerfil();
+    applyProfileSelectHighlight(perfilSelect);
     updateProfileUI();
     perfilSelect.addEventListener('change',()=>{
       setActivePerfil(perfilSelect.value);
       ensureProfileBoot(perfilSelect.value);
+      applyProfileSelectHighlight(perfilSelect);
       updateProfileUI();
       ensurePerfilSeeds();
       applyPerfilGates();
