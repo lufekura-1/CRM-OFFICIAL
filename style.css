@@ -31,7 +31,7 @@
   --surface-muted: var(--color-app-bg);
   --text-muted: var(--text-weak);
   --control-height: 40px;
-  --page-menu-height: 45px;
+  --page-menu-height: 50px;
   --page-menu-control-height: 25px;
   --page-menu-font-size: 11px;
   --card-danger-soft: #f8d7da;
@@ -91,7 +91,8 @@ body {
   display: flex;
 }
 a { color: inherit; text-decoration: none; }
-:focus { outline: none; box-shadow: 0 0 0 2px var(--color-primary); }
+:focus { outline: none; }
+:focus-visible { outline: none; box-shadow: 0 0 0 2px var(--color-primary); }
 
 /* ===== Layout ===== */
 .main { flex:1; display:flex; flex-direction:column; }
@@ -304,22 +305,39 @@ a { color: inherit; text-decoration: none; }
   top: 0;
   left: auto;
   right: auto;
-  height: 26px;
+  height: 45px;
   background: #2A2F37;
   border-bottom: 1px solid #1F232A;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 0.5rem;
+  padding: 0 0.75rem;
   z-index: 10;
   border-radius: 0;
   color: #fff;
+  font-size: 11px;
 }
 .topbar h1 {
-  font-size: 0.95rem;
+  font-size: 1em;
+  line-height: 1;
 }
-.topbar select { height: 100%; font-size: 0.85rem; }
-.topbar .actions { display: flex; gap: 0.5rem; align-items: center; }
+.topbar select {
+  height: 25px;
+  font-size: inherit;
+  padding: 0 0.75rem;
+  border-radius: var(--radius-sm);
+}
+.topbar .actions {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+.topbar .actions button {
+  height: 25px;
+  font-size: inherit;
+  border-radius: var(--radius-sm);
+  padding: 0 0.75rem;
+}
 
 body.modal-open { overflow:hidden; }
 body.modal-open .topbar { pointer-events:none; filter:grayscale(1) opacity(.5); }
@@ -329,21 +347,18 @@ body.modal-open .topbar { pointer-events:none; filter:grayscale(1) opacity(.5); 
   flex:1;
 }
 
-.sidebar:not(.is-expanded) #profileBadge {
+.sidebar:not(.is-expanded) #profilePicture {
   gap: 0;
   padding: 6px;
   background: linear-gradient(135deg, rgba(255,255,255,0.08), rgba(0,0,0,0.15));
 }
-.sidebar:not(.is-expanded) #profileBadge.profile-admin {
+.sidebar:not(.is-expanded) #profilePicture.profile-admin {
   background: linear-gradient(135deg, rgba(46,125,50,0.35), rgba(13,71,161,0.15));
 }
-.sidebar:not(.is-expanded) #profileBadge.profile-other {
+.sidebar:not(.is-expanded) #profilePicture.profile-other {
   background: linear-gradient(135deg, rgba(255,152,0,0.38), rgba(183,28,28,0.18));
 }
-.sidebar:not(.is-expanded) #profileBadge .profile-name {
-  display: none;
-}
-.sidebar:not(.is-expanded) #profileBadge .profile-pic {
+.sidebar:not(.is-expanded) #profilePicture .profile-pic {
   width: 44px;
   height: 44px;
   border-radius: 50%;
@@ -621,6 +636,20 @@ body[data-route="clientes-cadastro"] .card[data-card-id="cadastro-clientes"] .ca
   border-radius: var(--radius-sm);
   font-size: inherit;
 }
+.page-top-menu .ui-dropdown {
+  height: var(--page-menu-control-height);
+  display: inline-flex;
+  align-items: center;
+}
+.page-top-menu .ui-dropdown .dropdown-toggle {
+  height: 100%;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding-inline: 0.75rem;
+  font-size: inherit;
+  border-radius: var(--radius-sm);
+}
 .page-top-menu input,
 .page-top-menu select {
   padding-inline: 0.5rem;
@@ -647,7 +676,13 @@ body[data-route="clientes-cadastro"] .card[data-card-id="cadastro-clientes"] .ca
   transition: border-color 0.2s ease, color 0.2s ease;
 }
 .page-top-menu a.menu-link:hover { color: var(--color-primary); }
-.page-top-menu a.menu-link:focus { border-color: var(--color-primary); }
+.page-top-menu :where(button, .btn, input, select, .menu-link):focus-visible {
+  box-shadow: none;
+  border-color: var(--color-border);
+}
+.page-top-menu :where(button, .btn, input, select, .menu-link):focus {
+  box-shadow: none;
+}
 
 /* holder variant */
 .balloon--holder {
@@ -1320,7 +1355,7 @@ body[data-route="clientes-cadastro"] .card[data-card-id="cadastro-clientes"] .ca
 .contatos-tabs {
   display:flex;
   flex-wrap:wrap;
-  gap:0.6rem;
+  gap:var(--space-sm);
 }
 .contatos-tab {
   border:none;
@@ -1330,10 +1365,14 @@ body[data-route="clientes-cadastro"] .card[data-card-id="cadastro-clientes"] .ca
   font-weight:700;
   letter-spacing:0.05em;
   text-transform:uppercase;
-  padding:0.6rem 1.15rem;
+  padding:0 1.15rem;
   cursor:pointer;
   transition:all 0.2s ease;
   box-shadow:inset 0 0 0 1px rgba(15,23,42,0.08);
+  height:var(--page-menu-control-height);
+  display:inline-flex;
+  align-items:center;
+  font-size:inherit;
 }
 .contatos-tab:hover { background:#e2e8f0; }
 .contatos-tab.is-active {
@@ -1584,18 +1623,20 @@ body[data-route="clientes-cadastro"] .card[data-card-id="cadastro-clientes"] .ca
 .gerencia-mensagens .mensagens-tabs {
   display: flex;
   gap: var(--space-sm);
-  margin-bottom: var(--space-md);
 }
 .gerencia-mensagens .mensagem-tab {
   border: 1px solid var(--color-border);
   background: var(--surface);
   color: var(--text-primary);
-  padding: 0.5rem 1rem;
+  padding: 0 1rem;
   border-radius: var(--radius-md);
-  font-size: 0.875rem;
+  font-size: var(--page-menu-font-size);
   font-weight: 600;
   cursor: pointer;
   transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+  height: var(--page-menu-control-height);
+  display: inline-flex;
+  align-items: center;
 }
 .gerencia-mensagens .mensagem-tab.is-active {
   background: var(--color-primary);
@@ -2674,7 +2715,7 @@ body[data-route="clientes-cadastro"] .card[data-card-id="cadastro-clientes"] .ca
 .purchase-date-badge{position:absolute; right:12px; top:10px; font-weight:800; font-size:1rem}
 .profile-admin{background:rgba(46,125,50,0.12)}
 .profile-other{background:rgba(255,152,0,0.12)}
-#profileBadge{
+#profilePicture{
   border-radius:16px;
   padding:12px;
   font-weight:800;
@@ -2690,7 +2731,7 @@ body[data-route="clientes-cadastro"] .card[data-card-id="cadastro-clientes"] .ca
   box-shadow: inset 0 0 0 1px rgba(255,255,255,0.06);
 }
 
-#profileBadge .profile-pic{
+#profilePicture .profile-pic{
   width:64px;
   height:64px;
   border-radius:14px;
@@ -2699,18 +2740,10 @@ body[data-route="clientes-cadastro"] .card[data-card-id="cadastro-clientes"] .ca
   box-shadow:0 6px 18px rgba(0,0,0,0.18);
 }
 
-#profileBadge.editable .profile-pic{cursor:move;}
-#profileBadge.editable{cursor:pointer;}
+#profilePicture.editable .profile-pic{cursor:move;}
+#profilePicture.editable{cursor:pointer;}
 
-#profileBadge .profile-name{
-  font-weight:800;
-  white-space:nowrap; /* Ajuste: impede quebra do nome do usuário */
-  overflow:hidden;
-  text-overflow:ellipsis;
-  max-width:100%;
-}
-
-#profileBadge .profile-placeholder{
+#profilePicture .profile-placeholder{
   width:64px;
   height:64px;
   border-radius:var(--radius-md);
