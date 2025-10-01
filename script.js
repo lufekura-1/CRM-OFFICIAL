@@ -1150,12 +1150,24 @@ function renderCardGrid(prefix) {
 }
 
 // ===== Calendar Menu Bar =====
+function renderCalendarTopMenu(){
+  return `
+    <div class="page-top-menu calendar-top-menu">
+      <div class="menu-group menu-actions">
+        <button class="btn btn-primary btn-cal-eventos" type="button">Adicionar Lembrete</button>
+      </div>
+      <div class="menu-spacer"></div>
+      <div class="menu-group menu-actions-secondary">
+        <button class="btn btn-eventos" type="button">Eventos</button>
+        <button class="btn btn-folgas" type="button">Folgas</button>
+        <button class="btn btn-cal-desfalques" type="button" style="display:none">Desfalques</button>
+      </div>
+    </div>`;
+}
+
 function renderCalendarMenuBar(){
   return `
     <div class="calendar-menu-bar">
-      <div class="menu-actions">
-        <button class="btn btn-cal-desfalques" style="display:none">Desfalques</button>
-      </div>
       <div class="menu-widgets">
         <div class="mini-widget mini-blue">
           <div class="mini-title">Contatos</div>
@@ -1211,12 +1223,6 @@ function renderCalendarMenuBar(){
             <div class="mini-label">Hoje</div>
           </div>
         </div>
-        <div class="mini-widget mini-actions-only">
-          <div class="mini-actions-inline">
-            <button class="btn-eventos" type="button">Eventos</button>
-            <button class="btn-folgas" type="button">Folgas</button>
-          </div>
-        </div>
       </div>
     </div>`;
 }
@@ -1268,15 +1274,13 @@ function updateCalendarMenuBar(){
 function renderCalendario() {
   return `
   <div class="calendar-page">
+    ${renderCalendarTopMenu()}
     ${renderCalendarMenuBar()}
     <div class="card-grid">
       <div class="card" data-card-id="calendario" data-colspan="12">
         <div class="card-body calendario-wrapper">
           <div id="calendar" class="calendar">
             <div class="cal-toolbar">
-              <div class="cal-actions">
-                <button class="btn btn-cal-eventos">Adicionar Lembrete</button>
-              </div>
               <div class="cal-nav">
                 <button class="btn cal-prev" aria-label="Mês anterior">&#8249;</button>
                 <h2 class="cal-mes monthTitle"></h2>
@@ -1349,6 +1353,18 @@ function clientesStatsBar(totalClientes, doneMonth){
   </div>`;
 }
 
+function renderClientesVisaoGeralMenu(){
+  return `
+  <div class="page-top-menu clientes-visao-geral-menu">
+    <div class="menu-group">
+      <button type="button" class="btn btn-primary" data-action="client:new">Novo Cliente</button>
+      <a class="menu-link" href="#/clientes-tabela">Tabela de Clientes</a>
+      <a class="menu-link" href="#/clientes-cadastro">Cadastro</a>
+    </div>
+    <div class="menu-spacer"></div>
+  </div>`;
+}
+
 function updateClientesStats(){
   const bar=document.querySelector('.clientes-menu');
   if(!bar) return;
@@ -1363,6 +1379,7 @@ function renderClientesVisaoGeral() {
   const totalClientes=db.listarClientes().length;
   const {doneMonth}=getFollowupsStats();
   return `
+  ${renderClientesVisaoGeralMenu()}
   ${clientesStatsBar(totalClientes, doneMonth)}
   <div class="card-grid">
     <div class="card" data-card-id="lista-clientes" data-colspan="6">
@@ -1431,7 +1448,7 @@ function renderClientesCadastro(){
 function renderClientesTabela(){
   return `
   <div class="card-grid clientes-tabela-grid">
-    <div class="clientes-table-menu">
+    <div class="clientes-table-menu page-top-menu">
       <button class="btn btn-primary clientes-table-menu__add" data-action="client:new" type="button">Adicionar Cliente</button>
       <div class="search-wrap clientes-table-menu__search">
         <span class="icon">${iconSearch}</span>
@@ -1501,7 +1518,7 @@ function renderClientesTabela(){
 function renderClientePagina(){
   return `
   <section id="clientePage" class="cliente-page">
-    <div class="cliente-page-topbar">
+    <div class="cliente-page-topbar page-top-menu">
       <button type="button" class="cliente-back-button" data-action="cliente-voltar" aria-label="Voltar para Tabela de Clientes">${iconArrowLeft}</button>
       <div class="cliente-page-topbar-info">
         <h2 id="clientePageTitle">Página do Cliente</h2>
@@ -5363,20 +5380,27 @@ const ICON_EXPAND = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="
 const OS_PAGE_SIZE=12;
 
 function OSMenuBar(){
-  return `<div class="os-menu-bar balloon">`+
-    `<button id=\"btnNovaOS\" class=\"btn btn-primary\">Nova O.S</button>`+
-    `<div class=\"os-search\"><input id=\"osSearch\" type=\"search\" placeholder=\"Buscar...\" aria-label=\"Buscar O.S\"><span class=\"icon\">${ICON_SEARCH}</span></div>`+
-    `<div class=\"os-right\">`+
-      `<div class=\"os-type-filter\" id=\"osTypeButtons\">`+
-        `<button class=\"filter-btn active\" data-type=\"all\">Todos</button>`+
-        `<button class=\"filter-btn\" data-type=\"reloj\">Relojoaria</button>`+
-        `<button class=\"filter-btn\" data-type=\"joia\">Joalheria</button>`+
-        `<button class=\"filter-btn\" data-type=\"optica\">Óptica</button>`+
-      `</div>`+
-      `<div class=\"mini-card\"></div>`+
-      `<div class=\"mini-card\"></div>`+
-    `</div>`+
-  `</div>`;
+  return `
+    <div class="os-menu-bar balloon page-top-menu">
+      <div class="menu-group os-menu-left">
+        <button id="btnNovaOS" class="btn btn-primary">Nova O.S</button>
+      </div>
+      <div class="menu-group os-search-group">
+        <div class="os-search">
+          <input id="osSearch" type="search" placeholder="Buscar..." aria-label="Buscar O.S">
+          <span class="icon">${ICON_SEARCH}</span>
+        </div>
+      </div>
+      <div class="menu-spacer"></div>
+      <div class="menu-group os-right">
+        <div class="os-type-filter" id="osTypeButtons">
+          <button class="filter-btn active" data-type="all">Todos</button>
+          <button class="filter-btn" data-type="reloj">Relojoaria</button>
+          <button class="filter-btn" data-type="joia">Joalheria</button>
+          <button class="filter-btn" data-type="optica">Óptica</button>
+        </div>
+      </div>
+    </div>`;
 }
 
 function OSKanbanHolder(){
