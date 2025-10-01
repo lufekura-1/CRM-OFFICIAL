@@ -37,6 +37,8 @@
   --card-danger-soft: #f8d7da;
   --card-success-soft: #d4edda;
   --card-info-soft: #d1ecf1;
+  --focus-ring-color: rgba(40, 54, 70, 0.35);
+  --focus-ring-shadow: rgba(40, 54, 70, 0.2);
   --os-reloj-color: #183C7A;
   --os-joia-color: #C99700;
   --os-optica-color: #8B0000;
@@ -92,7 +94,7 @@ body {
 }
 a { color: inherit; text-decoration: none; }
 :focus { outline: none; }
-:focus-visible { outline: none; box-shadow: 0 0 0 2px var(--color-primary); }
+:focus-visible { outline: none; box-shadow: 0 0 0 2px var(--focus-ring-color); }
 
 /* ===== Layout ===== */
 .main { flex:1; display:flex; flex-direction:column; }
@@ -263,7 +265,7 @@ a { color: inherit; text-decoration: none; }
 .nav-item:focus,
 .nav-subitem:focus {
   outline: none;
-  box-shadow: 0 0 0 2px var(--color-primary);
+  box-shadow: 0 0 0 2px var(--focus-ring-color);
 }
 .nav-item:hover .label,
 .nav-item:focus-visible .label,
@@ -467,8 +469,8 @@ select option[value="Administrador"]:hover {
 .select:focus,
 .textarea:focus {
   outline:none;
-  border:2px solid var(--color-primary);
-  box-shadow:0 0 0 2px rgba(46,125,50,0.2);
+  border:2px solid var(--focus-ring-color);
+  box-shadow:0 0 0 2px var(--focus-ring-shadow);
 }
 .form-field[aria-invalid="true"] .text-input,
 .form-field[aria-invalid="true"] .masked-input,
@@ -677,8 +679,9 @@ body[data-route="clientes-cadastro"] .card[data-card-id="cadastro-clientes"] .ca
 }
 .page-top-menu a.menu-link:hover { color: var(--color-primary); }
 .page-top-menu :where(button, .btn, input, select, .menu-link):focus-visible {
-  box-shadow: none;
-  border-color: var(--color-border);
+  box-shadow: 0 0 0 1px var(--focus-ring-color);
+  border-color: var(--focus-ring-color);
+
 }
 .page-top-menu :where(button, .btn, input, select, .menu-link):focus {
   box-shadow: none;
@@ -698,7 +701,7 @@ body[data-route="clientes-cadastro"] .card[data-card-id="cadastro-clientes"] .ca
 
 /* Focus state for accessibility */
 .balloon:focus-within {
-  box-shadow: 0 0 0 2px var(--color-primary), var(--balloon-shadow);
+  box-shadow: 0 0 0 2px var(--focus-ring-color), var(--balloon-shadow);
 }
 
 /* Clients page layout */
@@ -760,7 +763,10 @@ body[data-route="clientes-cadastro"] .card[data-card-id="cadastro-clientes"] .ca
   font-size: var(--page-menu-font-size);
   line-height: var(--page-menu-control-height);
 }
-.os-type-filter .filter-btn:focus { outline: 2px solid var(--color-primary); outline-offset: -2px; }
+.os-type-filter .filter-btn:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--focus-ring-color);
+}
 .os-type-filter .filter-btn.active {
   background: var(--color-primary);
   color: #fff;
@@ -817,7 +823,10 @@ body[data-route="clientes-cadastro"] .card[data-card-id="cadastro-clientes"] .ca
 .os-card-actions .os-action,
 .os-completed .os-action{width:36px;height:36px;display:flex;align-items:center;justify-content:center;border:none;background:none;cursor:pointer;border-radius:var(--radius-md);}
 .os-card-actions .os-action:focus,
-.os-completed .os-action:focus{outline:2px solid var(--color-primary);}
+.os-completed .os-action:focus{
+  outline:none;
+  box-shadow:0 0 0 2px var(--focus-ring-color);
+}
 .os-card-actions .os-action:hover,
 .os-completed .os-action:hover{background:var(--surface-muted);}
 .os-card-actions .btn-os-imprimir,
@@ -1801,7 +1810,7 @@ body[data-route="clientes-cadastro"] .card[data-card-id="cadastro-clientes"] .ca
 }
 .cal-controls select:focus {
   outline:none;
-  box-shadow:0 0 0 3px rgba(59,130,246,0.18);
+  box-shadow:0 0 0 3px var(--focus-ring-shadow);
 }
 .cal-controls .cal-hoje {
   background:#e2e8f0;
@@ -1916,7 +1925,7 @@ body[data-route="clientes-cadastro"] .card[data-card-id="cadastro-clientes"] .ca
 }
 .segmented { display:inline-flex; background:var(--neutral-100); border-radius:999px; padding:4px; gap:4px; }
 .segmented button { padding:0.35rem 1rem; border-radius:999px; font:inherit; border:none; font-weight:600; }
-.segmented button:focus { outline:none; box-shadow:0 0 0 2px var(--color-primary); }
+.segmented button:focus { outline:none; box-shadow:0 0 0 2px var(--focus-ring-color); }
 .segmented [aria-pressed="true"] { background:var(--color-primary); color:#fff; }
 .segmented [aria-pressed="false"] { background:#fff; color:var(--color-text); }
 
@@ -2071,7 +2080,7 @@ body[data-route="clientes-cadastro"] .card[data-card-id="cadastro-clientes"] .ca
 .chips { display:flex; flex-wrap:wrap; gap:0.5rem; }
 .chip { padding:6px 12px; border-radius:var(--radius-lg); border:none; background:var(--neutral-200); color:var(--color-text); cursor:pointer; }
 .chip[aria-pressed="true"] { background:var(--color-primary); color:#fff; }
-.chip:focus { outline:none; box-shadow:0 0 0 2px var(--color-primary); }
+.chip:focus { outline:none; box-shadow:0 0 0 2px var(--focus-ring-color); }
 .clients-toolbar .search-input { height:100%; }
 .cal-weekdays {
   display:grid;
@@ -2200,7 +2209,7 @@ body[data-route="clientes-cadastro"] .card[data-card-id="cadastro-clientes"] .ca
   width:100%;
 }
 .day-add { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:32px; height:32px; border-radius:50%; background:var(--neutral-200); border:none; display:flex; align-items:center; justify-content:center; cursor:pointer; }
-.day-add:focus { outline:none; box-shadow:0 0 0 2px var(--green-500); }
+.day-add:focus { outline:none; box-shadow:0 0 0 2px var(--focus-ring-color); }
 .calendar-chip {
   flex:1 1 auto;
   width:100%;
@@ -2498,7 +2507,7 @@ body[data-route="clientes-cadastro"] .card[data-card-id="cadastro-clientes"] .ca
 .btn-icon.adjust { background:var(--orange-500); color:#fff; }
 .btn-icon:hover { filter:brightness(1.05); }
 .btn-icon:active { transform:translateY(1px); }
-.btn-icon:focus { outline:none; box-shadow:0 0 0 2px var(--green-500); }
+.btn-icon:focus { outline:none; box-shadow:0 0 0 2px var(--focus-ring-color); }
 .switch { appearance:none; width:40px; height:20px; background:var(--color-border); border-radius:var(--radius-lg); position:relative; cursor:pointer; transition:background .3s; }
 .switch:before { content:""; position:absolute; top:2px; left:2px; width:16px; height:16px; background:var(--color-bg); border-radius:50%; transition:transform .3s; box-shadow:0 1px 2px rgba(0,0,0,0.2); }
 .switch:checked { background:var(--color-primary); }
