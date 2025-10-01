@@ -681,6 +681,7 @@ body[data-route="clientes-cadastro"] .card[data-card-id="cadastro-clientes"] .ca
 .page-top-menu :where(button, .btn, input, select, .menu-link):focus-visible {
   box-shadow: 0 0 0 1px var(--focus-ring-color);
   border-color: var(--focus-ring-color);
+
 }
 .page-top-menu :where(button, .btn, input, select, .menu-link):focus {
   box-shadow: none;
